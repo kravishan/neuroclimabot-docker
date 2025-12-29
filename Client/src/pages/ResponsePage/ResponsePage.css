@@ -1,0 +1,290 @@
+.response-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.response-container {
+  display: flex;
+  flex-direction: column;
+  padding: 40px 20px;
+  margin-top: 100px;  
+  width: 100%;  
+  max-width: 1250px; 
+  margin-left: auto;
+  margin-right: auto;
+  flex: 1; /* This ensures the container grows to fill available space */
+  min-height: 0; /* Allow shrinking */
+}
+
+.content-wrapper {
+  display: flex;
+  width: 100%;
+  flex: 1; /* Grow to fill available space */
+}
+
+.response-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0; /* Allow shrinking */
+}
+
+.response-title {
+  font-size: 26px;
+  font-weight: bold;
+  color: black;
+  margin: 0;
+  text-align: left;
+  margin-right: auto;
+  margin-bottom: 30px;
+}
+
+.message-perspective-pair {
+  display: flex;
+  width: 100%;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.message-content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perspective-wrapper {
+  width: 250px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.connected-perspectives-container {
+  position: relative;
+  flex-direction: column;
+  flex: 1; /* Allow this to grow */
+}
+
+/* Create a continuous vertical line that spans all perspectives */
+.connected-perspectives-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(100% - 250px);
+  width: 2px;
+  background-color: rgba(58, 125, 69, 1);
+  z-index: 0;
+}
+
+.connected-perspectives-container::before {
+  top: -20px;
+}
+
+.user-messages-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1; /* Allow this to grow and fill space */
+}
+
+.disclaimer-text-style {
+  font-size: 14px;
+  color: black;
+  text-align: center;
+  max-width: 900px;
+  margin-top: 20px; /* Reduced from 60px */
+  margin-bottom: 0; /* Remove bottom margin */
+}
+
+/* Inactivity Warning Styles */
+.inactivity-warning {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid rgba(249,157,28,255);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-width: 400px;
+  width: 90%;
+  animation: slideInScale 0.3s ease-out;
+}
+
+.inactivity-warning.warning {
+  background: white;
+  border-color: rgba(249,157,28,255);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.inactivity-warning.critical {
+  background: white;
+  border-color: rgba(249,157,28,255);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: slideInScale 0.3s ease-out, criticalPulse 1s infinite alternate;
+}
+
+@keyframes criticalPulse {
+  0% { 
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+  100% { 
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.inactivity-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.inactivity-content svg {
+  color: rgba(249,157,28,255);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.inactivity-warning.critical .inactivity-content svg {
+  color: rgba(249,157,28,255);
+}
+
+.inactivity-text {
+  flex: 1;
+}
+
+.inactivity-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: black;
+  margin: 0 0 8px 0;
+}
+
+.inactivity-warning.critical .inactivity-title {
+  color: black;
+}
+
+.inactivity-message {
+  font-size: 14px;
+  color: black;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.inactivity-warning.critical .inactivity-message {
+  color: black;
+}
+
+/* Session Restored Notification */
+.session-restored-notification {
+  position: fixed;
+  top: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid rgba(249,157,28,255);
+  border-left: 4px solid rgba(249,157,28,255);
+  border-radius: 12px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-width: 450px;
+  width: 90%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: black;
+}
+
+.session-restored-notification svg {
+  color: rgba(249,157,28,255);
+  flex-shrink: 0;
+}
+
+/* Message input container styles */
+.message-input-container {
+  margin-top: auto; /* Push to bottom */
+  padding-top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  max-width: calc(100% - 280px); /* Match the message-content-wrapper width */
+}
+
+.loading-message {
+  margin-top: 20px;
+}
+
+.skeleton-with-margin {
+  margin-top: 23px; 
+}
+
+.skeleton-perspective-container {
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .response-container {
+    padding: 20px 15px;
+    margin-top: 80px;
+  }
+  
+  .message-perspective-pair {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .perspective-wrapper {
+    width: 100%;
+  }
+  
+  .connected-perspectives-container::before {
+    display: none;
+  }
+  
+  .message-input-container {
+    max-width: 100%;
+  }
+  
+  .response-title {
+    font-size: 22px;
+  }
+
+  .inactivity-warning {
+    max-width: 90%;
+    padding: 16px 20px;
+  }
+
+  .inactivity-content {
+    gap: 12px;
+  }
+
+  .inactivity-title {
+    font-size: 15px;
+  }
+
+  .inactivity-message {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .response-container {
+    padding: 15px 10px;
+    margin-top: 70px;
+  }
+  
+  .response-title {
+    font-size: 20px;
+  }
+}

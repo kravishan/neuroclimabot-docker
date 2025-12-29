@@ -1,0 +1,156 @@
+/* Content Analytics Styles */
+.compact-metric {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #cccccc;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-header svg {
+  color: #00b0f0;
+  background: rgba(0, 176, 240, 0.1);
+  padding: 4px;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+}
+
+.metric-value {
+  font-size: 16px;
+  color: #999999;
+  font-style: italic;
+}
+
+.metric-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primary-source,
+.primary-language {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.primary-label {
+  font-size: 12px;
+  color: #999999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.primary-value {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.source-breakdown,
+.language-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-item,
+.language-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.source-name,
+.language-name {
+  min-width: 60px;
+  color: #cccccc;
+  font-weight: 500;
+}
+
+.source-bar,
+.language-bar {
+  flex: 1;
+  height: 4px;
+  background: #333333;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.source-fill {
+  height: 100%;
+  background: #009892;
+  transition: width 0.3s ease;
+}
+
+.language-fill {
+  height: 100%;
+  background: #00b0f0;
+  transition: width 0.3s ease;
+}
+
+.source-count,
+.language-count {
+  min-width: 20px;
+  text-align: right;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .metric-header {
+    font-size: 12px;
+    gap: 6px;
+  }
+  
+  .metric-header svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .primary-value {
+    font-size: 13px;
+  }
+  
+  .source-item,
+  .language-item {
+    font-size: 11px;
+  }
+  
+  .source-name,
+  .language-name {
+    min-width: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-content {
+    gap: 10px;
+  }
+  
+  .source-breakdown,
+  .language-breakdown {
+    gap: 6px;
+  }
+  
+  .primary-source,
+  .primary-language {
+    padding: 6px 0;
+  }
+}

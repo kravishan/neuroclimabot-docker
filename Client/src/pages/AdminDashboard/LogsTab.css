@@ -1,0 +1,224 @@
+/* LogsTab Styles */
+.adm-logs-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--adm-spacing-xl);
+}
+
+/* Logs Container */
+.adm-logs-container {
+  background: var(--adm-surface);
+  border-radius: var(--adm-radius-md);
+  border: 1px solid var(--adm-border);
+  max-height: 500px;
+  overflow-y: auto;
+  font-family: 'Monaco', 'Consolas', 'Liberation Mono', monospace;
+}
+
+.adm-log-entry {
+  display: flex;
+  gap: var(--adm-spacing-md);
+  padding: var(--adm-spacing-sm);
+  font-size: 0.75rem;
+  border-left: 3px solid transparent;
+  transition: all var(--adm-transition);
+  border-bottom: 1px solid var(--adm-border-light);
+  min-height: 40px;
+  align-items: flex-start;
+}
+
+.adm-log-entry:hover {
+  background: var(--adm-surface-elevated);
+  border-left-color: var(--adm-accent-blue);
+}
+
+.adm-log-entry.adm-log-error {
+  background: rgba(255, 68, 68, 0.05);
+  border-left-color: var(--adm-danger);
+}
+
+.adm-log-entry.adm-log-warning {
+  background: rgba(249, 157, 28, 0.05);
+  border-left-color: var(--adm-accent-orange);
+}
+
+.adm-log-entry.adm-log-info {
+  background: rgba(0, 174, 239, 0.05);
+  border-left-color: var(--adm-accent-blue);
+}
+
+.adm-log-entry.adm-log-debug {
+  background: rgba(153, 153, 153, 0.05);
+  border-left-color: var(--adm-tertiary);
+}
+
+.adm-log-time {
+  color: var(--adm-secondary);
+  min-width: 140px;
+  flex-shrink: 0;
+  font-weight: 500;
+  font-size: 0.7rem;
+}
+
+.adm-log-level {
+  min-width: 60px;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  padding: 2px var(--adm-spacing-xs);
+  border-radius: var(--adm-radius-sm);
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+}
+
+.adm-log-level-error {
+  color: var(--adm-primary);
+  background: var(--adm-danger);
+}
+
+.adm-log-level-warning {
+  color: var(--adm-background);
+  background: var(--adm-accent-orange);
+}
+
+.adm-log-level-info {
+  color: var(--adm-primary);
+  background: var(--adm-accent-blue);
+}
+
+.adm-log-level-debug {
+  color: var(--adm-primary);
+  background: var(--adm-tertiary);
+}
+
+.adm-log-message {
+  flex: 1;
+  word-break: break-word;
+  line-height: 1.4;
+  color: var(--adm-primary);
+  font-size: 0.75rem;
+}
+
+/* Empty logs state */
+.adm-logs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--adm-secondary);
+  text-align: center;
+}
+
+.adm-logs-empty svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+/* Logs controls */
+.adm-logs-controls {
+  display: flex;
+  gap: var(--adm-spacing-md);
+  align-items: center;
+  padding: var(--adm-spacing-lg);
+  background: var(--adm-surface);
+  border-radius: var(--adm-radius-md);
+  border: 1px solid var(--adm-border);
+  margin-bottom: var(--adm-spacing-lg);
+}
+
+.adm-logs-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--adm-spacing-xs);
+}
+
+.adm-logs-filter-group label {
+  font-size: 12px;
+  color: var(--adm-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.adm-logs-filter-select {
+  background: var(--adm-surface-elevated);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  padding: 8px 12px;
+  color: var(--adm-primary);
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.adm-logs-filter-select:focus {
+  outline: none;
+  border-color: var(--adm-accent-blue);
+  box-shadow: 0 0 0 2px rgba(0, 174, 239, 0.2);
+}
+
+.adm-logs-refresh-btn {
+  padding: 8px 16px;
+  background: var(--adm-accent-blue);
+  color: var(--adm-primary);
+  border: none;
+  border-radius: var(--adm-radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: all var(--adm-transition);
+}
+
+.adm-logs-refresh-btn:hover:not(:disabled) {
+  background: rgba(0, 174, 239, 0.8);
+  transform: translateY(-1px);
+}
+
+.adm-logs-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .adm-log-entry {
+    flex-direction: column;
+    gap: var(--adm-spacing-xs);
+    padding: var(--adm-spacing-sm);
+  }
+  
+  .adm-log-time,
+  .adm-log-level {
+    min-width: auto;
+  }
+  
+  .adm-logs-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .adm-logs-filter-group {
+    width: 100%;
+  }
+  
+  .adm-logs-filter-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .adm-logs-container {
+    max-height: 400px;
+  }
+  
+  .adm-log-entry {
+    font-size: 0.7rem;
+  }
+  
+  .adm-log-message {
+    font-size: 0.7rem;
+  }
+}

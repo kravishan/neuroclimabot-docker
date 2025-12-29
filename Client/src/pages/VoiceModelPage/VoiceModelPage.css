@@ -1,0 +1,263 @@
+.voice-model-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff;
+}
+
+.visualizer-interface {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.animation-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.ai-avatar {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s ease;
+  background-color: #f0f5ff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Speaking animation - active when AI is speaking */
+.ai-avatar.speaking {
+  width: 200px;
+  height: 200px;
+  box-shadow: 0 0 30px 5px rgba(66, 133, 244, 0.3);
+}
+
+/* Listening state - active when AI is listening */
+.ai-avatar.listening {
+  border-color: #4caf50;
+  box-shadow: 0 0 30px 5px rgba(76, 175, 80, 0.2);
+}
+
+/* Processing/thinking state */
+.ai-avatar.processing {
+  border-color: #ffc107;
+  box-shadow: 0 0 30px 5px rgba(255, 193, 7, 0.2);
+}
+
+/* Waveform container styles */
+.waveform-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* AI state indicator label styling */
+.ai-state-indicator {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 16px;
+  margin-top: 10px;
+  margin-bottom: 16px;
+  background-color: #f5f5f5;
+  color: #333;
+  transition: all 0.3s ease;
+  min-width: 100px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+/* State-specific indicator styles */
+.ai-state-indicator.listening {
+  background-color: rgba(76, 175, 80, 0.15);
+  color: #2e7d32;
+}
+
+.ai-state-indicator.thinking {
+  background-color: rgba(255, 193, 7, 0.15);
+  color: #ff8f00;
+}
+
+.ai-state-indicator.talking {
+  background-color: rgba(66, 133, 244, 0.15);
+  color: #1976d2;
+}
+
+.control-bar {
+  position: fixed;
+  bottom: 40px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* New record button container styles for waveform */
+.record-button-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 50px;
+}
+
+.record-button {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background-color: #3a7d45;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  z-index: 2;
+  position: relative;
+}
+
+.record-button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.record-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.record-button.recording {
+  animation: recording-pulse 1.5s infinite alternate;
+  background-color: #3a7d45;
+}
+
+.record-button.speaking {
+  background-color: #4285f4;
+  animation: speaking-pulse 1.5s infinite alternate;
+}
+
+@keyframes recording-pulse {
+  0% {
+    transform: scale(1);
+    background-color: #3a7d45;
+  }
+  100% {
+    transform: scale(1.1);
+    background-color: #3a7d45;
+  }
+}
+
+@keyframes speaking-pulse {
+  0% {
+    transform: scale(1);
+    background-color: #4285f4;
+  }
+  100% {
+    transform: scale(1.1);
+    background-color: #4285f4;
+  }
+}
+
+/* Error message styling */
+.error-message {
+  background-color: #fdeeee;
+  color: #d32f2f;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  text-align: center;
+  max-width: 80%;
+  border: 1px solid #ffcdd2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Connection status indicator */
+.connection-status {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.connection-status.connected {
+  background-color: #e6f4ea;
+  color: #137333;
+  border: 1px solid #ceead6;
+}
+
+.connection-status.disconnected {
+  background-color: #feefc3;
+  color: #b06000;
+  border: 1px solid #fde293;
+}
+
+/* Reconnect button styling */
+.reconnect-button {
+  background-color: #fff;
+  color: #d32f2f;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.reconnect-button:hover:not(:disabled) {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.reconnect-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Spinner animation for reconnecting state */
+.spin {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

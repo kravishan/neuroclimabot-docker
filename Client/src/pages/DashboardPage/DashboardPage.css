@@ -1,0 +1,371 @@
+/* Dashboard Page Styles - Clean & Minimal */
+.dashboard-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding-top: 120px; /* Header margin */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Loading State */
+.dashboard-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  color: #666;
+}
+
+/* Error Display */
+.dashboard-error {
+  background: linear-gradient(145deg, #ffeaea, #ffffff);
+  border: 1px solid #dc3545;
+  border-left: 4px solid #dc3545;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-content {
+  flex: 1;
+  color: #dc3545;
+}
+
+.error-retry-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.error-retry-btn:hover {
+  background: #c82333;
+}
+
+/* Section Headers */
+.user-dashboard-section {
+  margin-bottom: 32px;
+}
+
+.user-section-header {
+  margin-bottom: 20px;
+  font-size: 18px;
+  color: #333;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.user-section-header svg {
+  color: #3a7d45;
+  background: rgba(58, 125, 69, 0.1);
+  padding: 6px;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+}
+
+/* Grid Layouts */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.stats-grid-inner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 0;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.chart-grid.single-chart {
+  grid-template-columns: 1fr;
+}
+
+/* Card Styles */
+.stat-card,
+.chart-card {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  padding: 20px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  margin-bottom: 10px;
+}
+
+.stat-card:hover,
+.chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Stat cards inside stats-grid-inner should have lighter styling */
+.stats-grid-inner .stat-card {
+  background: linear-gradient(145deg, #fafafa, #ffffff);
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  margin-bottom: 0;
+}
+
+.stats-grid-inner .stat-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Stat Values */
+.stat-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #3a7d45;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Chart Headers */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.chart-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+  margin: 0;
+}
+
+.chart-header h3 svg {
+  color: #3a7d45;
+  background: rgba(58, 125, 69, 0.1);
+  padding: 4px;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+}
+
+.chart-subtitle {
+  font-size: 14px;
+  color: #777;
+  font-weight: 500;
+}
+
+/* Document Lists */
+.docs-container {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+
+.docs-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.docs-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.docs-container::-webkit-scrollbar-thumb {
+  background: #cccccc;
+  border-radius: 2px;
+}
+
+.docs-container::-webkit-scrollbar-thumb:hover {
+  background: #999999;
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(145deg, #ecf5ee10, #defce50e);
+  border-radius: 8px;
+  border: 1px solid #eee;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.doc-item:hover {
+  background-color: #fafafa;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transform: translateY(-1px);
+}
+
+.doc-rank {
+  width: 40px;
+  height: 40px;
+  background-color: #3a7d45;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(58, 125, 69, 0.3);
+}
+
+.doc-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-title {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+  font-size: 16px;
+  line-height: 1.3;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.doc-references {
+  font-size: 14px;
+  color: #666666;
+  line-height: 1.2;
+}
+
+/* Word Cloud */
+.word-cloud-container {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.word-cloud {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.word-cloud-item {
+  display: inline-block;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.word-cloud-item:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.word-cloud-loading,
+.word-cloud-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: #666;
+  font-style: italic;
+  height: 100%;
+  justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-page {
+    padding-top: 100px;
+  }
+  
+  .dashboard-container {
+    padding: 16px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .stat-card,
+  .chart-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-page {
+    padding-top: 90px;
+  }
+  
+  .dashboard-container {
+    padding: 12px;
+  }
+  
+  .stats-grid,
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card,
+  .chart-card {
+    padding: 12px;
+  }
+}

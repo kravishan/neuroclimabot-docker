@@ -1,0 +1,284 @@
+@keyframes pulse {
+  0% {
+    background-position: 200% 0;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    background-position: -200% 0;
+    opacity: 1;
+  }
+}
+
+/* Enhanced pulse class with better gradient */
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+  background: linear-gradient(
+    90deg, 
+    #f0f4f8 0%, 
+    #e2e8f0 25%, 
+    #f8fafc 50%, 
+    #e2e8f0 75%, 
+    #f0f4f8 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add shimmer effect */
+.pulse::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Skeleton container styles */
+.skeleton-response {
+  padding: 20px;
+  background: linear-gradient(145deg, #43ff6c0c, #ffffff);
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  margin-top: 20px;
+}
+
+.skeleton-response-header {
+  margin-bottom: 16px;
+}
+
+.skeleton-paragraph {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.skeleton-line {
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.skeleton-user-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: linear-gradient(145deg, #ffffff, #1a31fa10);
+  border: 1px solid #eee;
+}
+
+.skeleton-user-message > div {
+  border-radius: 4px;
+}
+
+/* References skeleton styles */
+.skeleton-references {
+  margin-top: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.skeleton-references-header {
+  margin-bottom: 16px;
+}
+
+.skeleton-references-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.skeleton-reference-box {
+  border: 1px solid #eee;
+  background: linear-gradient(145deg, #ecf5ee10, #defce50e);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  animation: scaleIn 0.3s ease forwards;
+}
+
+/* Staggered animation for reference boxes */
+.skeleton-reference-box:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.skeleton-reference-box:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.skeleton-reference-box:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.skeleton-reference-box:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.skeleton-reference-box:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+.skeleton-reference-box:nth-child(6) {
+  animation-delay: 0.5s;
+}
+
+/* Perspectives skeleton styles */
+.skeleton-perspectives {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.skeleton-perspective-container {
+  width: 100%;
+}
+
+.skeleton-perspectives-header {
+  border-radius: 4px;
+}
+
+.skeleton-perspective-item {
+  border-radius: 8px;
+  border-left: 2px solid #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Message input skeleton */
+.skeleton-message-input {
+  background: linear-gradient(145deg, #ecf5ee56, #defce556);
+  border: 1px solid #eee;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Actions skeleton */
+.skeleton-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.skeleton-action-button {
+  background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Title skeleton with special styling */
+.skeleton-title {
+  background: linear-gradient(
+    90deg, 
+    #e2e8f0 0%, 
+    #cbd5e1 25%, 
+    #f1f5f9 50%, 
+    #cbd5e1 75%, 
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Scale in animation keyframes */
+@keyframes scaleIn {
+  from { 
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive skeleton adjustments */
+@media (max-width: 1024px) {
+  .skeleton-references-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .skeleton-references-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .skeleton-perspectives {
+    margin-left: 0;
+  }
+  
+  .skeleton-perspectives-header,
+  .skeleton-perspective-item {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeleton-response {
+    padding: 15px;
+    margin-top: 15px;
+  }
+  
+  .skeleton-user-message {
+    padding: 10px 12px;
+  }
+  
+  .skeleton-actions {
+    gap: 8px;
+    margin-top: 15px;
+  }
+  
+  .skeleton-action-button {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .pulse,
+  .pulse::after,
+  .skeleton-reference-box {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pulse {
+    background: linear-gradient(
+      90deg, 
+      #d1d5db 0%, 
+      #9ca3af 50%, 
+      #d1d5db 100%
+    );
+  }
+  
+  .skeleton-response,
+  .skeleton-user-message {
+    border: 2px solid #6b7280;
+  }
+}

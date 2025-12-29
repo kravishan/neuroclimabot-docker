@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  overflow-y: scroll;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: white;
+  background: white !important;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+/* Root div should take full height */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* App container - flexible height */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Only apply overflow hidden to the index/home page for smooth UX */
+body.index-page {
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.app-container.blurred-bg {
+  height: 100vh; /* Full height only for home page */
+}
+
+/* For other pages, allow normal scrolling */
+body:not(.index-page) {
+  overflow-y: auto;
+  height: auto;
+  min-height: 100vh;
+}
+
+/* Main content area should grow to fill available space */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.disclaimer-text {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center; 
+  width: 100%; 
+  padding: 0 20px; 
+  font-size: 14px;
+  z-index: 3;
+}
+
+.disclaimer-message {
+  display: inline; 
+  color: #000000;
+  margin: 0;
+}
+
+.learn-more-link {
+  font-size: 14px;
+  color: #1d72b8;
+  text-decoration: none;
+  margin-left: 8px; 
+}
+
+.learn-more-link:hover {
+  text-decoration: underline;
+}
+
+.blurred-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('/assets/images/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  filter: blur(2px);
+  z-index: -500;
+}
+
+/* Base animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInBottom {
+  from { 
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from { 
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animation classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+.slide-in-bottom {
+  animation: slideInBottom 0.4s ease-out forwards;
+}
+
+.slide-in {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+.scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}

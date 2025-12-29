@@ -1,0 +1,177 @@
+.auth-guard-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.loading-logo {
+  height: 60px;
+  width: auto;
+  opacity: 0.8;
+  animation: logoFade 2s ease-in-out infinite alternate;
+}
+
+@keyframes logoFade {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+/* Token Expiry Warning */
+.token-expiry-warning {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  max-width: 400px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.expiry-content {
+  background: white;
+  border: 1px solid #f59e0b;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.expiry-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.expiry-text {
+  flex: 1;
+}
+
+.expiry-text strong {
+  display: block;
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.expiry-text p {
+  margin: 0;
+  color: #78350f;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.expiry-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.expiry-button {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.refresh-button {
+  background-color: #f59e0b;
+  color: white;
+  border-color: #f59e0b;
+}
+
+.refresh-button:hover {
+  background-color: #d97706;
+  border-color: #d97706;
+}
+
+.dismiss-button {
+  background-color: transparent;
+  color: #78350f;
+  border-color: #d6d3d1;
+}
+
+.dismiss-button:hover {
+  background-color: #fef3c7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .token-expiry-warning {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .expiry-content {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .expiry-actions {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .expiry-button {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .expiry-content {
+    border: 2px solid #f59e0b;
+  }
+
+  .refresh-button {
+    border: 2px solid #d97706;
+  }
+
+  .dismiss-button {
+    border: 2px solid #78350f;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .loading-logo {
+    animation: none;
+  }
+
+  .token-expiry-warning {
+    animation: none;
+  }
+
+  .expiry-button {
+    transition: none;
+  }
+}

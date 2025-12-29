@@ -1,0 +1,19 @@
+export const UI_CONSTANTS = {
+  ANIMATION_SPEEDS: {
+    FAST: 10,
+    NORMAL: 15,
+    SLOW: 25
+  },
+  BREAKPOINTS: {
+    MOBILE: 480,
+    TABLET: 768,
+    DESKTOP: 1024,
+    LARGE: 1440
+  },
+  Z_INDEX: {
+    HEADER: 1000,
+    MODAL: 1100,
+    TOOLTIP: 1200,
+    DROPDOWN: 1050
+  }
+}

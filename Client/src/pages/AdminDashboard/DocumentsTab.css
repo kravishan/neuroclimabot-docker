@@ -1,0 +1,415 @@
+/* DocumentsTab Styles */
+.adm-documents-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--adm-spacing-xl);
+}
+
+/* Statistics Section */
+.adm-stats-section {
+  margin-bottom: var(--adm-spacing-xl);
+}
+
+.adm-processing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: rgba(249, 157, 28, 0.2);
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--adm-warning);
+  font-weight: 600;
+  border: 1px solid rgba(249, 157, 28, 0.3);
+}
+
+/* Controls Section */
+.adm-controls-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--adm-spacing-md);
+  align-items: end;
+  padding: var(--adm-spacing-lg);
+  background: var(--adm-surface);
+  border-radius: var(--adm-radius-md);
+  border: 1px solid var(--adm-border);
+  margin-bottom: var(--adm-spacing-xl);
+}
+
+.adm-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--adm-spacing-xs);
+  flex: 1;
+  min-width: 150px;
+}
+
+.adm-control-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--adm-spacing-xs);
+  font-size: 12px;
+  color: var(--adm-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.adm-select-input,
+.adm-text-input {
+  background: var(--adm-surface-elevated);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  padding: 10px 12px;
+  color: var(--adm-primary);
+  font-size: 14px;
+  transition: all var(--adm-transition);
+}
+
+.adm-select-input:focus,
+.adm-text-input:focus {
+  outline: none;
+  border-color: var(--adm-accent-blue);
+  box-shadow: 0 0 0 2px rgba(0, 174, 239, 0.2);
+}
+
+.adm-text-input::placeholder {
+  color: var(--adm-tertiary);
+}
+
+.adm-refresh-btn {
+  padding: 10px 16px;
+  background: var(--adm-accent-blue);
+  color: var(--adm-primary);
+  border: none;
+  border-radius: var(--adm-radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  transition: all var(--adm-transition);
+  white-space: nowrap;
+}
+
+.adm-refresh-btn:hover:not(:disabled) {
+  background: rgba(0, 174, 239, 0.8);
+  transform: translateY(-1px);
+}
+
+.adm-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Banner */
+.adm-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.3);
+  color: var(--adm-danger);
+  border-radius: var(--adm-radius-md);
+  margin-bottom: var(--adm-spacing-xl);
+}
+
+.adm-retry-btn {
+  background: var(--adm-danger);
+  color: var(--adm-primary);
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--adm-radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--adm-transition);
+}
+
+.adm-retry-btn:hover {
+  background: rgba(255, 68, 68, 0.8);
+}
+
+/* Table Container */
+.adm-table-container {
+  background: var(--adm-surface);
+  border-radius: var(--adm-radius-md);
+  border: 1px solid var(--adm-border);
+  overflow: hidden;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.adm-documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.adm-documents-table th,
+.adm-documents-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--adm-border-light);
+  vertical-align: middle;
+}
+
+.adm-documents-table th {
+  background: var(--adm-surface-elevated);
+  font-weight: 600;
+  color: var(--adm-primary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.adm-documents-table tbody tr {
+  transition: background-color var(--adm-transition);
+}
+
+.adm-documents-table tbody tr:hover {
+  background: var(--adm-surface-elevated);
+}
+
+.adm-document-cell {
+  max-width: 300px;
+}
+
+.adm-document-name {
+  font-weight: 600;
+  color: var(--adm-primary);
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.adm-bucket-badge {
+  padding: 4px 8px;
+  background: var(--adm-surface-elevated);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  font-size: 12px;
+  color: var(--adm-secondary);
+  font-weight: 500;
+}
+
+/* Status Indicators */
+.adm-status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.adm-status-indicator.adm-complete {
+  color: var(--adm-success);
+}
+
+.adm-status-indicator.adm-pending {
+  color: var(--adm-tertiary);
+}
+
+.adm-status-badge {
+  padding: 4px 8px;
+  border-radius: var(--adm-radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.adm-status-badge.adm-complete {
+  background: rgba(0, 155, 153, 0.2);
+  color: var(--adm-accent-teal);
+  border: 1px solid var(--adm-accent-teal);
+}
+
+.adm-status-badge.adm-partial {
+  background: rgba(249, 157, 28, 0.2);
+  color: var(--adm-accent-orange);
+  border: 1px solid var(--adm-accent-orange);
+}
+
+.adm-status-badge.adm-pending {
+  background: rgba(255, 68, 68, 0.2);
+  color: var(--adm-danger);
+  border: 1px solid var(--adm-danger);
+}
+
+/* Action Buttons */
+.adm-action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-action-btn {
+  background: var(--adm-surface-elevated);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--adm-radius-sm);
+  transition: all var(--adm-transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.adm-action-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.adm-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.adm-action-btn.adm-view-btn:hover:not(:disabled) {
+  color: var(--adm-info);
+  background: rgba(0, 174, 239, 0.2);
+  border-color: var(--adm-info);
+}
+
+.adm-action-btn.adm-process-btn:hover:not(:disabled) {
+  color: var(--adm-success);
+  background: rgba(0, 155, 153, 0.2);
+  border-color: var(--adm-success);
+}
+
+.adm-action-btn.adm-processing {
+  color: var(--adm-warning);
+  background: rgba(249, 157, 28, 0.2);
+  border-color: var(--adm-warning);
+  animation: adm-pulse 1.5s infinite;
+}
+
+@keyframes adm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Empty State */
+.adm-empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--adm-secondary);
+  font-size: 14px;
+}
+
+/* Pagination */
+.adm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 0;
+}
+
+.adm-pagination-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--adm-surface-elevated);
+  border: 1px solid var(--adm-border);
+  border-radius: var(--adm-radius-sm);
+  color: var(--adm-primary);
+  cursor: pointer;
+  transition: all var(--adm-transition);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.adm-pagination-btn:hover:not(:disabled) {
+  background: var(--adm-surface);
+  border-color: var(--adm-accent-blue);
+  transform: translateY(-1px);
+}
+
+.adm-pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.adm-pagination-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.adm-page-numbers {
+  color: var(--adm-primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.adm-total-count {
+  color: var(--adm-secondary);
+  font-size: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .adm-controls-section {
+    flex-direction: column;
+    gap: var(--adm-spacing-md);
+  }
+  
+  .adm-control-group {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .adm-documents-table th,
+  .adm-documents-table td {
+    padding: 8px;
+    font-size: 12px;
+  }
+  
+  .adm-action-buttons {
+    gap: 4px;
+  }
+  
+  .adm-action-btn {
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+  }
+  
+  .adm-pagination {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .adm-pagination-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .adm-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .adm-stat-card {
+    padding: 16px;
+  }
+}

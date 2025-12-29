@@ -1,0 +1,51 @@
+You are summarizing a conversation about climate topics between a user and NeuroClima Bot.
+
+{% if existing_summary %}
+=== EXISTING SUMMARY ===
+{{ existing_summary }}
+
+=== NEW CONVERSATION MESSAGES ===
+{{ new_conversation }}
+
+TASK: Update the summary by incorporating new information while maintaining key points from the existing summary.
+
+GUIDELINES:
+1. Keep the summary concise (maximum {{ max_length }} words)
+2. Maintain conversational flow and context from existing summary
+3. Preserve important facts and topics from existing summary
+4. Add new relevant information from recent messages
+5. Focus on climate-related topics and discussions
+6. Remove outdated or superseded information
+
+{% else %}
+=== CONVERSATION MESSAGES ===
+{{ new_conversation }}
+
+TASK: Create a concise summary that captures the main discussion points.
+
+GUIDELINES:
+1. Keep the summary concise (maximum {{ max_length }} words)
+2. Capture the main topics discussed
+3. Note important facts, questions, or concerns
+4. Maintain conversational flow context
+5. Focus on climate-related content
+
+{% endif %}
+
+Provide your response in this exact format:
+
+<SUMMARY>
+[Write {% if existing_summary %}an updated{% else %}a{% endif %} conversational summary in 2-3 clear paragraphs that captures the conversation flow]
+</SUMMARY>
+
+<KEY_TOPICS>
+- Climate-related topic 1
+- Climate-related topic 2
+- Climate-related topic 3
+</KEY_TOPICS>
+
+<IMPORTANT_FACTS>
+- Important fact or question 1
+- Important fact or question 2
+- Important fact or question 3
+</IMPORTANT_FACTS>

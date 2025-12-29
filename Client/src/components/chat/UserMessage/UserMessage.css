@@ -1,0 +1,43 @@
+.typed-message-container {
+  padding: 10px;
+  background: linear-gradient(145deg, #ffffff, #1a31fa10);
+  border-radius: 8px;
+  width: 100%;
+  display: flex;
+  align-items: center;  
+  gap: 10px;
+  border: 1px solid #eee;
+  animation: fadeIn 0.3s ease;
+}
+
+.typed-message {
+  font-size: 16px;
+  color: #333;
+  line-height: 1.5;
+  flex-grow: 1;
+}
+
+.user-icon-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.user-icon {
+  color: #555;
+  width: 24px;  
+  height: 24px;  
+  flex-shrink: 0;  
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
