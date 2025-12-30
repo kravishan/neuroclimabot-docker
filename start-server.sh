@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Starting NeuroClima (All Services)..."
+echo "🚀 Starting NeuroClima Server + Redis..."
 echo ""
 
 # Check if Docker is running
@@ -38,9 +38,9 @@ mkdir -p Server/data
 echo "✅ Directories created"
 echo ""
 
-# Start services using both compose files
-echo "🐳 Starting all Docker containers..."
-docker-compose -f docker-compose.server.yml -f docker-compose.client.yml up -d
+# Start services
+echo "🐳 Starting Server and Redis containers..."
+docker-compose -f docker-compose.server.yml up -d
 
 echo ""
 echo "⏳ Waiting for services to be healthy..."
@@ -49,18 +49,16 @@ sleep 10
 # Check service status
 echo ""
 echo "📊 Service Status:"
-docker-compose -f docker-compose.server.yml -f docker-compose.client.yml ps
+docker-compose -f docker-compose.server.yml ps
 
 echo ""
-echo "🎉 NeuroClima is running!"
+echo "🎉 Server services are running!"
 echo ""
 echo "📝 Services started:"
 echo "   ✓ Redis (with password authentication)"
 echo "   ✓ FastAPI Backend"
-echo "   ✓ React Frontend"
 echo ""
 echo "🌐 Access points:"
-echo "   • Frontend: http://localhost"
 echo "   • API docs: http://localhost:8000/docs"
 echo "   • Health check: http://localhost:8000/api/v1/health"
 echo "   • Metrics: http://localhost:8001"
@@ -71,9 +69,7 @@ echo "   • MinIO (object storage)"
 echo "   • Ollama (LLM service)"
 echo ""
 echo "💡 Useful commands:"
-echo "   • Stop all: ./stop.sh"
-echo "   • Stop server only: ./stop-server.sh"
-echo "   • Stop client only: ./stop-client.sh"
-echo "   • View all logs: docker-compose -f docker-compose.server.yml -f docker-compose.client.yml logs -f"
+echo "   • Stop server: ./stop-server.sh"
+echo "   • View logs: docker-compose -f docker-compose.server.yml logs -f"
 echo "   • View server logs: docker-compose -f docker-compose.server.yml logs -f server"
-echo "   • View client logs: docker-compose -f docker-compose.client.yml logs -f client"
+echo "   • View redis logs: docker-compose -f docker-compose.server.yml logs -f redis"

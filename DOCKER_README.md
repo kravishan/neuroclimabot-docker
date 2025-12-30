@@ -25,6 +25,25 @@ The Docker Compose setup includes the following containerized services:
 - **MinIO** - Object storage for documents
 - **Ollama** - LLM inference service
 
+## Deployment Options
+
+This setup provides **separate docker-compose files** for flexible deployment:
+
+### Option 1: Deploy Everything Together
+- **Files**: `docker-compose.server.yml` + `docker-compose.client.yml`
+- **Scripts**: `./start.sh` and `./stop.sh`
+- **Use Case**: Development, single-server deployment, all-in-one setup
+
+### Option 2: Deploy Server Only (Backend + Redis)
+- **File**: `docker-compose.server.yml`
+- **Scripts**: `./start-server.sh` and `./stop-server.sh`
+- **Use Case**: Backend server deployment, separate frontend hosting, API-only deployment
+
+### Option 3: Deploy Client Only (Frontend)
+- **File**: `docker-compose.client.yml`
+- **Scripts**: `./start-client.sh` and `./stop-client.sh`
+- **Use Case**: Frontend-only deployment, CDN hosting, separate client server
+
 ## Quick Start
 
 ### 1. Clone the Repository
@@ -49,7 +68,7 @@ MILVUS_HOST=your-milvus-vm-ip-or-hostname
 MILVUS_PORT=19530
 
 # External MinIO Configuration
-MINIO_ENDPOINT=your-minio-vm-ip-or-hostname:9000
+MINIO_ENDPOINT=your-milvus-vm-ip-or-hostname:9000
 MINIO_ACCESS_KEY=your-minio-access-key
 MINIO_SECRET_KEY=your-minio-secret-key
 MINIO_SECURE=true
@@ -65,22 +84,50 @@ Also configure optional settings:
 
 ### 3. Start Docker Services
 
-Using the helper script (recommended):
+Choose one of the following deployment options:
 
+#### Option A: Start Everything (Recommended for Development)
+
+Using the helper script:
 ```bash
 ./start.sh
 ```
 
 Or use Docker Compose directly:
-
 ```bash
-docker-compose up -d
+docker-compose -f docker-compose.server.yml -f docker-compose.client.yml up -d
 ```
 
+#### Option B: Start Server Only (Backend + Redis)
+
+Using the helper script:
+```bash
+./start-server.sh
+```
+
+Or use Docker Compose directly:
+```bash
+docker-compose -f docker-compose.server.yml up -d
+```
+
+#### Option C: Start Client Only (Frontend)
+
+Using the helper script:
+```bash
+./start-client.sh
+```
+
+Or use Docker Compose directly:
+```bash
+docker-compose -f docker-compose.client.yml up -d
+```
+
+**Note**: When starting client only, make sure the backend is accessible at `http://localhost:8000`
+
 This will:
-- Build the Client and Server Docker images
-- Start Redis with password authentication
-- Set up the networking between containers
+- Build the necessary Docker images
+- Start the selected services
+- Set up networking between containers
 - Connect to your external Milvus, MinIO, and Ollama services
 
 ### 4. Verify External Services
@@ -104,43 +151,68 @@ Ensure your external services are accessible from the Docker containers:
 
 ```bash
 # All services
-docker-compose logs -f
+docker-compose -f docker-compose.server.yml -f docker-compose.client.yml logs -f
 
-# Specific service
-docker-compose logs -f server
-docker-compose logs -f client
+# Server logs only
+docker-compose -f docker-compose.server.yml logs -f server
+
+# Client logs only
+docker-compose -f docker-compose.client.yml logs -f client
+
+# Redis logs
+docker-compose -f docker-compose.server.yml logs -f redis
 ```
 
 ### Restart Services
 
 ```bash
-# Restart all
-docker-compose restart
+# Restart all services
+docker-compose -f docker-compose.server.yml -f docker-compose.client.yml restart
 
-# Restart specific service
-docker-compose restart server
+# Restart server only
+docker-compose -f docker-compose.server.yml restart server
+
+# Restart client only
+docker-compose -f docker-compose.client.yml restart client
 ```
 
 ### Stop Services
 
 ```bash
-docker-compose down
+# Stop all services
+./stop.sh
+# Or: docker-compose -f docker-compose.server.yml -f docker-compose.client.yml down
+
+# Stop server only
+./stop-server.sh
+# Or: docker-compose -f docker-compose.server.yml down
+
+# Stop client only
+./stop-client.sh
+# Or: docker-compose -f docker-compose.client.yml down
 ```
 
 ### Stop and Remove All Data
 
 ```bash
-docker-compose down -v
+# Remove server data (Redis, Server volumes)
+docker-compose -f docker-compose.server.yml down -v
+
+# Client doesn't have volumes, so just stop it
+docker-compose -f docker-compose.client.yml down
 ```
 
 ### Rebuild After Code Changes
 
 ```bash
-# Rebuild and restart
-docker-compose up -d --build
+# Rebuild server
+docker-compose -f docker-compose.server.yml up -d --build
 
-# Rebuild specific service
-docker-compose up -d --build server
+# Rebuild client
+docker-compose -f docker-compose.client.yml up -d --build
+
+# Rebuild all
+docker-compose -f docker-compose.server.yml -f docker-compose.client.yml up -d --build
 ```
 
 ## Development Mode
@@ -165,14 +237,24 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Note: You'll still need the supporting services (Redis, Milvus, MinIO) running via Docker.
+Note: You'll still need Redis running. Start it with:
+```bash
+docker-compose -f docker-compose.server.yml up -d redis
+```
 
 ## Service Health Checks
 
 Check if all services are healthy:
 
 ```bash
-docker-compose ps
+# Check all services
+docker-compose -f docker-compose.server.yml -f docker-compose.client.yml ps
+
+# Check server services only
+docker-compose -f docker-compose.server.yml ps
+
+# Check client service only
+docker-compose -f docker-compose.client.yml ps
 ```
 
 All services should show `healthy` or `running` status.
@@ -183,15 +265,15 @@ All services should show `healthy` or `running` status.
 
 ```bash
 # Check logs
-docker-compose logs <service-name>
+docker-compose -f docker-compose.server.yml logs <service-name>
 
 # Restart service
-docker-compose restart <service-name>
+docker-compose -f docker-compose.server.yml restart <service-name>
 ```
 
 ### Port Already in Use
 
-If a port is already in use, you can modify the port mappings in `docker-compose.yml`:
+If a port is already in use, you can modify the port mappings in the respective `docker-compose.*.yml` file:
 
 ```yaml
 ports:
@@ -205,7 +287,7 @@ ports:
 cat Server/.env | grep REDIS_PASSWORD
 
 # Check Redis logs
-docker-compose logs redis
+docker-compose -f docker-compose.server.yml logs redis
 
 # Test Redis connection
 docker exec neuroclima-redis redis-cli -a your-password ping
@@ -220,7 +302,7 @@ docker exec neuroclima-server curl http://your-ollama-host:11434
 docker exec neuroclima-server curl http://your-minio-host:9000
 
 # Check server logs for connection errors
-docker-compose logs server
+docker-compose -f docker-compose.server.yml logs server
 ```
 
 ### Milvus Connection Issues
@@ -228,7 +310,7 @@ docker-compose logs server
 - Verify Milvus is running on the external VM
 - Check firewall rules allow connections from Docker host
 - Verify MILVUS_HOST and MILVUS_PORT in Server/.env
-- Check server logs: `docker-compose logs server`
+- Check server logs: `docker-compose -f docker-compose.server.yml logs server`
 
 ### MinIO Connection Issues
 
@@ -244,17 +326,28 @@ docker-compose logs server
 - Verify OLLAMA_BASE_URL in Server/.env
 - Check model name matches OLLAMA_MODEL setting
 
+### Client Can't Reach Server
+
+If client is deployed separately and can't reach the backend:
+- Verify backend is accessible at the configured URL
+- Update `VITE_API_BASE_URL` in Client/.env to point to your backend server
+- Rebuild client after environment changes: `docker-compose -f docker-compose.client.yml up -d --build`
+
 ### Reset Docker Services
 
 ```bash
-# Stop and remove all containers and volumes
-docker-compose down -v
+# Reset server + Redis
+docker-compose -f docker-compose.server.yml down -v
+docker-compose -f docker-compose.server.yml up -d
 
-# Remove images
-docker-compose down --rmi all
+# Reset client
+docker-compose -f docker-compose.client.yml down
+docker-compose -f docker-compose.client.yml up -d --build
 
-# Start fresh
-docker-compose up -d
+# Reset all
+docker-compose -f docker-compose.server.yml down -v
+docker-compose -f docker-compose.client.yml down
+./start.sh
 ```
 
 ## Production Considerations
@@ -271,11 +364,12 @@ Before deploying to production:
    - Implement network security groups/firewall rules
 
 2. **Performance**:
-   - Configure proper resource limits in docker-compose.yml
+   - Configure proper resource limits in docker-compose files
    - Enable caching and optimization features
    - Use production-grade reverse proxy (nginx, traefik) with SSL
    - Consider Redis clustering for high availability
    - Optimize Docker host resources
+   - Consider separate servers for client and server deployment
 
 3. **Monitoring**:
    - Enable Langfuse for observability
@@ -296,6 +390,12 @@ Before deploying to production:
    - Configure high availability for external services
    - Monitor external service health
    - Set up VPN or secure network for inter-service communication
+
+6. **Separate Deployment**:
+   - Client and Server can be deployed on different servers
+   - Update `VITE_API_BASE_URL` in Client/.env to point to server's public URL
+   - Ensure proper CORS configuration on server for client origin
+   - Consider CDN for client static files
 
 ## Environment Variables
 
@@ -321,7 +421,7 @@ Before deploying to production:
 
 ### Client Key Variables
 
-- `VITE_API_BASE_URL` - Backend API endpoint
+- `VITE_API_BASE_URL` - Backend API endpoint (update for separate deployment)
 - `VITE_AUTH_ENABLED` - Match server auth setting
 - `VITE_ENABLE_GRAPH_VISUALIZATION` - Enable graph features
 
@@ -329,9 +429,15 @@ Before deploying to production:
 
 ```
 neuroclimabot-docker/
-├── docker-compose.yml          # Main orchestration file (Redis, Server, Client)
-├── start.sh                    # Helper script to start services
-├── stop.sh                     # Helper script to stop services
+├── docker-compose.yml          # Legacy main file (backward compatibility)
+├── docker-compose.server.yml   # Server + Redis deployment
+├── docker-compose.client.yml   # Client-only deployment
+├── start.sh                    # Start all services
+├── stop.sh                     # Stop all services
+├── start-server.sh             # Start server + Redis only
+├── stop-server.sh              # Stop server + Redis
+├── start-client.sh             # Start client only
+├── stop-client.sh              # Stop client only
 ├── Client/
 │   ├── Dockerfile              # Client build instructions
 │   ├── nginx.conf              # Nginx configuration for React app
@@ -351,22 +457,28 @@ neuroclimabot-docker/
 
 2. **Redis Password**: Redis runs with password authentication. You must set a strong `REDIS_PASSWORD` in `Server/.env` before starting.
 
-3. **Network Connectivity**: Ensure Docker containers can reach external services. You may need to:
+3. **Separate Deployment**: You can deploy client and server independently using their respective docker-compose files. This allows for:
+   - Scaling client and server separately
+   - Deploying client on CDN/edge servers
+   - Different update cycles for frontend and backend
+
+4. **Network Connectivity**: Ensure Docker containers can reach external services. You may need to:
    - Configure firewall rules on external VMs
    - Use Docker host network mode if on the same host
-   - Set up VPN or secure networking between services
+   - Set up VPN or secure network for inter-service communication
 
-4. **Data Persistence**: Redis and server data are persisted in Docker volumes. Back up these volumes regularly.
+5. **Data Persistence**: Redis and server data are persisted in Docker volumes. Back up these volumes regularly.
 
-5. **Environment Files**: The `.env` files contain sensitive information and are not committed to git. You must configure them manually.
+6. **Environment Files**: The `.env` files contain sensitive information and are not committed to git. You must configure them manually.
 
 ## Support
 
 For issues and questions:
-1. Check the logs: `docker-compose logs`
+1. Check the logs using the appropriate docker-compose file
 2. Review the troubleshooting section above
 3. Check Docker and Docker Compose versions
 4. Ensure sufficient system resources
+5. Verify external services are accessible
 
 ## License
 

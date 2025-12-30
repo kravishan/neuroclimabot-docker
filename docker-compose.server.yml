@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Redis - Session and caching with password authentication
+  redis:
+    image: redis:7-alpine
+    container_name: neuroclima-redis
+    command: sh -c "redis-server --requirepass $${REDIS_PASSWORD:-changeme}"
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "$${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+
+  # FastAPI Backend
+  server:
+    build:
+      context: ./Server
+      dockerfile: Dockerfile
+    container_name: neuroclima-server
+    ports:
+      - "8000:8000"
+      - "8001:8001"  # Metrics port
+    env_file:
+      - ./Server/.env
+    environment:
+      # Override Redis URL to use password from .env
+      - REDIS_URL=redis://:$${REDIS_PASSWORD:-changeme}@redis:6379/0
+    volumes:
+      - ./Server:/app
+      - server_data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  server_data:
+
+networks:
+  neuroclima-network:
+    driver: bridge
