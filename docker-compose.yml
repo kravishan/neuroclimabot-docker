@@ -6,16 +6,16 @@ services:
   redis:
     image: redis:7-alpine
     container_name: neuroclima-redis
-    command: redis-server --requirepass "${REDIS_PASSWORD:-MySecureRedisPassword123!}"
+    command: redis-server --requirepass "${REDIS_PASSWORD}"
     ports:
       - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecureRedisPassword123!}
+    env_file:
+      - .env
     volumes:
       - redis_data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-MySecureRedisPassword123!}", "ping"]
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -35,11 +35,11 @@ services:
       - "8000:8000"
       - "8001:8001"  # Metrics port
     env_file:
+      - .env
       - ./Server/.env
     environment:
-      # Redis connection details - MUST match Redis password
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-MySecureRedisPassword123!}@redis:6379/0
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecureRedisPassword123!}
+      # Redis connection details - uses password from .env
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     volumes:
@@ -67,6 +67,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    env_file:
+      - .env
     environment:
       - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
       - VITE_API_DOCUMENT_URL=${VITE_API_DOCUMENT_URL:-http://localhost:5000}
