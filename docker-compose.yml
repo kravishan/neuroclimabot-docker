@@ -2,26 +2,30 @@ version: '3.8'
 
 services:
   # Redis - Session and caching with password authentication
+  # MUST START FIRST - Server depends on Redis being ready
   redis:
     image: redis:7-alpine
     container_name: neuroclima-redis
-    command: sh -c "redis-server --requirepass $${REDIS_PASSWORD:-changeme}"
+    command: redis-server --requirepass "${REDIS_PASSWORD:-MySecureRedisPassword123!}"
     ports:
       - "6379:6379"
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecureRedisPassword123!}
     volumes:
       - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "$${REDIS_PASSWORD:-changeme}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-MySecureRedisPassword123!}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     networks:
       - neuroclima-network
     restart: unless-stopped
 
   # FastAPI Backend
+  # STARTS AFTER Redis is healthy
   server:
     build:
       context: ./Server
@@ -33,8 +37,11 @@ services:
     env_file:
       - ./Server/.env
     environment:
-      # Override Redis URL to use password from .env
-      - REDIS_URL=redis://:$${REDIS_PASSWORD:-changeme}@redis:6379/0
+      # Redis connection details - MUST match Redis password
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-MySecureRedisPassword123!}@redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-MySecureRedisPassword123!}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       # Persist SQLite database
       - server_data:/app/data
@@ -42,11 +49,11 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health", "||", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     networks:
       - neuroclima-network
     restart: unless-stopped
