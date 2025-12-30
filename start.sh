@@ -18,6 +18,20 @@ fi
 echo "✅ Docker is running"
 echo ""
 
+# Check if .env file exists
+if [ ! -f "Server/.env" ]; then
+    echo "⚠️  Warning: Server/.env not found!"
+    echo "Please configure Server/.env with your external service endpoints."
+    exit 1
+fi
+
+# Check for REDIS_PASSWORD
+if ! grep -q "REDIS_PASSWORD=your-secure-redis-password-change-this" Server/.env; then
+    echo "⚠️  Please update REDIS_PASSWORD in Server/.env before starting"
+    echo "Current placeholder value detected. Use a strong password."
+    exit 1
+fi
+
 # Create necessary directories
 echo "📁 Creating data directories..."
 mkdir -p Server/data
@@ -40,12 +54,22 @@ docker-compose ps
 echo ""
 echo "🎉 NeuroClima is starting up!"
 echo ""
-echo "📝 Next Steps:"
-echo "   1. Download Ollama model: docker exec -it neuroclima-ollama ollama pull mistral:7b"
-echo "   2. Check logs: docker-compose logs -f"
-echo "   3. Access frontend: http://localhost"
-echo "   4. Access API docs: http://localhost:8000/docs"
-echo "   5. MinIO console: http://localhost:9001 (minioadmin/minioadmin)"
+echo "📝 Services running:"
+echo "   ✓ Redis (with password authentication)"
+echo "   ✓ FastAPI Backend"
+echo "   ✓ React Frontend"
 echo ""
-echo "💡 Run './stop.sh' to stop all services"
-echo "💡 Run 'docker-compose logs -f' to view logs"
+echo "🌐 Access points:"
+echo "   • Frontend: http://localhost"
+echo "   • API docs: http://localhost:8000/docs"
+echo "   • Health check: http://localhost:8000/api/v1/health"
+echo ""
+echo "⚙️  External services (configured in Server/.env):"
+echo "   • Milvus (vector database)"
+echo "   • MinIO (object storage)"
+echo "   • Ollama (LLM service)"
+echo ""
+echo "💡 Useful commands:"
+echo "   • Stop services: ./stop.sh"
+echo "   • View logs: docker-compose logs -f"
+echo "   • View specific service logs: docker-compose logs -f server"
