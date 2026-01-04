@@ -6,19 +6,19 @@ This guide explains how to run the NeuroClima Document Processor using Docker Co
 
 - Docker (version 20.10+)
 - Docker Compose (version 2.0+)
-- At least 16GB RAM (recommended for all services)
-- At least 20GB free disk space
+- **Already deployed and running:**
+  - MinIO (port 9000)
+  - Milvus (port 19530)
+  - Ollama (port 11434)
 
 ## Architecture
 
 The Docker Compose setup includes the following services:
 
-1. **unstructured** - Document extraction API (port 9000)
+1. **unstructured** - Document extraction API (port 9000 → maps to internal 8000)
 2. **processor** - Main document processing service (port 5000)
-3. **minio** - S3-compatible object storage (ports 9001, 9002)
-4. **milvus** - Vector database for embeddings (port 19530)
-5. **etcd** - Metadata storage for Milvus
-6. **ollama** - Local LLM and embedding service (port 11434)
+
+The processor connects to your existing MinIO, Milvus, and Ollama services running on localhost.
 
 ## Quick Start
 
@@ -28,9 +28,9 @@ The Docker Compose setup includes the following services:
 cd Processor
 ```
 
-### 2. Review and update the .env file (optional)
+### 2. Review and update the .env file
 
-The `.env` file is pre-configured with Docker service names. Update if needed:
+The `.env` file is pre-configured to use your existing services on localhost. Update if needed:
 
 ```bash
 nano .env
@@ -39,33 +39,36 @@ nano .env
 Key settings to review:
 - `MODEL_PROVIDER` - Set to "free" (Ollama) or "paid" (OpenAI)
 - `OPENAI_API_KEY` - Required if using MODEL_PROVIDER=paid
-- `ACCESS_KEY` / `SECRET_KEY` - MinIO credentials (default: minioadmin)
+- `ACCESS_KEY` / `SECRET_KEY` - MinIO credentials (match your deployment)
+- `OLLAMA_API_URL` - Ollama endpoint (default: http://localhost:11434)
+- `MINIO_ENDPOINT` - MinIO endpoint (default: localhost:9000)
+- `MILVUS_HOST` - Milvus host (default: localhost)
 
-### 3. Start all services
+### 3. Ensure external services are running
+
+Make sure your existing services are accessible:
+
+```bash
+# Check MinIO
+curl http://localhost:9000/minio/health/live
+
+# Check Milvus
+curl http://localhost:19530
+
+# Check Ollama
+curl http://localhost:11434/
+```
+
+### 4. Start the Docker services
 
 ```bash
 docker-compose up -d
 ```
 
 This will:
-- Download required Docker images (~10GB)
-- Start all services in the correct order
-- Wait for health checks before starting dependent services
-
-### 4. Download Ollama models (first time only)
-
-After Ollama starts, download the required models:
-
-```bash
-# Download the LLM model (Mistral 7B - ~4GB)
-docker exec -it neuroclima-ollama ollama pull mistral:7b
-
-# Download the embedding model (~1GB)
-docker exec -it neuroclima-ollama ollama pull nomic-embed-text
-
-# (Optional) Download vision model for image extraction (~7GB)
-docker exec -it neuroclima-ollama ollama pull llava:13b
-```
+- Download the Unstructured API image (~2GB)
+- Build the Processor image
+- Start both services with health checks
 
 ### 5. Verify services are running
 
@@ -73,7 +76,7 @@ docker exec -it neuroclima-ollama ollama pull llava:13b
 docker-compose ps
 ```
 
-All services should show "healthy" status after a few minutes.
+Both services should show "healthy" status after a few minutes.
 
 ### 6. Check processor health
 
@@ -86,9 +89,9 @@ Expected response:
 {
   "status": "healthy",
   "services": {
-    "ollama": "healthy",
-    "minio": "healthy",
-    "milvus": "healthy",
+    "ollama": "connected",
+    "minio": "connected",
+    "milvus": "connected",
     "unstructured": "healthy"
   }
 }
@@ -102,9 +105,7 @@ The processor API is available at `http://localhost:5000`
 
 ### Access MinIO Console
 
-MinIO web console: `http://localhost:9002`
-- Username: `minioadmin` (or your ACCESS_KEY)
-- Password: `minioadmin` (or your SECRET_KEY)
+Access your existing MinIO deployment (refer to your MinIO setup for the console URL)
 
 ### Process a document
 
@@ -156,34 +157,39 @@ docker-compose build processor
 docker-compose up -d processor
 ```
 
-## Service Endpoints (Internal)
+## Service Endpoints
 
-When running in Docker, services communicate using these internal endpoints:
+The processor uses these endpoints:
 
-- Unstructured API: `http://unstructured:8000`
-- MinIO: `minio:9000`
-- Milvus: `milvus:19530`
-- Ollama: `http://ollama:11434`
+- **Unstructured API**: `http://unstructured:8000` (internal Docker network)
+- **MinIO**: `localhost:9000` (your external service)
+- **Milvus**: `localhost:19530` (your external service)
+- **Ollama**: `http://localhost:11434` (your external service)
 
-These are already configured in the `.env` file.
+The processor container can access localhost services via `host.docker.internal`.
 
 ## Troubleshooting
 
 ### Processor fails to start
 
-1. Check Ollama models are downloaded:
+1. Verify external services are accessible:
    ```bash
-   docker exec -it neuroclima-ollama ollama list
+   # From your host
+   curl http://localhost:11434/  # Ollama
+   curl http://localhost:9000/minio/health/live  # MinIO
+
+   # Check if Ollama models are available
+   curl http://localhost:11434/api/tags
    ```
 
-2. Check service health:
-   ```bash
-   docker-compose ps
-   ```
-
-3. View processor logs:
+2. Check processor logs:
    ```bash
    docker-compose logs processor
+   ```
+
+3. Verify Docker network access to host:
+   ```bash
+   docker exec -it neuroclima-processor curl http://host.docker.internal:11434/
    ```
 
 ### Out of memory errors
@@ -194,10 +200,14 @@ These are already configured in the `.env` file.
 
 ### Milvus connection errors
 
-1. Wait for Milvus to fully start (can take 30-60 seconds)
-2. Check Milvus logs:
+1. Verify Milvus is accessible from host:
    ```bash
-   docker-compose logs milvus
+   curl http://localhost:19530
+   ```
+
+2. Check if processor can reach host services:
+   ```bash
+   docker exec -it neuroclima-processor ping host.docker.internal
    ```
 
 ### Unstructured API timeout
@@ -208,39 +218,37 @@ These are already configured in the `.env` file.
   docker-compose logs unstructured
   ```
 
-## GPU Support (Optional)
+## External Service Requirements
 
-To enable GPU acceleration for Ollama:
+Ensure these services are running before starting the processor:
 
-1. Install NVIDIA Container Toolkit
-2. Uncomment the GPU section in `docker-compose.yml`:
-   ```yaml
-   ollama:
-     deploy:
-       resources:
-         reservations:
-           devices:
-             - driver: nvidia
-               count: 1
-               capabilities: [gpu]
-   ```
+### MinIO (Object Storage)
+- Port: 9000
+- Credentials configured in `.env`
+- Buckets created: researchpapers, policy, news, scientificdata
 
-3. Restart services:
-   ```bash
-   docker-compose down
-   docker-compose up -d
-   ```
+### Milvus (Vector Database)
+- Port: 19530
+- Databases created as needed by the application
+
+### Ollama (LLM Service)
+- Port: 11434
+- Required models downloaded:
+  ```bash
+  ollama pull mistral:7b
+  ollama pull nomic-embed-text
+  ollama pull llava:13b  # Optional, for image extraction
+  ```
 
 ## Data Persistence
 
-All data is persisted in Docker volumes:
+Processor data is persisted in Docker volumes:
 
-- `minio_data` - Uploaded documents
-- `milvus_data` - Vector embeddings
-- `ollama_data` - Downloaded models
-- `processor_data` - SQLite database
+- `processor_data` - SQLite database and application data
 - `graphrag_data` - GraphRAG knowledge graphs
 - `lancedb_data` - LanceDB storage
+
+External service data (MinIO, Milvus, Ollama) is managed by your existing deployments.
 
 To backup data:
 ```bash
@@ -263,14 +271,13 @@ Key environment variables in `.env`:
 
 ## Port Reference
 
-| Service | Internal Port | External Port | Description |
-|---------|--------------|---------------|-------------|
-| Processor | 5000 | 5000 | Main API |
-| Unstructured | 8000 | 9000 | Document extraction |
-| MinIO API | 9000 | 9001 | Object storage API |
-| MinIO Console | 9001 | 9002 | Web console |
-| Milvus | 19530 | 19530 | Vector database |
-| Ollama | 11434 | 11434 | LLM API |
+| Service | Port | Purpose | Location |
+|---------|------|---------|----------|
+| Processor | 5000 | Main API | Docker |
+| Unstructured | 9000 | Document extraction | Docker |
+| MinIO | 9000 | Object storage | External |
+| Milvus | 19530 | Vector DB | External |
+| Ollama | 11434 | LLM API | External |
 
 ## Integration with Client and Server
 
@@ -315,4 +322,5 @@ For issues or questions:
 - Check logs: `docker-compose logs -f`
 - Review `.env` configuration
 - Ensure all health checks pass: `docker-compose ps`
-- Verify Ollama models are downloaded: `docker exec -it neuroclima-ollama ollama list`
+- Verify external services are accessible (MinIO, Milvus, Ollama)
+- Check Ollama models: `curl http://localhost:11434/api/tags`
