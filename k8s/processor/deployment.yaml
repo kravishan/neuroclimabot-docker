@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuroclima-unstructured
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: unstructured
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: unstructured
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: unstructured
+    spec:
+      containers:
+      - name: unstructured
+        image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuroclima-processor
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: processor
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: processor
+    spec:
+      containers:
+      - name: processor
+        image: YOUR_REGISTRY/neuroclima-processor:latest
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: UNSTRUCTURED_API_URL
+          value: "http://neuroclima-unstructured:8000"
+        - name: OLLAMA_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: neuroclima-config
+              key: OLLAMA_API_URL
+        - name: MINIO_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: neuroclima-config
+              key: MINIO_ENDPOINT
+        - name: MILVUS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: neuroclima-config
+              key: MILVUS_HOST
+        - name: ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MINIO_ACCESS_KEY
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MINIO_SECRET_KEY
+        envFrom:
+        - configMapRef:
+            name: processor-config
+        volumeMounts:
+        - name: processor-data
+          mountPath: /app/data
+        - name: graphrag-data
+          mountPath: /app/graphrag
+        - name: lancedb-data
+          mountPath: /app/lancedb
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+      volumes:
+      - name: processor-data
+        persistentVolumeClaim:
+          claimName: processor-data-pvc
+      - name: graphrag-data
+        persistentVolumeClaim:
+          claimName: graphrag-data-pvc
+      - name: lancedb-data
+        persistentVolumeClaim:
+          claimName: lancedb-data-pvc

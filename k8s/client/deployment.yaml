@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuroclima-client
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: client
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: client
+    spec:
+      containers:
+      - name: client
+        image: YOUR_REGISTRY/neuroclima-client:latest
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: VITE_API_BASE_URL
+          value: "https://YOUR_DOMAIN/api"
+        - name: VITE_API_DOCUMENT_URL
+          value: "https://YOUR_DOMAIN/processor"
+        - name: VITE_TRANSLATE_API_URL
+          value: "https://YOUR_DOMAIN/processor"
+        - name: VITE_STP_SERVICE_URL
+          value: "https://YOUR_DOMAIN/processor"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

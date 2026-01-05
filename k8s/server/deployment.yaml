@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuroclima-redis
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        ports:
+        - containerPort: 6379
+          name: redis
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: REDIS_PASSWORD
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-data-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuroclima-server
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: server
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: server
+    spec:
+      containers:
+      - name: server
+        image: YOUR_REGISTRY/neuroclima-server:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 8001
+          name: metrics
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: REDIS_PASSWORD
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@neuroclima-redis:6379/0"
+        - name: REDIS_HOST
+          value: "neuroclima-redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: DOCUMENT_PROCESSOR_URL
+          value: "http://neuroclima-processor:5000"
+        envFrom:
+        - configMapRef:
+            name: server-config
+        volumeMounts:
+        - name: server-data
+          mountPath: /app/data
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+      volumes:
+      - name: server-data
+        persistentVolumeClaim:
+          claimName: server-data-pvc

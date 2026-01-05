@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: neuroclima-redis
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: neuroclima
+    component: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neuroclima-server
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: server
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  - port: 8001
+    targetPort: 8001
+    protocol: TCP
+    name: metrics
+  selector:
+    app: neuroclima
+    component: server
