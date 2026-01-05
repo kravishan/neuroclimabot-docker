@@ -1,0 +1,122 @@
+services:
+  # ============================================================================
+  # PROCESSOR SERVICES (Start First)
+  # ============================================================================
+
+  # Unstructured API - Document extraction service
+  unstructured:
+    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+    container_name: neuroclima-unstructured
+    ports:
+      - "9000:8000"
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+
+  # Document Processor - Main processing service
+  processor:
+    build:
+      context: ./Processor
+      dockerfile: Dockerfile
+    container_name: neuroclima-processor
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./Processor/.env
+    environment:
+      - UNSTRUCTURED_API_URL=http://unstructured:8000
+    volumes:
+      - processor_data:/app/data
+      - graphrag_data:/app/graphrag
+      - lancedb_data:/app/lancedb
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # ============================================================================
+  # SERVER SERVICES (Start After Processor)
+  # ============================================================================
+
+  # Redis - Session and caching
+  redis:
+    image: redis:7-alpine
+    container_name: neuroclima-redis
+    command: redis-server --requirepass "${REDIS_PASSWORD:-neuroclima123}"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+
+  # FastAPI Backend Server
+  server:
+    build:
+      context: ./Server
+      dockerfile: Dockerfile
+    container_name: neuroclima-server
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    env_file:
+      - ./Server/.env
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-neuroclima123}@redis:6379/0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DOCUMENT_PROCESSOR_URL=http://processor:5000
+    volumes:
+      - server_data:/app/data
+    depends_on:
+      - redis
+      - processor
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # CLIENT SERVICE (Start Last)
+  # ============================================================================
+
+  # React Frontend
+  client:
+    build:
+      context: ./Client
+      dockerfile: Dockerfile
+    container_name: neuroclima-client
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_DOCUMENT_URL=http://localhost:5000
+      - VITE_TRANSLATE_API_URL=http://localhost:5000
+      - VITE_STP_SERVICE_URL=http://localhost:5000
+    depends_on:
+      - server
+      - processor
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  # Processor volumes
+  processor_data:
+  graphrag_data:
+  lancedb_data:
+
+  # Server volumes
+  redis_data:
+  server_data:
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  neuroclima-network:
+    driver: bridge
