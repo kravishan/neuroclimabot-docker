@@ -1,0 +1,45 @@
+services:
+  # Unstructured API - Document extraction service
+  unstructured:
+    image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+    container_name: neuroclima-unstructured
+    ports:
+      - "9000:8000"
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+
+  # Document Processor - Main processing service
+  # Note: Connects to externally deployed MinIO, Milvus, and Ollama services
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neuroclima-processor
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      # Override Unstructured API endpoint for Docker network
+      - UNSTRUCTURED_API_URL=http://unstructured:8000
+    volumes:
+      # Persist data, GraphRAG workspace, and LanceDB
+      - processor_data:/app/data
+      - graphrag_data:/app/graphrag
+      - lancedb_data:/app/lancedb
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+    # Allow processor to access host network for external services
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  processor_data:
+  graphrag_data:
+  lancedb_data:
+
+networks:
+  neuroclima-network:
+    driver: bridge
