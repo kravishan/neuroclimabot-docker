@@ -13,7 +13,13 @@ import {
   GitBranch,
   Search,
   Download,
-  Filter
+  Filter,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  BookOpen,
+  Zap
 } from 'lucide-react'
 import { fetchTippingPointsGraphByDocName } from '@/services/api/endpoints'
 import KnowledgeGraph from '@/components/common/KnowledgeGraph'
@@ -36,6 +42,7 @@ const ExplorePage = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [expandedCommunities, setExpandedCommunities] = useState(new Set())
+  const [showInfoBanner, setShowInfoBanner] = useState(true)
 
   const hasFetchedData = useRef(false)
 
@@ -440,6 +447,89 @@ const ExplorePage = () => {
       }
       return newSet
     })
+  }
+
+  const renderInfoBanner = () => {
+    if (!showInfoBanner) return null
+
+    return (
+      <div className="info-banner">
+        <div className="info-banner-header">
+          <div className="info-banner-title">
+            <Info size={24} className="info-icon" />
+            <h3>Understanding Knowledge Graphs</h3>
+          </div>
+          <button
+            className="info-banner-close"
+            onClick={() => setShowInfoBanner(false)}
+            aria-label="Close information banner"
+          >
+            <ChevronUp size={20} />
+          </button>
+        </div>
+
+        <div className="info-banner-content">
+          <div className="info-section">
+            <div className="info-section-header">
+              <BookOpen size={18} className="section-icon" />
+              <h4>What is a Knowledge Graph?</h4>
+            </div>
+            <p>
+              A knowledge graph is a visual representation of information that shows how different concepts,
+              entities, and ideas are connected. Think of it as a network map where nodes (circles) represent
+              important entities like organizations, locations, or concepts, and links (lines) show the
+              relationships between them.
+            </p>
+          </div>
+
+          <div className="info-section">
+            <div className="info-section-header">
+              <Zap size={18} className="section-icon" />
+              <h4>How Was This Data Extracted?</h4>
+            </div>
+            <p>
+              This knowledge graph was automatically generated using <strong>GraphRAG</strong> (Graph Retrieval-Augmented Generation),
+              an advanced AI technology that analyzes documents to identify key entities, their relationships,
+              and community structures. The system intelligently extracts factual claims and organizes them
+              into a structured, interconnected network of knowledge.
+            </p>
+          </div>
+
+          <div className="info-section">
+            <div className="info-section-header">
+              <Lightbulb size={18} className="section-icon" />
+              <h4>How to Use This Page</h4>
+            </div>
+            <div className="info-list">
+              <div className="info-item">
+                <Network size={16} />
+                <span><strong>Graph Tab:</strong> Explore the interactive 3D visualization. Click and drag nodes, zoom in/out, and click on nodes to see details.</span>
+              </div>
+              <div className="info-item">
+                <Layers size={16} />
+                <span><strong>Entities Tab:</strong> Browse all extracted entities (people, places, concepts) with descriptions and types.</span>
+              </div>
+              <div className="info-item">
+                <GitBranch size={16} />
+                <span><strong>Relationships Tab:</strong> See how entities are connected and the strength of their relationships.</span>
+              </div>
+              <div className="info-item">
+                <Users size={16} />
+                <span><strong>Communities Tab:</strong> Discover groups of closely related entities that form thematic clusters.</span>
+              </div>
+              <div className="info-item">
+                <FileText size={16} />
+                <span><strong>Claims Tab:</strong> Review specific factual statements extracted from the source document.</span>
+              </div>
+              <div className="info-item">
+                <Download size={16} />
+                <span><strong>Export Data:</strong> Download any view as JSON for further analysis or integration with other tools.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const renderTabContent = () => {
@@ -998,6 +1088,8 @@ const ExplorePage = () => {
           <Download size={16} /> Export All Data
         </button>
       </div>
+
+      {renderInfoBanner()}
 
       <div className="tabs-container">
         <div className="tabs-header">
