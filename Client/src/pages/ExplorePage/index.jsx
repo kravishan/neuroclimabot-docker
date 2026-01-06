@@ -19,7 +19,9 @@ import {
   ChevronUp,
   Lightbulb,
   BookOpen,
-  Zap
+  Zap,
+  HelpCircle,
+  X
 } from 'lucide-react'
 import { fetchTippingPointsGraphByDocName } from '@/services/api/endpoints'
 import KnowledgeGraph from '@/components/common/KnowledgeGraph'
@@ -42,7 +44,7 @@ const ExplorePage = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [expandedCommunities, setExpandedCommunities] = useState(new Set())
-  const [showInfoBanner, setShowInfoBanner] = useState(true)
+  const [showInfoBanner, setShowInfoBanner] = useState(false)
 
   const hasFetchedData = useRef(false)
 
@@ -456,7 +458,7 @@ const ExplorePage = () => {
       <div className="info-banner">
         <div className="info-banner-header">
           <div className="info-banner-title">
-            <Info size={24} className="info-icon" />
+            <HelpCircle size={24} className="info-icon" />
             <h3>Understanding Knowledge Graphs</h3>
           </div>
           <button
@@ -464,7 +466,7 @@ const ExplorePage = () => {
             onClick={() => setShowInfoBanner(false)}
             aria-label="Close information banner"
           >
-            <ChevronUp size={20} />
+            <X size={20} />
           </button>
         </div>
 
@@ -1084,9 +1086,18 @@ const ExplorePage = () => {
             {docName}
           </div>
         )}
-        <button onClick={() => exportData('all')} className="export-all-btn">
-          <Download size={16} /> Export All Data
-        </button>
+        <div className="header-actions-group">
+          <button
+            onClick={() => setShowInfoBanner(!showInfoBanner)}
+            className="help-btn"
+            title="Show/Hide Knowledge Graph Guide"
+          >
+            <HelpCircle size={16} /> Help
+          </button>
+          <button onClick={() => exportData('all')} className="export-all-btn">
+            <Download size={16} /> Export All Data
+          </button>
+        </div>
       </div>
 
       {renderInfoBanner()}
