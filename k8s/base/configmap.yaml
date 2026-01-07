@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neuroclima-config
+  namespace: uoulu
+data:
+  # External services (adjust these to your actual endpoints)
+  OLLAMA_API_URL: "http://YOUR_OLLAMA_SERVICE:11434"
+  MINIO_ENDPOINT: "YOUR_MINIO_ENDPOINT:9000"
+  MILVUS_HOST: "YOUR_MILVUS_HOST"
+  MILVUS_PORT: "19530"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: processor-config
+  namespace: uoulu
+data:
+  APP_NAME: "NeuroClima Document Processor"
+  APP_VERSION: "7.0.0"
+  DEBUG: "False"
+  LOG_LEVEL: "INFO"
+  HOST: "0.0.0.0"
+  PORT: "5000"
+  MAX_CONCURRENT_TASKS: "3"
+  MODEL_PROVIDER: "free"
+  OLLAMA_MODEL: "mistral:7b"
+  OLLAMA_EMBEDDING_MODEL: "nomic-embed-text"
+  OLLAMA_TIMEOUT: "2"
+  SECURE: "False"
+  PROCESSABLE_BUCKETS: "researchpapers,policy,news,scientificdata"
+  MILVUS_CHUNK_DATABASE: "chunk_test5"
+  MILVUS_SUMMARY_DATABASE: "summary_test5"
+  MILVUS_COLLECTION_NEWS: "News"
+  MILVUS_COLLECTION_SCIENTIFICDATA: "Scientific_Data"
+  MILVUS_COLLECTION_POLICY: "Policy"
+  MILVUS_COLLECTION_RESEARCHPAPERS: "Research_Papers"
+  LANCEDB_PATH: "/app/lancedb"
+  ENABLE_LANCEDB_GRAPHRAG: "True"
+  UNSTRUCTURED_TIMEOUT: "5"
+  ENABLE_IMAGE_EXTRACTION: "True"
+  VISION_MODEL_PROVIDER: "ollama"
+  OLLAMA_VISION_MODEL: "llava:13b"
+  ENABLE_SCIENTIFIC_DATA_PROCESSING: "True"
+  ENABLE_MICROSOFT_GRAPHRAG: "True"
+  GRAPHRAG_BASE_DIR: "/app/graphrag"
+  GRAPHRAG_TEMP_DIR: "/tmp/graphrag_temp"
+  GRAPHRAG_API_KEY: "not-needed"
+  GRAPHRAG_LLM_MODEL: "mistral:7b"
+  ENABLE_STP: "True"
+  DATABASE_PATH: "/app/data/document_tracker.db"
+  CORS_ORIGINS: "*"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+  namespace: uoulu
+data:
+  # Add your server-specific config here
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
