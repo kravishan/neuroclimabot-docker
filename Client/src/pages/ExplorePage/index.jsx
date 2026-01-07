@@ -700,7 +700,7 @@ const ExplorePage = () => {
               </div>
               <div className="info-item">
                 <Download size={16} />
-                <span><strong>Export Data:</strong> Download any view as JSON for further analysis or integration with other tools.</span>
+                <span><strong>Export Data:</strong> Download any view for further analysis or integration with other tools.</span>
               </div>
             </div>
           </div>
@@ -1216,7 +1216,7 @@ const ExplorePage = () => {
             <div className="loading-spinner">
               <div className="spinner"></div>
               <div className="loading-text">
-                <h3>Generating Enhanced Knowledge Graph</h3>
+                <h3>Generating Knowledge Graph</h3>
                 <p>Analyzing document relationships and extracting key concepts via GraphRAG...</p>
               </div>
             </div>
