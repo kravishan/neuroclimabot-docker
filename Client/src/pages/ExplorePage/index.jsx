@@ -680,27 +680,27 @@ const ExplorePage = () => {
             <div className="info-list">
               <div className="info-item">
                 <Network size={16} />
-                <span><strong>Graph Tab:</strong> Explore the interactive 3D visualization. Click and drag nodes, zoom in/out, and click on nodes to see details.</span>
+                <span><strong>Graph Tab:</strong> Explore the interactive 3D visualization. Click and drag nodes, zoom in/out, and click on nodes to see details</span>
               </div>
               <div className="info-item">
                 <Layers size={16} />
-                <span><strong>Entities Tab:</strong> Browse all extracted entities (people, places, concepts) with descriptions and types.</span>
+                <span><strong>Entities Tab:</strong> Browse all extracted entities (people, places, concepts) with descriptions and types</span>
               </div>
               <div className="info-item">
                 <GitBranch size={16} />
-                <span><strong>Relationships Tab:</strong> See how entities are connected and the strength of their relationships.</span>
+                <span><strong>Relationships Tab:</strong> See how entities are connected and the strength of their relationships</span>
               </div>
               <div className="info-item">
                 <Users size={16} />
-                <span><strong>Communities Tab:</strong> Discover groups of closely related entities that form thematic clusters.</span>
+                <span><strong>Communities Tab:</strong> Discover groups of closely related entities that form thematic clusters</span>
               </div>
               <div className="info-item">
                 <FileText size={16} />
-                <span><strong>Claims Tab:</strong> Review specific factual statements extracted from the source document.</span>
+                <span><strong>Claims Tab:</strong> Review specific factual statements extracted from the source document</span>
               </div>
               <div className="info-item">
                 <Download size={16} />
-                <span><strong>Export Data:</strong> Download any view for further analysis or integration with other tools.</span>
+                <span><strong>Export Data:</strong> Download any view for further analysis or integration with other tools</span>
               </div>
             </div>
           </div>
