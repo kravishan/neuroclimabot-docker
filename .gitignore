@@ -58,3 +58,6 @@ k8s/kubeconfig.yaml
 k8s/base/configmap.yaml
 k8s/base/configmap.yaml
 k8s/base/configmap.yaml
+
+# Kubernetes secrets - NEVER commit actual secrets!
+k8s/base/secrets.yaml
