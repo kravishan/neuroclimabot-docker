@@ -1,41 +1,54 @@
-========================================
-NEUROCLIMA BOT
-AI-Powered Climate Intelligence Platform
-========================================
+================================================================================
+                              NEUROCLIMA BOT
+                  AI-Powered Climate Intelligence Platform
+================================================================================
 
 Dear User,
 
-Thank you for accessing Neuroclima Bot. We have generated a secure authentication code for your account.
+We acknowledge your access request to the Neuroclima Bot system. In accordance
+with our security protocols, a unique authentication code has been generated
+for your account. Please utilize the provided code to complete the verification
+process and gain access to the platform.
 
 
-YOUR AUTHENTICATION CODE
--------------------------
+AUTHENTICATION CODE
+--------------------------------------------------------------------------------
 
-    {{ token }}
+                                {{ token }}
 
 
-HOW TO COMPLETE AUTHENTICATION
--------------------------------
+AUTHENTICATION INSTRUCTIONS
+--------------------------------------------------------------------------------
 
-1. Copy the 6-digit authentication code displayed above
-2. Return to the Neuroclima Bot application
+1. Copy the six-digit authentication code displayed above
+2. Return to the Neuroclima Bot application interface
 3. Enter the code in the designated authentication field
-4. Submit the code to access your account
+4. Submit the code to complete the verification process
 
 
-IMPORTANT SECURITY INFORMATION
--------------------------------
+SECURITY NOTICE
+--------------------------------------------------------------------------------
 
-• This authentication code will expire in {{ token_expiry_days }} days
-• Do not share this code with anyone, including Neuroclima Bot staff
-• If you did not request this code, please disregard this email
-• For security purposes, your email address is not stored in our system
+• This authentication code will expire in {{ token_expiry_days }} days from
+  the time of issuance
+
+• Do not share this code with any individual, including Neuroclima Bot
+  personnel
+
+• If you did not initiate this authentication request, please disregard
+  this communication
+
+• For privacy protection, your email address is not retained in our database
 
 
-Sincerely,
-Neuroclima Bot Team
+Respectfully,
 
-Advanced climate analysis and environmental intelligence powered by artificial intelligence technology
+Neuroclima Bot Research Team
 
----
-This is an automated message. Please do not reply to this email.
+--------------------------------------------------------------------------------
+Advanced computational climate analysis and environmental intelligence research
+powered by artificial intelligence methodologies
+--------------------------------------------------------------------------------
+
+This is an automated system-generated message. Please do not reply to this
+email address.

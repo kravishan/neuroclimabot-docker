@@ -5,213 +5,220 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #1f2937;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.8;
+            color: #000000;
             margin: 0;
             padding: 0;
-            background-color: #f3f4f6;
+            background-color: #ffffff;
         }
         .email-wrapper {
-            background-color: #f3f4f6;
+            background-color: #ffffff;
             padding: 40px 20px;
         }
         .container {
-            max-width: 600px;
+            max-width: 650px;
             margin: 0 auto;
             background: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            border: 2px solid #000000;
         }
         .header {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
-            padding: 50px 40px;
+            background: #000000;
+            padding: 40px 40px 35px 40px;
             text-align: center;
-        }
-        .logo {
-            background-color: rgba(255, 255, 255, 0.15);
-            display: inline-block;
-            padding: 16px 32px;
-            border-radius: 8px;
-            margin-bottom: 12px;
+            border-bottom: 3px solid #000000;
         }
         .logo-text {
             color: #ffffff;
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin: 0;
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            font-family: 'Georgia', 'Times New Roman', serif;
         }
         .tagline {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 15px;
-            margin: 12px 0 0 0;
-            font-weight: 400;
+            color: #ffffff;
+            font-size: 12px;
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            opacity: 0.85;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         .content {
-            padding: 48px 40px;
+            padding: 50px 50px 40px 50px;
+        }
+        .date-line {
+            font-size: 13px;
+            color: #333333;
+            margin-bottom: 30px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         .greeting {
-            font-size: 16px;
-            line-height: 1.5;
-            margin-bottom: 32px;
-            color: #374151;
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 24px;
+            color: #000000;
         }
         .message-text {
             font-size: 15px;
-            line-height: 1.6;
-            color: #4b5563;
-            margin-bottom: 32px;
+            line-height: 1.9;
+            color: #1a1a1a;
+            margin-bottom: 35px;
+            text-align: justify;
         }
         .code-section {
             text-align: center;
-            margin: 40px 0;
+            margin: 45px 0;
+            padding: 35px 0;
+            border-top: 1px solid #000000;
+            border-bottom: 1px solid #000000;
         }
         .code-label {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #6b7280;
+            letter-spacing: 1.5px;
+            color: #000000;
             margin-bottom: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         .code-box {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            border: 2px solid #2563eb;
-            padding: 28px;
+            background: #ffffff;
+            border: 3px solid #000000;
+            padding: 25px;
             margin: 20px auto;
-            max-width: 320px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
+            max-width: 280px;
         }
         .code {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-            font-size: 48px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 44px;
             font-weight: 700;
-            color: #1e40af;
-            letter-spacing: 16px;
+            color: #000000;
+            letter-spacing: 18px;
             margin: 0;
             line-height: 1;
         }
         .divider {
             height: 1px;
-            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+            background: #cccccc;
             margin: 40px 0;
         }
-        .info-section {
-            background: #f9fafb;
-            border-left: 4px solid #2563eb;
-            padding: 24px;
-            margin: 32px 0;
-            border-radius: 0 6px 6px 0;
+        .section-title {
+            font-weight: 700;
+            font-size: 13px;
+            color: #000000;
+            margin: 0 0 18px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
-        .info-title {
-            font-weight: 600;
-            font-size: 15px;
-            color: #1f2937;
-            margin: 0 0 16px 0;
+        .instruction-list {
+            margin: 0 0 35px 0;
+            padding: 0 0 0 25px;
+            font-family: 'Georgia', 'Times New Roman', serif;
         }
-        .info-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .info-list li {
-            padding: 8px 0;
-            color: #4b5563;
+        .instruction-list li {
+            margin-bottom: 10px;
+            color: #1a1a1a;
             font-size: 14px;
-            line-height: 1.5;
-            position: relative;
-            padding-left: 24px;
-        }
-        .info-list li:before {
-            content: "•";
-            position: absolute;
-            left: 8px;
-            color: #2563eb;
-            font-weight: bold;
+            line-height: 1.8;
         }
         .security-notice {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            border-radius: 8px;
-            padding: 24px;
-            margin: 32px 0;
+            background: #f5f5f5;
+            border: 2px solid #000000;
+            padding: 25px;
+            margin: 35px 0;
         }
         .security-title {
-            font-weight: 600;
-            font-size: 15px;
-            color: #92400e;
-            margin: 0 0 12px 0;
+            font-weight: 700;
+            font-size: 13px;
+            color: #000000;
+            margin: 0 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         .security-list {
             margin: 0;
             padding: 0 0 0 20px;
+            font-family: 'Georgia', 'Times New Roman', serif;
         }
         .security-list li {
-            margin-bottom: 8px;
-            color: #78350f;
-            font-size: 14px;
-            line-height: 1.5;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+            font-size: 13px;
+            line-height: 1.7;
         }
         .footer {
-            background: #f9fafb;
-            padding: 32px 40px;
-            text-align: center;
-            border-top: 1px solid #e5e7eb;
+            background: #ffffff;
+            padding: 40px 50px;
+            border-top: 2px solid #000000;
+        }
+        .signature-block {
+            margin-bottom: 30px;
         }
         .footer-signature {
-            color: #1f2937;
+            color: #000000;
             font-size: 15px;
-            font-weight: 500;
-            margin-bottom: 8px;
+            margin-bottom: 20px;
+            line-height: 1.8;
         }
         .footer-team {
-            color: #2563eb;
+            color: #000000;
             font-weight: 600;
+            font-size: 14px;
             margin-top: 4px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         .footer-description {
-            margin-top: 16px;
-            font-size: 13px;
-            color: #6b7280;
-            line-height: 1.5;
+            margin-top: 35px;
+            padding-top: 25px;
+            font-size: 12px;
+            color: #333333;
+            line-height: 1.7;
+            border-top: 1px solid #cccccc;
+            font-style: italic;
         }
         .footer-legal {
-            margin-top: 24px;
-            font-size: 12px;
-            color: #9ca3af;
-            line-height: 1.4;
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666666;
+            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         @media (max-width: 640px) {
             .email-wrapper {
                 padding: 20px 10px;
             }
             .container {
-                border-radius: 6px;
+                border-width: 1px;
             }
             .header {
-                padding: 40px 24px;
-            }
-            .logo {
-                padding: 12px 24px;
+                padding: 30px 24px 25px 24px;
             }
             .logo-text {
-                font-size: 26px;
+                font-size: 22px;
+                letter-spacing: 1px;
+            }
+            .tagline {
+                font-size: 10px;
             }
             .content {
-                padding: 32px 24px;
+                padding: 35px 24px 30px 24px;
             }
             .code {
-                font-size: 40px;
+                font-size: 36px;
                 letter-spacing: 12px;
             }
             .code-box {
-                padding: 24px 16px;
+                padding: 20px 16px;
+                border-width: 2px;
             }
             .footer {
-                padding: 24px 20px;
+                padding: 30px 24px;
             }
         }
     </style>
@@ -220,9 +227,7 @@
     <div class="email-wrapper">
         <div class="container">
             <div class="header">
-                <div class="logo">
-                    <h1 class="logo-text">Neuroclima Bot</h1>
-                </div>
+                <h1 class="logo-text">Neuroclima Bot</h1>
                 <p class="tagline">AI-Powered Climate Intelligence Platform</p>
             </div>
 
@@ -232,11 +237,11 @@
                 </div>
 
                 <div class="message-text">
-                    Thank you for accessing Neuroclima Bot. We have generated a secure authentication code for your account. Please use the code below to complete your authentication process.
+                    We acknowledge your access request to the Neuroclima Bot system. In accordance with our security protocols, a unique authentication code has been generated for your account. Please utilize the provided code to complete the verification process and gain access to the platform.
                 </div>
 
                 <div class="code-section">
-                    <div class="code-label">Your Authentication Code</div>
+                    <div class="code-label">Authentication Code</div>
                     <div class="code-box">
                         <div class="code">{{ token }}</div>
                     </div>
@@ -244,39 +249,39 @@
 
                 <div class="divider"></div>
 
-                <div class="info-section">
-                    <div class="info-title">How to Complete Authentication</div>
-                    <ul class="info-list">
-                        <li>Copy the 6-digit authentication code displayed above</li>
-                        <li>Return to the Neuroclima Bot application</li>
-                        <li>Enter the code in the designated authentication field</li>
-                        <li>Submit the code to access your account</li>
-                    </ul>
-                </div>
+                <div class="section-title">Authentication Instructions</div>
+                <ol class="instruction-list">
+                    <li>Copy the six-digit authentication code displayed above</li>
+                    <li>Return to the Neuroclima Bot application interface</li>
+                    <li>Enter the code in the designated authentication field</li>
+                    <li>Submit the code to complete the verification process</li>
+                </ol>
 
                 <div class="security-notice">
-                    <div class="security-title">Important Security Information</div>
+                    <div class="security-title">Security Notice</div>
                     <ul class="security-list">
-                        <li>This authentication code will expire in {{ token_expiry_days }} days</li>
-                        <li>Do not share this code with anyone, including Neuroclima Bot staff</li>
-                        <li>If you did not request this code, please disregard this email</li>
-                        <li>For security purposes, your email address is not stored in our system</li>
+                        <li>This authentication code will expire in {{ token_expiry_days }} days from the time of issuance</li>
+                        <li>Do not share this code with any individual, including Neuroclima Bot personnel</li>
+                        <li>If you did not initiate this authentication request, please disregard this communication</li>
+                        <li>For privacy protection, your email address is not retained in our database</li>
                     </ul>
                 </div>
             </div>
 
             <div class="footer">
-                <div class="footer-signature">
-                    Sincerely,
-                </div>
-                <div class="footer-team">
-                    Neuroclima Bot Team
+                <div class="signature-block">
+                    <div class="footer-signature">
+                        Respectfully,
+                    </div>
+                    <div class="footer-team">
+                        Neuroclima Bot Research Team
+                    </div>
                 </div>
                 <div class="footer-description">
-                    Advanced climate analysis and environmental intelligence powered by artificial intelligence technology
+                    Advanced computational climate analysis and environmental intelligence research powered by artificial intelligence methodologies
                 </div>
                 <div class="footer-legal">
-                    This is an automated message. Please do not reply to this email.
+                    This is an automated system-generated message. Please do not reply to this email address.
                 </div>
             </div>
         </div>
