@@ -382,7 +382,14 @@ const ExplorePage = () => {
       case 'all':
         // Create a comprehensive report in text format
         filename = `${docName}_complete_report.txt`
-        csvContent = `KNOWLEDGE GRAPH REPORT FOR: ${docName}\n`
+
+        // Add NeuroClima Bot header
+        csvContent = `${'='.repeat(80)}\n`
+        csvContent += `                            NEUROCLIMA BOT\n`
+        csvContent += `                    Knowledge Graph Analysis Report\n`
+        csvContent += `${'='.repeat(80)}\n\n`
+
+        csvContent += `KNOWLEDGE GRAPH REPORT FOR: ${docName}\n`
         csvContent += `Generated on: ${new Date().toLocaleString()}\n`
         csvContent += `${'='.repeat(80)}\n\n`
 
