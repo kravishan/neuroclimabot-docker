@@ -1,0 +1,8 @@
+# Patch to update processor-config with SECURE=True for MinIO
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: processor-config
+  namespace: uoulu
+data:
+  SECURE: "True"

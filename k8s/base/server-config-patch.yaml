@@ -1,0 +1,8 @@
+# Patch to update server-config with MINIO_SECURE=true
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+  namespace: uoulu
+data:
+  MINIO_SECURE: "true"
