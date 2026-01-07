@@ -1,0 +1,115 @@
+# =============================================================================
+# EXAMPLE: SHARED CONFIGURATION (Used by multiple services)
+# =============================================================================
+# This is an EXAMPLE showing how to configure with external VM services
+# Copy the structure below and update with your actual VM IP/hostname
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neuroclima-config
+  namespace: uoulu
+data:
+  # External services - REPLACE WITH YOUR VM IP OR HOSTNAME
+  # Example: If your VM is at 192.168.1.100, use that IP
+  OLLAMA_API_URL: "http://192.168.1.100:11434"  # Replace with your VM IP
+  OLLAMA_HOST: "192.168.1.100"                  # Replace with your VM IP
+  OLLAMA_PORT: "11434"
+  MINIO_ENDPOINT: "192.168.1.100:9000"          # Replace with your VM IP:PORT
+  MILVUS_HOST: "192.168.1.100"                  # Replace with your VM IP
+  MILVUS_PORT: "19530"
+
+---
+# =============================================================================
+# PROCESSOR CONFIGURATION
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: processor-config
+  namespace: uoulu
+data:
+  # Application Settings
+  APP_NAME: "NeuroClima Document Processor"
+  APP_VERSION: "7.0.0"
+  DEBUG: "False"
+  LOG_LEVEL: "INFO"
+  HOST: "0.0.0.0"
+  PORT: "5000"
+
+  # Processing Configuration - PRODUCTION VALUE
+  MAX_CONCURRENT_TASKS: "1"
+
+  # Model Provider
+  MODEL_PROVIDER: "free"
+
+  # OpenAI Configuration
+  OPENAI_MODEL: "gpt-4o"
+  OPENAI_EMBEDDING_MODEL: "text-embedding-3-large"
+  OPENAI_TIMEOUT: "2"
+  OPENAI_API_BASE: "https://api.openai.com/v1/chat/completions"
+
+  # Ollama Configuration
+  OLLAMA_MODEL: "mistral:7b"
+  OLLAMA_EMBEDDING_MODEL: "nomic-embed-text"
+  OLLAMA_TIMEOUT: "20000"
+
+  # MinIO Configuration
+  SECURE: "True"  # Set to True if your MinIO uses HTTPS
+  PROCESSABLE_BUCKETS: "researchpapers,policy,news,scientificdata"
+
+  # Milvus Configuration - PRODUCTION VALUES
+  MILVUS_USER: "root"
+  MILVUS_PASSWORD: "Milvus"
+  MILVUS_CHUNK_DATABASE: "chunk_prod"
+  MILVUS_SUMMARY_DATABASE: "summary_prod"
+  MILVUS_COLLECTION_NEWS: "News"
+  MILVUS_COLLECTION_SCIENTIFICDATA: "Scientific_Data"
+  MILVUS_COLLECTION_POLICY: "Policy"
+  MILVUS_COLLECTION_RESEARCHPAPERS: "Research_Papers"
+
+  # ... rest of processor-config remains the same ...
+
+---
+# =============================================================================
+# SERVER CONFIGURATION
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+  namespace: uoulu
+data:
+  # Application Settings
+  DEBUG: "true"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  ENVIRONMENT: "development"
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  WORKERS: "1"
+  RELOAD: "false"
+
+  # MinIO Bucket Configuration
+  MINIO_SECURE: "true"  # ← IMPORTANT: Set to "true" if your MinIO VM uses HTTPS
+  MINIO_REGION: "us-east-1"
+  MINIO_TIMEOUT: "10"
+  MINIO_BUCKET_NEWS: "news"
+  MINIO_BUCKET_POLICY: "policies"
+  MINIO_BUCKET_RESEARCH_PAPERS: "researchpapers"
+  MINIO_BUCKET_SCIENTIFIC_DATA: "scientificdata"
+  MINIO_BUCKET_REPORTS: "reports"
+  MINIO_DEFAULT_BUCKET: "researchpapers"
+
+  # ... rest of server-config remains the same ...
+
+# =============================================================================
+# NOTES:
+# =============================================================================
+# 1. Replace all IP addresses (192.168.1.100) with your actual VM IP or hostname
+# 2. MINIO_SECURE should be "true" if your MinIO uses HTTPS, "false" for HTTP
+# 3. The SECURE field in processor-config should match your MinIO setup
+# 4. Make sure your VM firewall allows connections from the Kubernetes cluster
+# 5. Test connectivity: kubectl run test --image=curlimages/curl --rm -it -- curl http://YOUR_VM_IP:9000
+# =============================================================================
