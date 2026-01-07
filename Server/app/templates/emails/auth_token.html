@@ -7,161 +7,276 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #333;
+            color: #1f2937;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            background-color: #f3f4f6;
+        }
+        .email-wrapper {
+            background-color: #f3f4f6;
+            padding: 40px 20px;
         }
         .container {
             max-width: 600px;
-            margin: 40px auto;
-            background: white;
-            border-radius: 12px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
         }
         .header {
-            background: linear-gradient(135deg, #2d5a3d 0%, #3a7d45 50%, #4a9555 100%);
-            color: white;
-            padding: 40px 30px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+            padding: 50px 40px;
             text-align: center;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
+        .logo {
+            background-color: rgba(255, 255, 255, 0.15);
+            display: inline-block;
+            padding: 16px 32px;
+            border-radius: 8px;
+            margin-bottom: 12px;
         }
-        .header p {
-            margin: 8px 0 0 0;
-            font-size: 16px;
-            opacity: 0.9;
+        .logo-text {
+            color: #ffffff;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin: 0;
+        }
+        .tagline {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            margin: 12px 0 0 0;
+            font-weight: 400;
         }
         .content {
-            padding: 40px 30px;
+            padding: 48px 40px;
         }
         .greeting {
-            font-size: 18px;
-            margin-bottom: 24px;
-            color: #2d5a3d;
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 32px;
+            color: #374151;
+        }
+        .message-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #4b5563;
+            margin-bottom: 32px;
         }
         .code-section {
             text-align: center;
-            margin: 32px 0;
+            margin: 40px 0;
         }
         .code-label {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6b7280;
+            margin-bottom: 20px;
         }
         .code-box {
-            background: linear-gradient(135deg, #f8fffe 0%, #f0fdf4 100%);
-            border: 3px solid #3a7d45;
-            padding: 24px;
-            margin: 20px 0;
-            border-radius: 16px;
-            box-shadow: 0 2px 4px rgba(58, 125, 69, 0.1);
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 2px solid #2563eb;
+            padding: 28px;
+            margin: 20px auto;
+            max-width: 320px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
         }
         .code {
             font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-            font-size: 42px;
+            font-size: 48px;
             font-weight: 700;
-            color: #2d5a3d;
-            letter-spacing: 12px;
+            color: #1e40af;
+            letter-spacing: 16px;
             margin: 0;
+            line-height: 1;
         }
-        .instructions {
-            background: #f8f9fa;
-            border-left: 4px solid #3a7d45;
-            padding: 20px;
-            margin: 24px 0;
-            border-radius: 0 8px 8px 0;
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+            margin: 40px 0;
         }
-        .warning {
-            background: #fffbeb;
-            border: 1px solid #fbbf24;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 24px 0;
+        .info-section {
+            background: #f9fafb;
+            border-left: 4px solid #2563eb;
+            padding: 24px;
+            margin: 32px 0;
+            border-radius: 0 6px 6px 0;
         }
-        .warning-title {
+        .info-title {
             font-weight: 600;
-            color: #d97706;
-            margin-bottom: 12px;
+            font-size: 15px;
+            color: #1f2937;
+            margin: 0 0 16px 0;
         }
-        .warning ul {
-            margin: 8px 0 0 0;
-            padding-left: 20px;
+        .info-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
         }
-        .warning li {
-            margin-bottom: 4px;
+        .info-list li {
+            padding: 8px 0;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+            padding-left: 24px;
+        }
+        .info-list li:before {
+            content: "•";
+            position: absolute;
+            left: 8px;
+            color: #2563eb;
+            font-weight: bold;
+        }
+        .security-notice {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        .security-title {
+            font-weight: 600;
+            font-size: 15px;
             color: #92400e;
+            margin: 0 0 12px 0;
+        }
+        .security-list {
+            margin: 0;
+            padding: 0 0 0 20px;
+        }
+        .security-list li {
+            margin-bottom: 8px;
+            color: #78350f;
+            font-size: 14px;
+            line-height: 1.5;
         }
         .footer {
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 32px 40px;
             text-align: center;
-            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
         }
         .footer-signature {
-            color: #3a7d45;
+            color: #1f2937;
+            font-size: 15px;
             font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .footer-team {
+            color: #2563eb;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+        .footer-description {
+            margin-top: 16px;
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+        .footer-legal {
+            margin-top: 24px;
+            font-size: 12px;
+            color: #9ca3af;
+            line-height: 1.4;
         }
         @media (max-width: 640px) {
+            .email-wrapper {
+                padding: 20px 10px;
+            }
             .container {
-                margin: 20px;
-                border-radius: 8px;
+                border-radius: 6px;
             }
             .header {
-                padding: 30px 20px;
+                padding: 40px 24px;
+            }
+            .logo {
+                padding: 12px 24px;
+            }
+            .logo-text {
+                font-size: 26px;
             }
             .content {
-                padding: 30px 20px;
+                padding: 32px 24px;
             }
             .code {
-                font-size: 36px;
-                letter-spacing: 8px;
+                font-size: 40px;
+                letter-spacing: 12px;
+            }
+            .code-box {
+                padding: 24px 16px;
+            }
+            .footer {
+                padding: 24px 20px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🌍 NeuroClima</h1>
-        </div>
-        <div class="content">
-            <div class="greeting">Hello there! 👋</div>
+    <div class="email-wrapper">
+        <div class="container">
+            <div class="header">
+                <div class="logo">
+                    <h1 class="logo-text">Neuroclima Bot</h1>
+                </div>
+                <p class="tagline">AI-Powered Climate Intelligence Platform</p>
+            </div>
 
-            <div class="code-section">
-                <div class="code-label">Your 6-digit access code is:</div>
-                <div class="code-box">
-                    <div class="code">{{ token }}</div>
+            <div class="content">
+                <div class="greeting">
+                    Dear User,
+                </div>
+
+                <div class="message-text">
+                    Thank you for accessing Neuroclima Bot. We have generated a secure authentication code for your account. Please use the code below to complete your authentication process.
+                </div>
+
+                <div class="code-section">
+                    <div class="code-label">Your Authentication Code</div>
+                    <div class="code-box">
+                        <div class="code">{{ token }}</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="info-section">
+                    <div class="info-title">How to Complete Authentication</div>
+                    <ul class="info-list">
+                        <li>Copy the 6-digit authentication code displayed above</li>
+                        <li>Return to the Neuroclima Bot application</li>
+                        <li>Enter the code in the designated authentication field</li>
+                        <li>Submit the code to access your account</li>
+                    </ul>
+                </div>
+
+                <div class="security-notice">
+                    <div class="security-title">Important Security Information</div>
+                    <ul class="security-list">
+                        <li>This authentication code will expire in {{ token_expiry_days }} days</li>
+                        <li>Do not share this code with anyone, including Neuroclima Bot staff</li>
+                        <li>If you did not request this code, please disregard this email</li>
+                        <li>For security purposes, your email address is not stored in our system</li>
+                    </ul>
                 </div>
             </div>
 
-            <div class="instructions">
-                <strong>How to use this code:</strong><br>
-                1. Copy the 6-digit code above<br>
-                2. Return to the NeuroClima application<br>
-                3. Enter the code in the authentication field<br>
-                4. Click "Verify Code" to gain access
-            </div>
-
-            <div class="warning">
-                <div class="warning-title">⚠️ Security Information</div>
-                <ul>
-                    <li>This code expires in {{ token_expiry_days }} days</li>
-                    <li>Never share this code with anyone</li>
-                    <li>If you didn't request this code, please ignore this email</li>
-                    <li>Your email address is not saved for security purposes</li>
-                </ul>
-            </div>
-
             <div class="footer">
-                <div class="footer-signature">Best regards,<br>The NeuroClima Team</div>
-                <div style="margin-top: 16px; font-size: 14px;">
-                    Advancing climate science through AI-powered insights
+                <div class="footer-signature">
+                    Sincerely,
+                </div>
+                <div class="footer-team">
+                    Neuroclima Bot Team
+                </div>
+                <div class="footer-description">
+                    Advanced climate analysis and environmental intelligence powered by artificial intelligence technology
+                </div>
+                <div class="footer-legal">
+                    This is an automated message. Please do not reply to this email.
                 </div>
             </div>
         </div>
