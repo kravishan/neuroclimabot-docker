@@ -91,7 +91,7 @@ spec:
           value: "6379"
         - name: DOCUMENT_PROCESSOR_URL
           value: "http://neuroclima-processor:5000"
-        # Milvus from shared config
+        # Milvus from shared config and secrets
         - name: MILVUS_HOST
           valueFrom:
             configMapKeyRef:
@@ -102,6 +102,16 @@ spec:
             configMapKeyRef:
               name: neuroclima-config
               key: MILVUS_PORT
+        - name: MILVUS_USER
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MILVUS_USER
+        - name: MILVUS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MILVUS_PASSWORD
         # MinIO from shared config and secrets
         - name: MINIO_ENDPOINT
           valueFrom:
@@ -118,12 +128,62 @@ spec:
             secretKeyRef:
               name: neuroclima-secrets
               key: MINIO_SECRET_KEY
+        # Ollama from shared config
+        - name: OLLAMA_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: neuroclima-config
+              key: OLLAMA_API_URL
         # SECRET_KEY for application security
         - name: SECRET_KEY
           valueFrom:
             secretKeyRef:
               name: neuroclima-secrets
               key: SECRET_KEY
+        # Admin credentials
+        - name: ADMIN_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: ADMIN_USERNAME
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: ADMIN_PASSWORD
+        # Maileroo email credentials
+        - name: MAILEROO_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MAILEROO_API_KEY
+        - name: MAILEROO_FROM_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MAILEROO_FROM_EMAIL
+        # Langfuse credentials
+        - name: LANGFUSE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: LANGFUSE_SECRET_KEY
+        - name: LANGFUSE_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: LANGFUSE_PUBLIC_KEY
+        - name: LANGFUSE_HOST
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: LANGFUSE_HOST
+        # OpenAI API key
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: OPENAI_API_KEY
         envFrom:
         - configMapRef:
             name: server-config

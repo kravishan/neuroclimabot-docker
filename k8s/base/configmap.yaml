@@ -7,10 +7,13 @@ metadata:
   name: neuroclima-config
   namespace: uoulu
 data:
-  # External services (UPDATE THESE WITH YOUR ACTUAL ENDPOINTS)
-  OLLAMA_API_URL: "http://YOUR_OLLAMA_HOST:11434"
-  MINIO_ENDPOINT: "YOUR_MINIO_HOST:9000"
-  MILVUS_HOST: "YOUR_MILVUS_HOST"
+  # External services - UPDATE THESE WITH YOUR ACTUAL ENDPOINTS
+  # Replace the placeholders below with your actual service URLs
+  OLLAMA_API_URL: "your_ollama_server_url_here"
+  OLLAMA_HOST: "your_ollama_server_host_here"
+  OLLAMA_PORT: "11434"
+  MINIO_ENDPOINT: "your_minio_server_endpoint_here"
+  MILVUS_HOST: "your_milvus_server_host_here"
   MILVUS_PORT: "19530"
 
 ---
@@ -31,42 +34,45 @@ data:
   HOST: "0.0.0.0"
   PORT: "5000"
 
-  # Processing Configuration
-  MAX_CONCURRENT_TASKS: "3"
+  # Processing Configuration - PRODUCTION VALUE
+  MAX_CONCURRENT_TASKS: "1"
 
   # Model Provider
   MODEL_PROVIDER: "free"
 
+  # OpenAI Configuration
+  OPENAI_MODEL: "gpt-4o"
+  OPENAI_EMBEDDING_MODEL: "text-embedding-3-large"
+  OPENAI_TIMEOUT: "2"
+  OPENAI_API_BASE: "https://api.openai.com/v1/chat/completions"
+
   # Ollama Configuration
   OLLAMA_MODEL: "mistral:7b"
   OLLAMA_EMBEDDING_MODEL: "nomic-embed-text"
-  OLLAMA_TIMEOUT: "2"
+  OLLAMA_TIMEOUT: "20000"
 
   # MinIO Configuration
-  SECURE: "False"
+  SECURE: "True"
   PROCESSABLE_BUCKETS: "researchpapers,policy,news,scientificdata"
 
-  # Milvus Configuration
-  MILVUS_USER: ""
-  MILVUS_PASSWORD: ""
-  MILVUS_CHUNK_DATABASE: "chunk_test5"
-  MILVUS_SUMMARY_DATABASE: "summary_test5"
+  # Milvus Configuration - PRODUCTION VALUES
+  MILVUS_USER: "root"
+  MILVUS_PASSWORD: "Milvus"
+  MILVUS_CHUNK_DATABASE: "chunk_prod"
+  MILVUS_SUMMARY_DATABASE: "summary_prod"
   MILVUS_COLLECTION_NEWS: "News"
   MILVUS_COLLECTION_SCIENTIFICDATA: "Scientific_Data"
   MILVUS_COLLECTION_POLICY: "Policy"
   MILVUS_COLLECTION_RESEARCHPAPERS: "Research_Papers"
 
-  # LanceDB
-  LANCEDB_PATH: "/app/lancedb"
-  ENABLE_LANCEDB_GRAPHRAG: "True"
-
   # Unstructured API
-  UNSTRUCTURED_TIMEOUT: "5"
+  UNSTRUCTURED_TIMEOUT: "5000"
 
   # Vision & Image Extraction
   ENABLE_IMAGE_EXTRACTION: "True"
   VISION_MODEL_PROVIDER: "ollama"
-  OLLAMA_VISION_MODEL: "llava:13b"
+  OLLAMA_VISION_MODEL: "gemma3:4b"
+  OPENAI_VISION_MODEL: "gpt-4-vision-preview"
   EXTRACT_IMAGES_FROM_PDF: "True"
   EXTRACT_IMAGES_FROM_DOCX: "True"
   IMAGE_MIN_WIDTH: "100"
@@ -75,6 +81,12 @@ data:
   RESIZE_IMAGES_FOR_VISION: "True"
   MAX_IMAGE_DIMENSION: "1024"
   REPLACE_IMAGES_WITH_DESCRIPTIONS: "True"
+
+  # ClimateGPT Configuration
+  USE_CLIMATEGPT: "True"
+  CLIMATEGPT_DEVICE: "auto"
+  CLIMATEGPT_8BIT: "False"
+  CLIMATEGPT_4BIT: "False"
 
   # Scientific Data Processing
   ENABLE_SCIENTIFIC_DATA_PROCESSING: "True"
@@ -91,39 +103,43 @@ data:
 
   # GraphRAG Settings
   ENABLE_MICROSOFT_GRAPHRAG: "True"
-  GRAPHRAG_BASE_DIR: "/app/graphrag"
-  GRAPHRAG_TEMP_DIR: "/tmp/graphrag_temp"
-  GRAPHRAG_API_KEY: "not-needed"
-  GRAPHRAG_LLM_MODEL: "mistral:7b"
-  GRAPHRAG_LLM_TIMEOUT: "3"
+  GRAPHRAG_BASE_DIR: "./graphrag_workspace"
+  GRAPHRAG_TEMP_DIR: "./graphrag_temp"
+
+  # GraphRAG QUERY Models (for search/retrieval)
+  GRAPHRAG_QUERY_CHAT_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_QUERY_CHAT_MODEL_API_KEY: "ollama"
+  GRAPHRAG_QUERY_CHAT_MODEL: "qwen2.5:0.5b"
+  GRAPHRAG_QUERY_EMBEDDING_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_QUERY_EMBEDDING_MODEL_API_KEY: "ollama"
+  GRAPHRAG_QUERY_EMBEDDING_MODEL: "nomic-embed-text:latest"
+
+  # GraphRAG INDEXING Models (for document processing)
+  GRAPHRAG_INDEXING_CHAT_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_INDEXING_CHAT_MODEL_API_KEY: "ollama"
+  GRAPHRAG_INDEXING_CHAT_MODEL: "mistral:7b"
+  GRAPHRAG_EMBEDDING_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_EMBEDDING_MODEL_API_KEY: "ollama"
+  GRAPHRAG_EMBEDDING_MODEL: "nomic-embed-text:latest"
+
+  # GraphRAG Processing Configuration
+  GRAPHRAG_LLM_TIMEOUT: "3000000"
   GRAPHRAG_LLM_TEMPERATURE: "0.1"
   GRAPHRAG_LLM_MAX_TOKENS: "4000"
-  GRAPHRAG_EMBEDDING_MODEL: "nomic-embed-text:latest"
   GRAPHRAG_MAX_TEXT_LENGTH: "50000"
   GRAPHRAG_CHUNK_SIZE: "1200"
-  GRAPHRAG_TIMEOUT: "60"
-  GRAPHRAG_ENABLE_PROMPT_TUNING: "False"
-  GRAPHRAG_ENABLE_CLAIMS: "True"
-  GRAPHRAG_CLAIM_EXTRACTION_ENABLED: "True"
-  GRAPHRAG_MAX_CLAIMS_PER_CHUNK: "10"
-  GRAPHRAG_ENABLE_COVARIATES: "True"
-  GRAPHRAG_COVARIATE_EXTRACTION_ENABLED: "True"
-  GRAPHRAG_ENABLE_TEXT_UNITS: "True"
-  GRAPHRAG_TEXT_UNIT_SIZE: "300"
-  GRAPHRAG_TEXT_UNIT_OVERLAP: "100"
-  GRAPHRAG_ENABLE_ENTITY_EMBEDDINGS: "True"
-  GRAPHRAG_ENABLE_RELATIONSHIP_EMBEDDINGS: "False"
-  GRAPHRAG_VECTOR_SEARCH_ENABLED: "True"
-  GRAPHRAG_VECTOR_SIMILARITY_THRESHOLD: "0.7"
-  GRAPHRAG_VECTOR_TOP_K: "20"
-  GRAPHRAG_COMMUNITY_ALGORITHM: "leiden"
-  GRAPHRAG_COMMUNITY_MAX_LEVEL: "3"
-  GRAPHRAG_ENABLE_HIERARCHICAL_COMMUNITIES: "True"
+  GRAPHRAG_TIMEOUT: "6000000"
 
-  # STP Settings
+  # GraphRAG Advanced Features
+  GRAPHRAG_ENABLE_CLAIMS: "True"
+  GRAPHRAG_ENABLE_COVARIATES: "True"
+  GRAPHRAG_ENABLE_TEXT_UNITS: "True"
+  GRAPHRAG_ENABLE_ENTITY_EMBEDDINGS: "True"
+
+  # STP Settings - PRODUCTION VALUES
   ENABLE_STP: "True"
-  STP_MILVUS_DATABASE: "mvp_stp_chunks_short"
-  STP_MILVUS_COLLECTION: "stp_documents_test"
+  STP_MILVUS_DATABASE: "stp_prod"
+  STP_MILVUS_COLLECTION: "stp_documents"
   STP_CLASSIFIER_MODEL: "models/onnx_exports/roBERTa_stp0.5.onnx"
   STP_MIN_CONFIDENCE: "0.5"
   STP_TEXT_CLEANING_ENABLED: "True"
@@ -158,11 +174,11 @@ data:
   SUMMARIZATION_RESEARCHPAPERS: "abstractive"
 
   # Database
-  DATABASE_PATH: "/app/data/document_tracker.db"
+  DATABASE_PATH: "./document_tracker.db"
 
   # Security & Performance
   CORS_ORIGINS: "*"
-  RATE_LIMIT_PER_MINUTE: "60"
+  RATE_LIMIT_PER_MINUTE: "600"
   MAX_UPLOAD_SIZE_MB: "100"
 
   # Logging
@@ -182,22 +198,24 @@ metadata:
   namespace: uoulu
 data:
   # Application Settings
-  DEBUG: "false"
+  DEBUG: "true"
   LOG_LEVEL: "INFO"
   LOG_FORMAT: "json"
-  ENVIRONMENT: "production"
+  ENVIRONMENT: "development"
   HOST: "0.0.0.0"
   PORT: "8000"
   WORKERS: "1"
   RELOAD: "false"
 
-  # Authentication
-  AUTH_ENABLED: "true"
+  # Authentication - PRODUCTION VALUE
+  AUTH_ENABLED: "false"
   AUTH_TOKEN_EXPIRY_DAYS: "7"
-  AUTH_DATABASE_URL: "sqlite:///./data/auth_tokens.db"
+  AUTH_DATABASE_URL: "sqlite:///./auth_tokens.db"
 
   # Email Configuration
-  EMAIL_PROVIDER: "smtp"
+  EMAIL_PROVIDER: "maileroo"
+  MAILEROO_FROM_NAME: "NeuroClima"
+  MAILEROO_API_URL: "https://smtp.maileroo.com/api/v2/emails"
   SMTP_SERVER: "localhost"
   SMTP_PORT: "587"
   FROM_EMAIL: "noreply@neuroclima.com"
@@ -205,15 +223,13 @@ data:
   EMAIL_RETRY_ATTEMPTS: "3"
   EMAIL_RETRY_DELAY_SECONDS: "1.0"
 
-  # Milvus Configuration (will use values from neuroclima-config + these)
-  MILVUS_USER: ""
-  MILVUS_PASSWORD: ""
+  # Milvus Configuration
   CHUNKS_RETRIEVAL_LIMIT: "20"
   SUMMARIES_RETRIEVAL_LIMIT: "12"
   SIMILARITY_THRESHOLD: "0.1"
 
   # MinIO Bucket Configuration
-  MINIO_SECURE: "false"
+  MINIO_SECURE: "true"
   MINIO_REGION: "us-east-1"
   MINIO_TIMEOUT: "10"
   MINIO_BUCKET_NEWS: "news"
@@ -231,15 +247,20 @@ data:
   MINIO_ENABLE_PATH_CACHING: "true"
 
   # LLM Configuration
-  OLLAMA_BASE_URL: "http://YOUR_OLLAMA_HOST:11434"
   OLLAMA_MODEL: "mistral:7b"
   OLLAMA_TEMPERATURE: "0.2"
   OLLAMA_MAX_TOKENS: "1500"
   OLLAMA_TIMEOUT: "30"
   OLLAMA_CONNECTION_POOL_SIZE: "5"
 
+  # OpenAI Configuration
+  OPENAI_MODEL: "gpt-4o"
+  OPENAI_TEMPERATURE: "0.2"
+  OPENAI_MAX_TOKENS: "1500"
+  OPENAI_TIMEOUT: "15"
+
   # Langfuse Configuration
-  LANGFUSE_ENABLED: "false"
+  LANGFUSE_ENABLED: "true"
   LANGFUSE_DEBUG: "false"
   LANGFUSE_FLUSH_AT: "15"
   LANGFUSE_FLUSH_INTERVAL: "10"
@@ -254,6 +275,7 @@ data:
   LANGFUSE_TRACE_RERANKING: "true"
   LANGFUSE_TRACE_API_CALLS: "true"
   LANGFUSE_TRACE_SESSIONS: "true"
+  LANGFUSE_RELEASE: ""
   LANGFUSE_USER_ID: "neuroclima-system"
   LANGFUSE_SESSION_ID_PREFIX: "nc"
 
