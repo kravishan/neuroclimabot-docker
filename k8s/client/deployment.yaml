@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: client
-        image: YOUR_REGISTRY/neuroclima-client:latest
+        image: docker.io/raviyah/neuroclima-client:latest
         ports:
         - containerPort: 80
           name: http

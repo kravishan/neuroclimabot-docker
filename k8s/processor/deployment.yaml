@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
       - name: processor
-        image: YOUR_REGISTRY/neuroclima-processor:latest
+        image: docker.io/raviyah/neuroclima-processor:latest
         ports:
         - containerPort: 5000
           name: http

@@ -1,62 +1,447 @@
+# =============================================================================
+# SHARED CONFIGURATION (Used by multiple services)
+# =============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: neuroclima-config
   namespace: uoulu
 data:
-  # External services (adjust these to your actual endpoints)
-  OLLAMA_API_URL: "http://YOUR_OLLAMA_SERVICE:11434"
-  MINIO_ENDPOINT: "YOUR_MINIO_ENDPOINT:9000"
-  MILVUS_HOST: "YOUR_MILVUS_HOST"
+  # External services - UPDATE THESE WITH YOUR ACTUAL ENDPOINTS
+  # Replace the placeholders below with your actual service URLs
+  OLLAMA_API_URL: "your_ollama_server_url_here"
+  OLLAMA_HOST: "your_ollama_server_host_here"
+  OLLAMA_PORT: "11434"
+  MINIO_ENDPOINT: "your_minio_server_endpoint_here"
+  MILVUS_HOST: "your_milvus_server_host_here"
   MILVUS_PORT: "19530"
+
 ---
+# =============================================================================
+# PROCESSOR CONFIGURATION
+# =============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: processor-config
   namespace: uoulu
 data:
+  # Application Settings
   APP_NAME: "NeuroClima Document Processor"
   APP_VERSION: "7.0.0"
   DEBUG: "False"
   LOG_LEVEL: "INFO"
   HOST: "0.0.0.0"
   PORT: "5000"
-  MAX_CONCURRENT_TASKS: "3"
+
+  # Processing Configuration - PRODUCTION VALUE
+  MAX_CONCURRENT_TASKS: "1"
+
+  # Model Provider
   MODEL_PROVIDER: "free"
+
+  # OpenAI Configuration
+  OPENAI_MODEL: "gpt-4o"
+  OPENAI_EMBEDDING_MODEL: "text-embedding-3-large"
+  OPENAI_TIMEOUT: "2"
+  OPENAI_API_BASE: "https://api.openai.com/v1/chat/completions"
+
+  # Ollama Configuration
   OLLAMA_MODEL: "mistral:7b"
   OLLAMA_EMBEDDING_MODEL: "nomic-embed-text"
-  OLLAMA_TIMEOUT: "2"
-  SECURE: "False"
+  OLLAMA_TIMEOUT: "20000"
+
+  # MinIO Configuration
+  SECURE: "True"
   PROCESSABLE_BUCKETS: "researchpapers,policy,news,scientificdata"
-  MILVUS_CHUNK_DATABASE: "chunk_test5"
-  MILVUS_SUMMARY_DATABASE: "summary_test5"
+
+  # Milvus Configuration - PRODUCTION VALUES
+  MILVUS_USER: "root"
+  MILVUS_PASSWORD: "Milvus"
+  MILVUS_CHUNK_DATABASE: "chunk_prod"
+  MILVUS_SUMMARY_DATABASE: "summary_prod"
   MILVUS_COLLECTION_NEWS: "News"
   MILVUS_COLLECTION_SCIENTIFICDATA: "Scientific_Data"
   MILVUS_COLLECTION_POLICY: "Policy"
   MILVUS_COLLECTION_RESEARCHPAPERS: "Research_Papers"
-  LANCEDB_PATH: "/app/lancedb"
-  ENABLE_LANCEDB_GRAPHRAG: "True"
-  UNSTRUCTURED_TIMEOUT: "5"
+
+  # Unstructured API
+  UNSTRUCTURED_TIMEOUT: "5000"
+
+  # Vision & Image Extraction
   ENABLE_IMAGE_EXTRACTION: "True"
   VISION_MODEL_PROVIDER: "ollama"
-  OLLAMA_VISION_MODEL: "llava:13b"
+  OLLAMA_VISION_MODEL: "gemma3:4b"
+  OPENAI_VISION_MODEL: "gpt-4-vision-preview"
+  EXTRACT_IMAGES_FROM_PDF: "True"
+  EXTRACT_IMAGES_FROM_DOCX: "True"
+  IMAGE_MIN_WIDTH: "100"
+  IMAGE_MIN_HEIGHT: "100"
+  IMAGE_MAX_SIZE_MB: "10"
+  RESIZE_IMAGES_FOR_VISION: "True"
+  MAX_IMAGE_DIMENSION: "1024"
+  REPLACE_IMAGES_WITH_DESCRIPTIONS: "True"
+
+  # ClimateGPT Configuration
+  USE_CLIMATEGPT: "True"
+  CLIMATEGPT_DEVICE: "auto"
+  CLIMATEGPT_8BIT: "False"
+  CLIMATEGPT_4BIT: "False"
+
+  # Scientific Data Processing
   ENABLE_SCIENTIFIC_DATA_PROCESSING: "True"
+  SCIENTIFIC_DATA_FORMATS: "csv,tsv,xlsx,xls,nc,netcdf,hdf5,h5,mat,parquet"
+  CSV_SAMPLE_ROWS: "100"
+  CSV_INCLUDE_STATISTICS: "True"
+  EXCEL_PROCESS_ALL_SHEETS: "True"
+  NETCDF_EXTRACT_METADATA: "True"
+  NETCDF_SAMPLE_ARRAYS: "True"
+  NETCDF_MAX_ARRAY_SAMPLE: "1000"
+  SCIENTIFIC_DATA_CHUNK_SIZE: "5000"
+  SCIENTIFIC_DATA_INCLUDE_SCHEMA: "True"
+  SCIENTIFIC_DATA_INCLUDE_STATISTICS: "True"
+
+  # GraphRAG Settings
   ENABLE_MICROSOFT_GRAPHRAG: "True"
-  GRAPHRAG_BASE_DIR: "/app/graphrag"
-  GRAPHRAG_TEMP_DIR: "/tmp/graphrag_temp"
-  GRAPHRAG_API_KEY: "not-needed"
-  GRAPHRAG_LLM_MODEL: "mistral:7b"
+  GRAPHRAG_BASE_DIR: "./graphrag_workspace"
+  GRAPHRAG_TEMP_DIR: "./graphrag_temp"
+
+  # GraphRAG QUERY Models (for search/retrieval)
+  GRAPHRAG_QUERY_CHAT_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_QUERY_CHAT_MODEL_API_KEY: "ollama"
+  GRAPHRAG_QUERY_CHAT_MODEL: "qwen2.5:0.5b"
+  GRAPHRAG_QUERY_EMBEDDING_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_QUERY_EMBEDDING_MODEL_API_KEY: "ollama"
+  GRAPHRAG_QUERY_EMBEDDING_MODEL: "nomic-embed-text:latest"
+
+  # GraphRAG INDEXING Models (for document processing)
+  GRAPHRAG_INDEXING_CHAT_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_INDEXING_CHAT_MODEL_API_KEY: "ollama"
+  GRAPHRAG_INDEXING_CHAT_MODEL: "mistral:7b"
+  GRAPHRAG_EMBEDDING_MODEL_API_BASE: "your_ollama_server_url_here"
+  GRAPHRAG_EMBEDDING_MODEL_API_KEY: "ollama"
+  GRAPHRAG_EMBEDDING_MODEL: "nomic-embed-text:latest"
+
+  # GraphRAG Processing Configuration
+  GRAPHRAG_LLM_TIMEOUT: "3000000"
+  GRAPHRAG_LLM_TEMPERATURE: "0.1"
+  GRAPHRAG_LLM_MAX_TOKENS: "4000"
+  GRAPHRAG_MAX_TEXT_LENGTH: "50000"
+  GRAPHRAG_CHUNK_SIZE: "1200"
+  GRAPHRAG_TIMEOUT: "6000000"
+
+  # GraphRAG Advanced Features
+  GRAPHRAG_ENABLE_CLAIMS: "True"
+  GRAPHRAG_ENABLE_COVARIATES: "True"
+  GRAPHRAG_ENABLE_TEXT_UNITS: "True"
+  GRAPHRAG_ENABLE_ENTITY_EMBEDDINGS: "True"
+
+  # STP Settings - PRODUCTION VALUES
   ENABLE_STP: "True"
-  DATABASE_PATH: "/app/data/document_tracker.db"
+  STP_MILVUS_DATABASE: "stp_prod"
+  STP_MILVUS_COLLECTION: "stp_documents"
+  STP_CLASSIFIER_MODEL: "models/onnx_exports/roBERTa_stp0.5.onnx"
+  STP_MIN_CONFIDENCE: "0.5"
+  STP_TEXT_CLEANING_ENABLED: "True"
+  STP_REPHRASING_ENABLED: "True"
+  STP_REPHRASE_MAX_WORDS: "80"
+  STP_QF_ENABLED: "True"
+  STP_EMBEDDING_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+  STP_EMBEDDING_DIM: "384"
+  STP_MIN_CHUNK_TOKENS: "200"
+  STP_MAX_CHUNK_TOKENS: "1500"
+  STP_TARGET_CHUNK_TOKENS: "800"
+  STP_TIMEOUT: "5"
+
+  # Chunking Strategy
+  CHUNKING_STRATEGY_NEWS: "semantic"
+  CHUNK_SIZE_NEWS: "600"
+  CHUNK_OVERLAP_NEWS: "100"
+  CHUNKING_STRATEGY_SCIENTIFICDATA: "semantic"
+  CHUNK_SIZE_SCIENTIFICDATA: "800"
+  CHUNK_OVERLAP_SCIENTIFICDATA: "150"
+  CHUNKING_STRATEGY_POLICY: "semantic"
+  CHUNK_SIZE_POLICY: "700"
+  CHUNK_OVERLAP_POLICY: "120"
+  CHUNKING_STRATEGY_RESEARCHPAPERS: "semantic"
+  CHUNK_SIZE_RESEARCHPAPERS: "900"
+  CHUNK_OVERLAP_RESEARCHPAPERS: "150"
+
+  # Summarization
+  SUMMARIZATION_NEWS: "abstractive"
+  SUMMARIZATION_SCIENTIFICDATA: "abstractive"
+  SUMMARIZATION_POLICY: "abstractive"
+  SUMMARIZATION_RESEARCHPAPERS: "abstractive"
+
+  # Database
+  DATABASE_PATH: "./document_tracker.db"
+
+  # Security & Performance
   CORS_ORIGINS: "*"
+  RATE_LIMIT_PER_MINUTE: "600"
+  MAX_UPLOAD_SIZE_MB: "100"
+
+  # Logging
+  LOG_FILE: ""
+  LOG_FORMAT: "text"
+  LOG_MAX_SIZE_MB: "50"
+  LOG_BACKUP_COUNT: "3"
+
 ---
+# =============================================================================
+# SERVER CONFIGURATION
+# =============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: server-config
   namespace: uoulu
 data:
-  # Add your server-specific config here
-  ENVIRONMENT: "production"
+  # Application Settings
+  DEBUG: "true"
   LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  ENVIRONMENT: "development"
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  WORKERS: "1"
+  RELOAD: "false"
+
+  # Authentication - PRODUCTION VALUE
+  AUTH_ENABLED: "false"
+  AUTH_TOKEN_EXPIRY_DAYS: "7"
+  AUTH_DATABASE_URL: "sqlite:///./auth_tokens.db"
+
+  # Email Configuration
+  EMAIL_PROVIDER: "maileroo"
+  MAILEROO_FROM_NAME: "NeuroClima"
+  MAILEROO_API_URL: "https://smtp.maileroo.com/api/v2/emails"
+  SMTP_SERVER: "localhost"
+  SMTP_PORT: "587"
+  FROM_EMAIL: "noreply@neuroclima.com"
+  EMAIL_TIMEOUT_SECONDS: "30"
+  EMAIL_RETRY_ATTEMPTS: "3"
+  EMAIL_RETRY_DELAY_SECONDS: "1.0"
+
+  # Milvus Configuration
+  CHUNKS_RETRIEVAL_LIMIT: "20"
+  SUMMARIES_RETRIEVAL_LIMIT: "12"
+  SIMILARITY_THRESHOLD: "0.1"
+
+  # MinIO Bucket Configuration
+  MINIO_SECURE: "true"
+  MINIO_REGION: "us-east-1"
+  MINIO_TIMEOUT: "10"
+  MINIO_BUCKET_NEWS: "news"
+  MINIO_BUCKET_POLICY: "policies"
+  MINIO_BUCKET_RESEARCH_PAPERS: "researchpapers"
+  MINIO_BUCKET_SCIENTIFIC_DATA: "scientificdata"
+  MINIO_BUCKET_REPORTS: "reports"
+  MINIO_DEFAULT_BUCKET: "researchpapers"
+  MINIO_PRESIGNED_URL_EXPIRY_MINUTES: "30"
+  MINIO_SHAREABLE_URL_EXPIRY_MINUTES: "30"
+  MINIO_ENABLE_PUBLIC_SHARING: "true"
+  MINIO_URL_TYPE: "shareable"
+  MINIO_MAX_CONCURRENT_OPERATIONS: "8"
+  MINIO_PATH_CACHE_DURATION_HOURS: "1"
+  MINIO_ENABLE_PATH_CACHING: "true"
+
+  # LLM Configuration
+  OLLAMA_MODEL: "mistral:7b"
+  OLLAMA_TEMPERATURE: "0.2"
+  OLLAMA_MAX_TOKENS: "1500"
+  OLLAMA_TIMEOUT: "30"
+  OLLAMA_CONNECTION_POOL_SIZE: "5"
+
+  # OpenAI Configuration
+  OPENAI_MODEL: "gpt-4o"
+  OPENAI_TEMPERATURE: "0.2"
+  OPENAI_MAX_TOKENS: "1500"
+  OPENAI_TIMEOUT: "15"
+
+  # Langfuse Configuration
+  LANGFUSE_ENABLED: "true"
+  LANGFUSE_DEBUG: "false"
+  LANGFUSE_FLUSH_AT: "15"
+  LANGFUSE_FLUSH_INTERVAL: "10"
+  LANGFUSE_SAMPLE_RATE: "1.0"
+  LANGFUSE_ENABLE_GENERATIONS: "true"
+  LANGFUSE_ENABLE_SCORES: "true"
+  LANGFUSE_MAX_RETRIES: "3"
+  LANGFUSE_TIMEOUT: "20"
+  LANGFUSE_TRACE_RAG_PIPELINE: "true"
+  LANGFUSE_TRACE_LLM_CALLS: "true"
+  LANGFUSE_TRACE_RETRIEVAL: "true"
+  LANGFUSE_TRACE_RERANKING: "true"
+  LANGFUSE_TRACE_API_CALLS: "true"
+  LANGFUSE_TRACE_SESSIONS: "true"
+  LANGFUSE_RELEASE: ""
+  LANGFUSE_USER_ID: "neuroclima-system"
+  LANGFUSE_SESSION_ID_PREFIX: "nc"
+
+  # GraphRAG Service Configuration (points to processor)
+  GRAPHRAG_SERVER_URL: "http://neuroclima-processor:5000"
+  GRAPHRAG_API_TIMEOUT: "30.0"
+  GRAPHRAG_API_MAX_RETRIES: "3"
+  GRAPHRAG_API_RETRY_DELAY: "1.0"
+  GRAPHRAG_API_CONNECTION_TIMEOUT: "10.0"
+  GRAPHRAG_API_READ_TIMEOUT: "25.0"
+  GRAPHRAG_LOCAL_SEARCH_MAX_ENTITIES: "20"
+  GRAPHRAG_LOCAL_SEARCH_MAX_RELATIONSHIPS: "30"
+  GRAPHRAG_LOCAL_SEARCH_MAX_COMMUNITIES: "10"
+  GRAPHRAG_LOCAL_SEARCH_CONTEXT_DEPTH: "1"
+  GRAPHRAG_LOCAL_SEARCH_MIN_RELEVANCE_SCORE: "0.1"
+  GRAPHRAG_LOCAL_SEARCH_INCLUDE_COMMUNITY_CONTEXT: "true"
+  GRAPHRAG_LOCAL_SEARCH_USE_LLM_EXTRACTION: "true"
+  GRAPHRAG_VISUALIZATION_MAX_NODES: "200"
+  GRAPHRAG_VISUALIZATION_MAX_EDGES: "400"
+  GRAPHRAG_VISUALIZATION_INCLUDE_SUMMARY: "true"
+  GRAPHRAG_API_ENABLE_COMMUNITIES: "true"
+  GRAPHRAG_API_ENABLE_RELATIONSHIPS: "true"
+  GRAPHRAG_API_DEFAULT_SEARCH_TYPE: "local"
+  GRAPH_MIN_RELEVANCE_SCORE: "0.1"
+  GRAPH_RETRIEVAL_LIMIT: "15"
+  GRAPHRAG_ENABLE_BUCKET_FILTERING: "true"
+  GRAPHRAG_DEFAULT_BUCKET: "researchpapers"
+  GRAPHRAG_AVAILABLE_BUCKETS: "researchpapers,news,policies"
+
+  # Translation Service (points to processor)
+  TRANSLATION_SERVICE_URL: "http://neuroclima-processor:5000"
+  TRANSLATION_SERVICE_TIMEOUT: "60.0"
+  TRANSLATION_SUPPORTED_LANGUAGES: "en,it,pt,el"
+
+  # STP Service Configuration (points to processor)
+  STP_SERVICE_ENABLED: "true"
+  STP_SERVICE_URL: "http://neuroclima-processor:5000"
+  STP_SERVICE_ENDPOINT: "/stp/search"
+  STP_SERVICE_TIMEOUT: "30.0"
+  STP_CONFIDENCE_THRESHOLD: "0.1"
+  STP_SIMILARITY_THRESHOLD: "0.3"
+  STP_TOP_K: "1"
+  STP_INCLUDE_METADATA: "true"
+  STP_PARALLEL_PROCESSING: "true"
+  STP_FALLBACK_MESSAGE: "No specific social tipping point available for this query."
+  STP_MAX_RETRIES: "2"
+  STP_RETRY_DELAY: "1.0"
+  STP_CACHE_ENABLED: "false"
+
+  # RAG Configuration
+  MAX_RETRIEVED_DOCS: "15"
+  INITIAL_RETRIEVAL_LIMIT: "25"
+  RETRIEVAL_MILVUS_TIMEOUT: "15.0"
+  RETRIEVAL_GRAPHRAG_API_TIMEOUT: "15.0"
+  RETRIEVAL_TOTAL_TIMEOUT: "25.0"
+
+  # Reranking Configuration
+  RERANKING_ENABLED: "true"
+  RERANKER_ENABLED: "true"
+  RERANKER_MODEL: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  RERANKING_MODEL: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  RERANKING_FACTOR: "2"
+  RERANKING_TIMEOUT: "5"
+  RERANKER_BATCH_SIZE: "16"
+  RERANKER_MAX_LENGTH: "400"
+  RERANKER_MIN_SCORE: "0.75"
+  TOP_K_RERANK: "15"
+  ULTRA_FAST_RERANKER_ENABLED: "true"
+  RERANKER_WORD_OVERLAP_WEIGHT: "0.2"
+  RERANKER_PHRASE_MATCH_WEIGHT: "0.1"
+  RERANKER_SOURCE_BOOST_WEIGHT: "0.03"
+
+  # Response Generation
+  MAX_RESPONSE_LENGTH: "4000"
+  INCLUDE_SOURCES: "true"
+  MAX_SOURCES: "4"
+  MAX_REFERENCES: "8"
+  RESPONSE_LANGUAGE: "en"
+  SUPPORTED_LANGUAGES: "en,it,pt,el"
+
+  # Context Configuration
+  MAX_CONTEXT_CHUNKS: "8"
+  MAX_CONTEXT_SUMMARIES: "4"
+  MAX_CONTEXT_GRAPH_ITEMS: "6"
+  MAX_CONTEXT_LENGTH: "8000"
+
+  # Caching Configuration
+  ENABLE_RESPONSE_CACHING: "true"
+  ENABLE_RESULT_CACHING: "true"
+  ENABLE_EMBEDDING_CACHING: "true"
+  CACHE_TTL_SECONDS: "300"
+  EMBEDDING_CACHE_SIZE: "1000"
+  QUERY_CACHE_SIZE: "500"
+  ENABLE_BUCKET_AWARE_CACHING: "true"
+
+  # Memory and Session Configuration
+  MEMORY_WINDOW_SIZE: "6"
+  MAX_CONVERSATION_HISTORY: "30"
+  SESSION_TIMEOUT_MINUTES: "30"
+  ENABLE_CONVERSATION_SUMMARY: "true"
+  SUMMARY_MESSAGE_THRESHOLD: "10"
+  SUMMARY_MIN_MESSAGES: "8"
+  SUMMARY_MAX_LENGTH: "500"
+  SUMMARY_TIMEOUT: "15"
+
+  # Feature Flags
+  ENABLE_CHAT: "true"
+  ENABLE_DOCUMENT_UPLOAD: "true"
+  ENABLE_ADMIN_API: "true"
+  ENABLE_CONVERSATION_MEMORY: "true"
+  ENABLE_PARALLEL_RETRIEVAL: "true"
+  ENABLE_EARLY_STOPPING: "true"
+  ENABLE_MULTILINGUAL: "true"
+  ENABLE_VOICE_INPUT: "false"
+  ENABLE_ANALYTICS: "true"
+  ENABLE_FEEDBACK: "true"
+  ENABLE_GRAPH_INTEGRATION: "true"
+  ENABLE_GRAPHRAG_API: "true"
+  ENABLE_RERANKING: "true"
+  ENABLE_BUCKET_FILTERING: "false"
+  ENABLE_BUCKET_AWARE_RESPONSES: "true"
+  ENABLE_QUERY_EXPANSION: "false"
+  ENABLE_AUTO_SUMMARIZATION: "false"
+
+  # Rate Limiting
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+  CHAT_RATE_LIMIT: "20"
+  UPLOAD_RATE_LIMIT: "5"
+  ADMIN_RATE_LIMIT: "50"
+
+  # Performance & Monitoring
+  TARGET_RESPONSE_TIME_SECONDS: "20.0"
+  MAX_RESPONSE_TIME_SECONDS: "45.0"
+  MAX_CONCURRENT_REQUESTS: "10"
+  REQUEST_TIMEOUT_SECONDS: "30"
+  HTTP_CONNECTION_POOL_SIZE: "20"
+  HTTP_CONNECTION_TIMEOUT: "5"
+  HTTP_READ_TIMEOUT: "10"
+  EMBEDDING_GENERATION_TIMEOUT: "10.0"
+  EMBEDDING_TIMEOUT: "10.0"
+  EXTERNAL_SERVICE_CONNECT_TIMEOUT: "2.0"
+  EXTERNAL_SERVICE_READ_TIMEOUT: "5.0"
+
+  # Monitoring & Metrics
+  ENABLE_METRICS: "true"
+  METRICS_PORT: "8001"
+  TRACK_RESPONSE_TIMES: "true"
+  PERFORMANCE_LOG_THRESHOLD: "2.0"
+  TRACK_GRAPHRAG_API_PERFORMANCE: "true"
+  TRACK_RELEVANCE_FILTERING: "true"
+  TRACK_BUCKET_USAGE: "true"
+  TRACK_STP_PERFORMANCE: "true"
+
+  # Logging
+  LOG_FILE: ""
+  LOG_ROTATION: "1 day"
+  LOG_RETENTION: "30 days"
+
+  # CORS Settings
+  ALLOWED_ORIGINS: "*"
+  ALLOW_CREDENTIALS: "false"
+  ALLOWED_METHODS: "*"
+  ALLOWED_HEADERS: "*"
+
+  # Security Settings
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  ALGORITHM: "HS256"
