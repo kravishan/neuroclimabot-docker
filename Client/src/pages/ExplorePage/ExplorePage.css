@@ -491,9 +491,7 @@
   background: rgba(55, 109, 67, 0.02);
   padding: 20px;
   border-radius: 8px;
-  border-left: 3px solid #3a7d45;
   border: 1px solid rgba(55, 109, 67, 0.1);
-  border-left: 3px solid #3a7d45;
 }
 
 .info-section-header {
@@ -508,11 +506,6 @@
   font-size: 16px;
   font-weight: 700;
   color: #000000;
-}
-
-.section-icon {
-  color: #3a7d45;
-  flex-shrink: 0;
 }
 
 .info-section p {

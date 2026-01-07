@@ -391,7 +391,8 @@ const ExplorePage = () => {
         csvContent += `Total Entities: ${allData.entities?.length || 0}\n`
         csvContent += `Total Relationships: ${allData.relationships?.length || 0}\n`
         csvContent += `Total Communities: ${allData.communities?.length || 0}\n`
-        csvContent += `Total Claims: ${allData.claims?.length || 0}\n\n`
+        csvContent += `Total Claims: ${allData.claims?.length || 0}\n`
+        csvContent += `Total Community Reports: ${allData.community_reports?.length || 0}\n\n`
 
         // Add entities section
         if (allData.entities && allData.entities.length > 0) {
@@ -406,23 +407,20 @@ const ExplorePage = () => {
           })
         }
 
-        // Add relationships section
+        // Add relationships section - ALL relationships, no limit
         if (allData.relationships && allData.relationships.length > 0) {
           csvContent += `\n\nRELATIONSHIPS (${allData.relationships.length})\n`
           csvContent += `${'='.repeat(80)}\n`
-          allData.relationships.slice(0, 50).forEach((rel, i) => {
+          allData.relationships.forEach((rel, i) => {
             const sourceEntity = allData.entities?.find(e => e.id === rel.source)
             const targetEntity = allData.entities?.find(e => e.id === rel.target)
             csvContent += `\n${i + 1}. ${sourceEntity?.name || rel.source} → ${targetEntity?.name || rel.target}\n`
             csvContent += `   Relationship: ${rel.description || rel.type || 'Related'}\n`
             csvContent += `   Strength: ${rel.value || rel.strength || 1}\n`
           })
-          if (allData.relationships.length > 50) {
-            csvContent += `\n... and ${allData.relationships.length - 50} more relationships\n`
-          }
         }
 
-        // Add communities section
+        // Add communities section - show all members
         if (allData.communities && allData.communities.length > 0) {
           csvContent += `\n\nCOMMUNITIES (${allData.communities.length})\n`
           csvContent += `${'='.repeat(80)}\n`
@@ -433,11 +431,45 @@ const ExplorePage = () => {
               csvContent += `   Summary: ${community.summary}\n`
             }
             if (community.entity_names && community.entity_names.length > 0) {
-              csvContent += `   Members: ${community.entity_names.slice(0, 10).join(', ')}`
-              if (community.entity_names.length > 10) {
-                csvContent += ` ... and ${community.entity_names.length - 10} more`
-              }
-              csvContent += `\n`
+              csvContent += `   Members: ${community.entity_names.join(', ')}\n`
+            }
+          })
+        }
+
+        // Add claims section
+        if (allData.claims && allData.claims.length > 0) {
+          csvContent += `\n\nCLAIMS (${allData.claims.length})\n`
+          csvContent += `${'='.repeat(80)}\n`
+          allData.claims.forEach((claim, i) => {
+            csvContent += `\n${i + 1}. ${claim.description || 'No description'}\n`
+            csvContent += `   Status: ${claim.status || 'Unknown'}\n`
+            csvContent += `   Type: ${claim.type || 'CLAIM'}\n`
+            if (claim.source_text) {
+              csvContent += `   Source: "${claim.source_text}"\n`
+            }
+          })
+        }
+
+        // Add community reports section
+        if (allData.community_reports && allData.community_reports.length > 0) {
+          csvContent += `\n\nCOMMUNITY REPORTS (${allData.community_reports.length})\n`
+          csvContent += `${'='.repeat(80)}\n`
+          allData.community_reports.forEach((report, i) => {
+            csvContent += `\n${i + 1}. ${report.title || `Report ${i + 1}`}\n`
+            if (report.summary || report.full_content || report.text) {
+              csvContent += `   Summary: ${report.summary || report.full_content || report.text}\n`
+            }
+            if (report.rating) {
+              csvContent += `   Rating: ${report.rating}\n`
+            }
+            if (report.findings && report.findings.length > 0) {
+              csvContent += `   Key Findings:\n`
+              report.findings.forEach((finding, idx) => {
+                csvContent += `   ${idx + 1}. ${finding.summary}\n`
+                if (finding.explanation) {
+                  csvContent += `      ${finding.explanation}\n`
+                }
+              })
             }
           })
         }
@@ -612,7 +644,6 @@ const ExplorePage = () => {
         <div className="info-banner-content">
           <div className="info-section">
             <div className="info-section-header">
-              <BookOpen size={18} className="section-icon" />
               <h4>What is a Knowledge Graph?</h4>
             </div>
             <p>
@@ -625,7 +656,6 @@ const ExplorePage = () => {
 
           <div className="info-section">
             <div className="info-section-header">
-              <Zap size={18} className="section-icon" />
               <h4>How Was This Data Extracted?</h4>
             </div>
             <p>
@@ -638,7 +668,6 @@ const ExplorePage = () => {
 
           <div className="info-section">
             <div className="info-section-header">
-              <Lightbulb size={18} className="section-icon" />
               <h4>How to Use This Page</h4>
             </div>
             <div className="info-list">
