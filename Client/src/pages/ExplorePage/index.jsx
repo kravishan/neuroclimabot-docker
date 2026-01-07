@@ -13,7 +13,15 @@ import {
   GitBranch,
   Search,
   Download,
-  Filter
+  Filter,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Lightbulb,
+  BookOpen,
+  Zap,
+  HelpCircle,
+  X
 } from 'lucide-react'
 import { fetchTippingPointsGraphByDocName } from '@/services/api/endpoints'
 import KnowledgeGraph from '@/components/common/KnowledgeGraph'
@@ -36,6 +44,7 @@ const ExplorePage = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [expandedCommunities, setExpandedCommunities] = useState(new Set())
+  const [showInfoBanner, setShowInfoBanner] = useState(true)
 
   const hasFetchedData = useRef(false)
 
@@ -267,40 +276,218 @@ const ExplorePage = () => {
     setLoading(true)
   }
 
+  const convertToCSV = (data, headers) => {
+    if (!data || data.length === 0) return ''
+
+    // Create CSV header
+    const csvHeaders = headers.join(',')
+
+    // Create CSV rows
+    const csvRows = data.map(item => {
+      return headers.map(header => {
+        let value = item[header.toLowerCase().replace(/ /g, '_')] || item[header] || ''
+        // Handle nested objects and arrays
+        if (typeof value === 'object' && value !== null) {
+          value = Array.isArray(value) ? value.join('; ') : JSON.stringify(value)
+        }
+        // Escape quotes and wrap in quotes if contains comma
+        value = String(value).replace(/"/g, '""')
+        if (value.includes(',') || value.includes('\n') || value.includes('"')) {
+          value = `"${value}"`
+        }
+        return value
+      }).join(',')
+    })
+
+    return [csvHeaders, ...csvRows].join('\n')
+  }
+
   const exportData = (type) => {
     if (!allData) return
 
-    let dataToExport = null
-    let filename = `${docName}_${type}.json`
+    let csvContent = ''
+    let filename = `${docName}_${type}.csv`
 
     switch (type) {
       case 'entities':
-        dataToExport = allData.entities
+        const entitiesHeaders = ['Name', 'Type', 'Description']
+        const entitiesData = (allData.entities || []).map(e => ({
+          Name: e.name || '',
+          Type: e.type || 'Unknown',
+          Description: e.description || ''
+        }))
+        csvContent = convertToCSV(entitiesData, entitiesHeaders)
         break
+
       case 'relationships':
-        dataToExport = allData.relationships
+        const relationshipsHeaders = ['Source Entity', 'Relationship', 'Target Entity', 'Strength', 'Description']
+        const relationshipsData = (allData.relationships || []).map(rel => {
+          const sourceEntity = allData.entities?.find(e => e.id === rel.source)
+          const targetEntity = allData.entities?.find(e => e.id === rel.target)
+          return {
+            'Source Entity': sourceEntity?.name || rel.source || '',
+            'Relationship': rel.type || '',
+            'Target Entity': targetEntity?.name || rel.target || '',
+            'Strength': rel.value || rel.strength || 1,
+            'Description': rel.description || ''
+          }
+        })
+        csvContent = convertToCSV(relationshipsData, relationshipsHeaders)
         break
+
       case 'communities':
-        dataToExport = allData.communities
+        const communitiesHeaders = ['Title', 'Size', 'Level', 'Summary', 'Members']
+        const communitiesData = (allData.communities || []).map(c => ({
+          Title: c.title || `Community ${c.human_readable_id || ''}`,
+          Size: c.size || 0,
+          Level: c.level ?? 0,
+          Summary: c.summary || '',
+          Members: c.entity_names ? c.entity_names.join('; ') : (c.member_entities || []).join('; ')
+        }))
+        csvContent = convertToCSV(communitiesData, communitiesHeaders)
         break
+
       case 'claims':
-        dataToExport = allData.claims
+        const claimsHeaders = ['Description', 'Status', 'Type', 'Source Text']
+        const claimsData = (allData.claims || []).map(c => ({
+          Description: c.description || '',
+          Status: c.status || 'Unknown',
+          Type: c.type || 'CLAIM',
+          'Source Text': c.source_text || ''
+        }))
+        csvContent = convertToCSV(claimsData, claimsHeaders)
         break
+
       case 'texts':
-        dataToExport = allData.text_units || allData.community_reports
+        const hasTextUnits = allData.text_units && allData.text_units.length > 0
+        if (hasTextUnits) {
+          const textsHeaders = ['Text', 'Tokens', 'Chunk ID']
+          const textsData = (allData.text_units || []).map(t => ({
+            Text: t.text || '',
+            Tokens: t.n_tokens || 0,
+            'Chunk ID': t.chunk_id || ''
+          }))
+          csvContent = convertToCSV(textsData, textsHeaders)
+        } else {
+          const reportsHeaders = ['Title', 'Summary', 'Rating']
+          const reportsData = (allData.community_reports || []).map(r => ({
+            Title: r.title || '',
+            Summary: r.summary || r.full_content || r.text || '',
+            Rating: r.rating || ''
+          }))
+          csvContent = convertToCSV(reportsData, reportsHeaders)
+        }
         break
-      case 'reports':
-        dataToExport = allData.community_reports
-        break
+
       case 'all':
-        dataToExport = allData
-        filename = `${docName}_complete_data.json`
+        // Create a comprehensive report in text format
+        filename = `${docName}_complete_report.txt`
+
+        // Add NeuroClima Bot header
+        csvContent = `${'='.repeat(80)}\n`
+        csvContent += `                            NEUROCLIMA BOT\n`
+        csvContent += `                    Knowledge Graph Analysis Report\n`
+        csvContent += `${'='.repeat(80)}\n\n`
+
+        csvContent += `KNOWLEDGE GRAPH REPORT FOR: ${docName}\n`
+        csvContent += `Generated on: ${new Date().toLocaleString()}\n`
+        csvContent += `${'='.repeat(80)}\n\n`
+
+        csvContent += `SUMMARY STATISTICS\n`
+        csvContent += `${'='.repeat(80)}\n`
+        csvContent += `Total Entities: ${allData.entities?.length || 0}\n`
+        csvContent += `Total Relationships: ${allData.relationships?.length || 0}\n`
+        csvContent += `Total Communities: ${allData.communities?.length || 0}\n`
+        csvContent += `Total Claims: ${allData.claims?.length || 0}\n`
+        csvContent += `Total Community Reports: ${allData.community_reports?.length || 0}\n\n`
+
+        // Add entities section
+        if (allData.entities && allData.entities.length > 0) {
+          csvContent += `\nENTITIES (${allData.entities.length})\n`
+          csvContent += `${'='.repeat(80)}\n`
+          allData.entities.forEach((entity, i) => {
+            csvContent += `\n${i + 1}. ${entity.name}\n`
+            csvContent += `   Type: ${entity.type || 'Unknown'}\n`
+            if (entity.description) {
+              csvContent += `   Description: ${entity.description}\n`
+            }
+          })
+        }
+
+        // Add relationships section - ALL relationships, no limit
+        if (allData.relationships && allData.relationships.length > 0) {
+          csvContent += `\n\nRELATIONSHIPS (${allData.relationships.length})\n`
+          csvContent += `${'='.repeat(80)}\n`
+          allData.relationships.forEach((rel, i) => {
+            const sourceEntity = allData.entities?.find(e => e.id === rel.source)
+            const targetEntity = allData.entities?.find(e => e.id === rel.target)
+            csvContent += `\n${i + 1}. ${sourceEntity?.name || rel.source} → ${targetEntity?.name || rel.target}\n`
+            csvContent += `   Relationship: ${rel.description || rel.type || 'Related'}\n`
+            csvContent += `   Strength: ${rel.value || rel.strength || 1}\n`
+          })
+        }
+
+        // Add communities section - show all members
+        if (allData.communities && allData.communities.length > 0) {
+          csvContent += `\n\nCOMMUNITIES (${allData.communities.length})\n`
+          csvContent += `${'='.repeat(80)}\n`
+          allData.communities.forEach((community, i) => {
+            csvContent += `\n${i + 1}. ${community.title || `Community ${community.human_readable_id || i + 1}`}\n`
+            csvContent += `   Size: ${community.size || 0} | Level: ${community.level ?? 0}\n`
+            if (community.summary) {
+              csvContent += `   Summary: ${community.summary}\n`
+            }
+            if (community.entity_names && community.entity_names.length > 0) {
+              csvContent += `   Members: ${community.entity_names.join(', ')}\n`
+            }
+          })
+        }
+
+        // Add claims section
+        if (allData.claims && allData.claims.length > 0) {
+          csvContent += `\n\nCLAIMS (${allData.claims.length})\n`
+          csvContent += `${'='.repeat(80)}\n`
+          allData.claims.forEach((claim, i) => {
+            csvContent += `\n${i + 1}. ${claim.description || 'No description'}\n`
+            csvContent += `   Status: ${claim.status || 'Unknown'}\n`
+            csvContent += `   Type: ${claim.type || 'CLAIM'}\n`
+            if (claim.source_text) {
+              csvContent += `   Source: "${claim.source_text}"\n`
+            }
+          })
+        }
+
+        // Add community reports section
+        if (allData.community_reports && allData.community_reports.length > 0) {
+          csvContent += `\n\nCOMMUNITY REPORTS (${allData.community_reports.length})\n`
+          csvContent += `${'='.repeat(80)}\n`
+          allData.community_reports.forEach((report, i) => {
+            csvContent += `\n${i + 1}. ${report.title || `Report ${i + 1}`}\n`
+            if (report.summary || report.full_content || report.text) {
+              csvContent += `   Summary: ${report.summary || report.full_content || report.text}\n`
+            }
+            if (report.rating) {
+              csvContent += `   Rating: ${report.rating}\n`
+            }
+            if (report.findings && report.findings.length > 0) {
+              csvContent += `   Key Findings:\n`
+              report.findings.forEach((finding, idx) => {
+                csvContent += `   ${idx + 1}. ${finding.summary}\n`
+                if (finding.explanation) {
+                  csvContent += `      ${finding.explanation}\n`
+                }
+              })
+            }
+          })
+        }
+
         break
       default:
         return
     }
 
-    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' })
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: type === 'all' ? 'text/plain;charset=utf-8' : 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -440,6 +627,86 @@ const ExplorePage = () => {
       }
       return newSet
     })
+  }
+
+  const renderInfoBanner = () => {
+    if (!showInfoBanner) return null
+
+    return (
+      <div className="info-banner">
+        <div className="info-banner-header">
+          <div className="info-banner-title">
+            <HelpCircle size={24} className="info-icon" />
+            <h3>Understanding Knowledge Graphs</h3>
+          </div>
+          <button
+            className="info-banner-close"
+            onClick={() => setShowInfoBanner(false)}
+            aria-label="Close information banner"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="info-banner-content">
+          <div className="info-section">
+            <div className="info-section-header">
+              <h4>What is a Knowledge Graph?</h4>
+            </div>
+            <p>
+              A knowledge graph is a visual representation of information that shows how different concepts,
+              entities, and ideas are connected. Think of it as a network map where nodes (circles) represent
+              important entities like organizations, locations, or concepts, and links (lines) show the
+              relationships between them.
+            </p>
+          </div>
+
+          <div className="info-section">
+            <div className="info-section-header">
+              <h4>How Was This Data Extracted?</h4>
+            </div>
+            <p>
+              This knowledge graph was automatically generated using <strong>GraphRAG</strong> (Graph Retrieval-Augmented Generation),
+              an advanced AI technology that analyzes documents to identify key entities, their relationships,
+              and community structures. The system intelligently extracts factual claims and organizes them
+              into a structured, interconnected network of knowledge.
+            </p>
+          </div>
+
+          <div className="info-section">
+            <div className="info-section-header">
+              <h4>How to Use This Page</h4>
+            </div>
+            <div className="info-list">
+              <div className="info-item">
+                <Network size={16} />
+                <span><strong>Graph Tab:</strong> Explore the interactive 3D visualization. Click and drag nodes, zoom in/out, and click on nodes to see details.</span>
+              </div>
+              <div className="info-item">
+                <Layers size={16} />
+                <span><strong>Entities Tab:</strong> Browse all extracted entities (people, places, concepts) with descriptions and types.</span>
+              </div>
+              <div className="info-item">
+                <GitBranch size={16} />
+                <span><strong>Relationships Tab:</strong> See how entities are connected and the strength of their relationships.</span>
+              </div>
+              <div className="info-item">
+                <Users size={16} />
+                <span><strong>Communities Tab:</strong> Discover groups of closely related entities that form thematic clusters.</span>
+              </div>
+              <div className="info-item">
+                <FileText size={16} />
+                <span><strong>Claims Tab:</strong> Review specific factual statements extracted from the source document.</span>
+              </div>
+              <div className="info-item">
+                <Download size={16} />
+                <span><strong>Export Data:</strong> Download any view for further analysis or integration with other tools.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const renderTabContent = () => {
@@ -949,7 +1216,7 @@ const ExplorePage = () => {
             <div className="loading-spinner">
               <div className="spinner"></div>
               <div className="loading-text">
-                <h3>Generating Enhanced Knowledge Graph</h3>
+                <h3>Generating Knowledge Graph</h3>
                 <p>Analyzing document relationships and extracting key concepts via GraphRAG...</p>
               </div>
             </div>
@@ -994,10 +1261,21 @@ const ExplorePage = () => {
             {docName}
           </div>
         )}
-        <button onClick={() => exportData('all')} className="export-all-btn">
-          <Download size={16} /> Export All Data
-        </button>
+        <div className="header-actions-group">
+          <button
+            onClick={() => setShowInfoBanner(!showInfoBanner)}
+            className="help-btn"
+            title="Show/Hide Knowledge Graph Guide"
+          >
+            <HelpCircle size={16} /> Help
+          </button>
+          <button onClick={() => exportData('all')} className="export-all-btn">
+            <Download size={16} /> Export All Data
+          </button>
+        </div>
       </div>
+
+      {renderInfoBanner()}
 
       <div className="tabs-container">
         <div className="tabs-header">

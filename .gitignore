@@ -54,3 +54,4 @@ Server/app/services/embeddings/__pycache__/
 
 Server/auth_tokens.db
 Server/Server.zip
+k8s/kubeconfig.yaml
