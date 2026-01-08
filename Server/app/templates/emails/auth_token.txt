@@ -1,22 +1,50 @@
-NeuroClima Bot - Your Access Code
+================================================================================
+                           NEUROCLIMA BOT
+================================================================================
 
-Hello there!
+AUTHENTICATION VERIFICATION
 
-Your 6-digit access code for NeuroClima Bot is:
+Dear User,
 
-    {{ token }}
+You are receiving this correspondence as part of the authentication process for 
+the Neuroclima Bot platform. Please find your single-use verification code 
+below, which is required to complete your authentication and access the system.
 
-How to use this code:
-1. Copy the 6-digit code above
-2. Return to the NeuroClima Bot application
-3. Enter the code in the authentication field
-4. Click "Verify Code" to gain access
+________________________________________________________________________________
 
-Security Information:
-• This code expires in {{ token_expiry_days }} days
-• Never share this code with anyone
-• If you didn't request this code, please ignore this email
-• Your email address is not saved for security purposes
+                         VERIFICATION CODE
+                         
+                            {{ token }}
+________________________________________________________________________________
 
-Best regards,
-The NeuroClimaBot Team
+
+AUTHENTICATION PROCEDURE
+
+1. Copy the six-digit verification code displayed above
+2. Return to the Neuroclima Bot application interface
+3. Enter the verification code in the designated authentication field
+4. Select "Validate Token" to complete the authentication process
+
+
+IMPORTANT SECURITY NOTICE
+
+• This verification code will expire in {{ token_expiry_days }} days from issuance
+• This code is confidential and should not be shared with any third party
+• If you did not initiate this authentication request, please disregard this
+• Email addresses are not retained in our system to ensure data privacy
+• For security inquiries, please contact the platform administrator
+
+
+________________________________________________________________________________
+
+Respectfully,
+
+Neuroclima Bot
+
+________________________________________________________________________________
+
+Neuroclima Bot | Smart Climate Adaptation & Resilience
+
+This is an automated message. Please do not reply to this email.
+
+================================================================================
