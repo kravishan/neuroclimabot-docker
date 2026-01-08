@@ -1,0 +1,28 @@
+# Prometheus configuration for NeuroClima monitoring
+global:
+  scrape_interval: 15s      # Scrape metrics every 15 seconds
+  evaluation_interval: 15s  # Evaluate rules every 15 seconds
+  external_labels:
+    monitor: 'neuroclima-monitor'
+
+# Scrape configurations
+scrape_configs:
+  # Job to scrape NeuroClima metrics
+  - job_name: 'neuroclima-server'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['server:8001']  # Docker service name and metrics port
+        labels:
+          app: 'neuroclima'
+          environment: 'production'
+
+    # Collect all metrics including Python runtime metrics
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: '(neuroclima_.*|python_.*|process_.*)'
+        action: keep
+
+  # Optional: Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
