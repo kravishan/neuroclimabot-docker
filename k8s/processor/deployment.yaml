@@ -96,6 +96,9 @@ spec:
           mountPath: /app/graphrag
         - name: lancedb-data
           mountPath: /app/lancedb
+        - name: graphrag-settings
+          mountPath: /app/graphrag/settings.yaml
+          subPath: settings.yaml
         resources:
           requests:
             memory: "4Gi"
@@ -113,3 +116,6 @@ spec:
       - name: lancedb-data
         persistentVolumeClaim:
           claimName: lancedb-data-pvc
+      - name: graphrag-settings
+        configMap:
+          name: graphrag-settings
