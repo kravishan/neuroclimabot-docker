@@ -260,7 +260,7 @@ const AdminDashboard = () => {
             
             {/* Traces Button */}
             <button 
-              onClick={() => window.open('http://195.148.23.57:3000/project/cmismn27q0006lu07370ipgpm', '_blank')} 
+              onClick={() => window.open('http://195.148.23.57:3000/project/cmk53xvim0005mq07ah2nexkz', '_blank')} 
               className="adm-action-btn adm-home-btn adm-header-btn"
             >
               <BarChart3 size={16} />
