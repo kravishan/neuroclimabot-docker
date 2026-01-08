@@ -84,51 +84,51 @@ class MinIOClient:
             except S3Error as e:
                 logger.warning(f"Could not check bucket {bucket_name}: {e}")
     
-    async def generate_shareable_reference_url(self, doc_name: str, bucket_source: str) -> str:
+    async def generate_shareable_reference_url(self, doc_name: str, bucket_source: str) -> Optional[str]:
         """
         Generate public shareable URL for references with 30-minute expiry.
         Handles folder structures and provides URLs that work without authentication.
-        
+
         Args:
             doc_name: Document filename (may or may not include folder path)
             bucket_source: Source bucket type (policy, researchpapers, scientificdata, news)
-            
+
         Returns:
-            Public shareable URL with 30-minute expiry
+            Public shareable URL with 30-minute expiry, or None if document not found
         """
         try:
             # Get bucket name from mapping
             bucket_name = self.bucket_mapping.get(bucket_source.lower())
-            
+
             if not bucket_name:
                 logger.warning(f"Unknown bucket source: {bucket_source}")
-                return self._create_fallback_url(doc_name, bucket_source)
-            
+                return None
+
             # Check if bucket exists
             if not self.client.bucket_exists(bucket_name):
                 logger.warning(f"Bucket {bucket_name} does not exist")
-                return self._create_fallback_url(doc_name, bucket_source)
-            
+                return None
+
             # Find the actual file path (handles folders)
             actual_file_path = await self._find_document_path(doc_name, bucket_name)
-            
+
             if not actual_file_path:
                 logger.warning(f"Document {doc_name} not found in bucket {bucket_name}")
-                return self._create_fallback_url(doc_name, bucket_source)
-            
+                return None
+
             # Generate public shareable presigned URL with 30-minute expiry
             presigned_url = self.client.presigned_get_object(
                 bucket_name,
                 actual_file_path,
                 expires=self.presigned_url_expiry
             )
-            
+
             logger.debug(f"Generated 30min shareable URL for {doc_name} -> {actual_file_path}")
             return presigned_url
-            
+
         except Exception as e:
             logger.error(f"Failed to generate shareable URL for {doc_name}: {e}")
-            return self._create_fallback_url(doc_name, bucket_source)
+            return None
     
     async def _find_document_path(self, doc_name: str, bucket_name: str) -> Optional[str]:
         """
@@ -194,15 +194,6 @@ class MinIOClient:
             logger.error(f"Error searching for document {doc_name}: {e}")
             return None
     
-    def _create_fallback_url(self, doc_name: str, bucket_source: str) -> str:
-        """Create fallback URL when presigned URL generation fails."""
-        # Create a direct URL (may not work without authentication, but better than nothing)
-        bucket_name = self.bucket_mapping.get(bucket_source.lower(), bucket_source)
-        protocol = "https" if self.secure else "http"
-        fallback_url = f"{protocol}://{self.endpoint}/{bucket_name}/{doc_name}"
-        
-        logger.debug(f"Created fallback URL for {doc_name}: {fallback_url}")
-        return fallback_url
     
     def _clean_path_cache(self):
         """Clean expired entries from path cache."""
