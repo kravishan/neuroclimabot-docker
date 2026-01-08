@@ -42,8 +42,8 @@ if curl -s http://localhost:9090/-/healthy > /dev/null; then
     echo -e "${GREEN}✓ Prometheus is running on port 9090${NC}"
 else
     echo -e "${YELLOW}⚠ Prometheus is not running on port 9090${NC}"
-    echo "  To start Prometheus with Docker:"
-    echo "  docker run -d --name prometheus --network host -v \$(pwd)/grafana/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus:latest"
+    echo "  To start Prometheus with Docker (run from project root):"
+    echo "  docker run -d --name prometheus --network host -v \$(pwd)/Server/monitoring/grafana/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus:latest"
 fi
 echo ""
 
@@ -80,6 +80,6 @@ echo ""
 echo "Next steps:"
 echo "1. Open Prometheus: http://localhost:9090"
 echo "2. Try query: neuroclima_requests_total"
-echo "3. Import dashboard in Grafana from: ./grafana/dashboards/neuroclima-dashboard.json"
+echo "3. Import dashboard in Grafana from: ./Server/monitoring/grafana/dashboards/neuroclima-dashboard.json"
 echo ""
 echo -e "${GREEN}Happy monitoring! 📈${NC}"

@@ -31,14 +31,14 @@ Your NeuroClima Bot already has Prometheus metrics built-in! Here's what you can
 docker run -d \
   --name prometheus \
   --network host \
-  -v $(pwd)/grafana/prometheus.yml:/etc/prometheus/prometheus.yml \
+  -v $(pwd)/Server/monitoring/grafana/prometheus.yml:/etc/prometheus/prometheus.yml \
   prom/prometheus:latest
 ```
 
 #### Option B: Using Local Installation
 1. Download Prometheus from https://prometheus.io/download/
 2. Extract and navigate to the directory
-3. Copy the `prometheus.yml` from `./grafana/prometheus.yml` to Prometheus config directory
+3. Copy the `prometheus.yml` from `./Server/monitoring/grafana/prometheus.yml` to Prometheus config directory
 4. Run Prometheus:
 ```bash
 ./prometheus --config.file=prometheus.yml
@@ -64,7 +64,7 @@ Since you already have Grafana installed on your PC:
 
 1. In Grafana, go to **Dashboards** → **Import**
 2. Click **Upload JSON file**
-3. Select the file: `./grafana/dashboards/neuroclima-dashboard.json`
+3. Select the file: `./Server/monitoring/grafana/dashboards/neuroclima-dashboard.json`
 4. Select the **NeuroClima Prometheus** data source
 5. Click **Import**
 
@@ -264,7 +264,7 @@ For production, you can add Prometheus and Grafana to your `docker-compose.yml`:
     image: prom/prometheus:latest
     container_name: neuroclima-prometheus
     volumes:
-      - ./grafana/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./Server/monitoring/grafana/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     ports:
       - "9090:9090"
@@ -284,7 +284,7 @@ For production, you can add Prometheus and Grafana to your `docker-compose.yml`:
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./Server/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
     networks:
       - neuroclima-network
     depends_on:

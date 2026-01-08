@@ -5,7 +5,7 @@ This directory contains all the configuration files needed to set up monitoring 
 ## 📁 Directory Structure
 
 ```
-grafana/
+Server/monitoring/grafana/
 ├── README.md                          # This file
 ├── GRAFANA_SETUP.md                   # Detailed setup guide
 ├── prometheus.yml                     # Prometheus configuration
@@ -20,22 +20,23 @@ grafana/
 
 ### 1. Start Prometheus
 ```bash
+# Run from project root directory
 docker run -d \
   --name prometheus \
   --network host \
-  -v $(pwd)/grafana/prometheus.yml:/etc/prometheus/prometheus.yml \
+  -v $(pwd)/Server/monitoring/grafana/prometheus.yml:/etc/prometheus/prometheus.yml \
   prom/prometheus:latest
 ```
 
 ### 2. Test Your Setup
 ```bash
-./grafana/test-metrics.sh
+./Server/monitoring/grafana/test-metrics.sh
 ```
 
 ### 3. Import Dashboard to Grafana
 1. Open Grafana (http://localhost:3000)
 2. Add Prometheus data source (http://localhost:9090)
-3. Import dashboard: `./grafana/dashboards/neuroclima-dashboard.json`
+3. Import dashboard: `./Server/monitoring/grafana/dashboards/neuroclima-dashboard.json`
 
 ## 📊 Available Metrics
 
@@ -59,7 +60,7 @@ See [GRAFANA_SETUP.md](./GRAFANA_SETUP.md) for detailed instructions including:
 
 Run the test script to verify everything is working:
 ```bash
-./grafana/test-metrics.sh
+./Server/monitoring/grafana/test-metrics.sh
 ```
 
 ## 🔗 Access Points
