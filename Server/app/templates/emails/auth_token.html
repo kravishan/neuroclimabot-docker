@@ -5,122 +5,187 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
+            font-family: 'Times New Roman', Times, Georgia, serif;
+            line-height: 1.8;
+            color: #1a1a1a;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            background-color: #f8f8f8;
         }
         .container {
-            max-width: 600px;
+            max-width: 650px;
             margin: 40px auto;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
         .header {
-            background: linear-gradient(135deg, #2d5a3d 0%, #3a7d45 50%, #4a9555 100%);
-            color: white;
-            padding: 40px 30px;
+            background: #ffffff;
+            border-bottom: 3px solid #2d5a3d;
+            padding: 32px 40px 24px 40px;
             text-align: center;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-        }
-        .header p {
-            margin: 8px 0 0 0;
-            font-size: 16px;
-            opacity: 0.9;
-        }
-        .content {
-            padding: 40px 30px;
-        }
-        .greeting {
-            font-size: 18px;
-            margin-bottom: 24px;
-            color: #2d5a3d;
-        }
-        .code-section {
-            text-align: center;
-            margin: 32px 0;
-        }
-        .code-label {
-            font-size: 16px;
-            color: #666;
+        .logo-section {
             margin-bottom: 16px;
         }
-        .code-box {
-            background: linear-gradient(135deg, #f8fffe 0%, #f0fdf4 100%);
-            border: 3px solid #3a7d45;
-            padding: 24px;
-            margin: 20px 0;
-            border-radius: 16px;
-            box-shadow: 0 2px 4px rgba(58, 125, 69, 0.1);
-        }
-        .code {
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-            font-size: 42px;
+        .institution-name {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 26px;
             font-weight: 700;
             color: #2d5a3d;
-            letter-spacing: 12px;
+            letter-spacing: 0.5px;
             margin: 0;
+            text-transform: uppercase;
         }
-        .instructions {
-            background: #f8f9fa;
-            border-left: 4px solid #3a7d45;
-            padding: 20px;
-            margin: 24px 0;
-            border-radius: 0 8px 8px 0;
-        }
-        .warning {
-            background: #fffbeb;
-            border: 1px solid #fbbf24;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 24px 0;
-        }
-        .warning-title {
-            font-weight: 600;
-            color: #d97706;
-            margin-bottom: 12px;
-        }
-        .warning ul {
+        .department {
+            font-size: 14px;
+            color: #3a7d45;
             margin: 8px 0 0 0;
-            padding-left: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
-        .warning li {
+        .content {
+            padding: 40px 40px 32px 40px;
+        }
+        .document-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d5a3d;
+            margin: 0 0 24px 0;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 16px;
+        }
+        .salutation {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+        .body-text {
+            font-size: 15px;
+            color: #333333;
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+        .code-section {
+            background: #fafafa;
+            border: 2px solid #3a7d45;
+            padding: 28px 24px;
+            margin: 28px 0;
+            text-align: center;
+        }
+        .code-label {
+            font-size: 13px;
+            color: #3a7d45;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-weight: 600;
+        }
+        .code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 38px;
+            font-weight: 700;
+            color: #2d5a3d;
+            letter-spacing: 16px;
+            margin: 8px 0;
+            padding: 12px;
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            display: inline-block;
+        }
+        .instructions-box {
+            background: #f5f7f5;
+            border-left: 4px solid #3a7d45;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .instructions-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #2d5a3d;
+            margin: 0 0 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .instructions-list {
+            margin: 0;
+            padding-left: 20px;
+            color: #333333;
+        }
+        .instructions-list li {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .notice-box {
+            background: #fffdf7;
+            border: 1px solid #c9b885;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .notice-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #8b6914;
+            margin: 0 0 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .notice-list {
+            margin: 0;
+            padding-left: 20px;
+            color: #5a4a0f;
+        }
+        .notice-list li {
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .signature {
+            margin-top: 32px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .signature-line {
+            font-size: 15px;
             margin-bottom: 4px;
-            color: #92400e;
+            color: #1a1a1a;
+        }
+        .signature-title {
+            font-size: 14px;
+            color: #5a6c5d;
+            font-style: italic;
         }
         .footer {
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid #e5e7eb;
+            background: #f5f5f5;
+            border-top: 3px solid #2d5a3d;
+            padding: 24px 40px;
             text-align: center;
-            color: #6b7280;
         }
-        .footer-signature {
-            color: #3a7d45;
-            font-weight: 500;
+        .footer-text {
+            font-size: 12px;
+            color: #666666;
+            line-height: 1.6;
+            margin: 0;
+        }
+        .footer-divider {
+            margin: 12px 0;
+            color: #999999;
         }
         @media (max-width: 640px) {
             .container {
                 margin: 20px;
-                border-radius: 8px;
             }
-            .header {
-                padding: 30px 20px;
-            }
-            .content {
-                padding: 30px 20px;
+            .header, .content, .footer {
+                padding: 24px 20px;
             }
             .code {
-                font-size: 36px;
-                letter-spacing: 8px;
+                font-size: 32px;
+                letter-spacing: 12px;
+            }
+            .body-text {
+                text-align: left;
             }
         }
     </style>
@@ -128,42 +193,62 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌍 NeuroClima</h1>
+            <div class="logo-section">
+                <h1 class="institution-name">Neuroclima Bot</h1>
+            </div>
         </div>
+
         <div class="content">
-            <div class="greeting">Hello there! 👋</div>
+            <h2 class="document-title">Authentication Verification</h2>
+
+            <p class="salutation">Dear User,</p>
+
+            <p class="body-text">
+                You are receiving this correspondence as part of the authentication process for the 
+                Neuroclima Bot platform. Please find your single-use verification code below, 
+                which is required to complete your authentication and access the system.
+            </p>
 
             <div class="code-section">
-                <div class="code-label">Your 6-digit access code is:</div>
-                <div class="code-box">
-                    <div class="code">{{ token }}</div>
-                </div>
+                <div class="code-label">Verification Code</div>
+                <div class="code">{{ token }}</div>
             </div>
 
-            <div class="instructions">
-                <strong>How to use this code:</strong><br>
-                1. Copy the 6-digit code above<br>
-                2. Return to the NeuroClima application<br>
-                3. Enter the code in the authentication field<br>
-                4. Click "Verify Code" to gain access
+            <div class="instructions-box">
+                <div class="instructions-title">Authentication Procedure</div>
+                <ol class="instructions-list">
+                    <li>Copy the six-digit verification code displayed above</li>
+                    <li>Return to the Neuroclima Bot application interface</li>
+                    <li>Enter the verification code in the designated authentication field</li>
+                    <li>Select "Validate Token" to complete the authentication process</li>
+                </ol>
             </div>
 
-            <div class="warning">
-                <div class="warning-title">⚠️ Security Information</div>
-                <ul>
-                    <li>This code expires in {{ token_expiry_days }} days</li>
-                    <li>Never share this code with anyone</li>
-                    <li>If you didn't request this code, please ignore this email</li>
-                    <li>Your email address is not saved for security purposes</li>
+            <div class="notice-box">
+                <div class="notice-title">Important Security Notice</div>
+                <ul class="notice-list">
+                    <li>This verification code will expire in {{ token_expiry_days }} days from issuance</li>
+                    <li>This code is confidential and should not be shared with any third party</li>
+                    <li>If you did not initiate this authentication request, please disregard this</li>
+                    <li>Email addresses are not retained in our system to ensure data privacy</li>
+                    <li>For security inquiries, please contact the platform administrator</li>
                 </ul>
             </div>
 
-            <div class="footer">
-                <div class="footer-signature">Best regards,<br>The NeuroClima Team</div>
-                <div style="margin-top: 16px; font-size: 14px;">
-                    Advancing climate science through AI-powered insights
-                </div>
+            <div class="signature">
+                <p class="signature-line">Respectfully,</p>
+                <p class="signature-line"><strong>Neuroclima Bot</strong></p>
             </div>
+        </div>
+
+        <div class="footer">
+            <p class="footer-text">
+                <strong>Neuroclima Bot</strong> | Smart Climate Adaptation & Resilience
+            </p>
+            <p class="footer-divider">• • •</p>
+            <p class="footer-text">
+                This is an automated message. Please do not reply to this email.
+            </p>
         </div>
     </div>
 </body>

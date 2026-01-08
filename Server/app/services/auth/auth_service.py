@@ -279,7 +279,7 @@ class AuthService:
             
             logger.info(f"Sending email via Maileroo to: {email}")
             
-            subject = "Your NeuroClima Access Code"
+            subject = "Your NeuroClima Bot Access Code"
             html_content = self._generate_html_email(token)
             text_content = self._generate_text_email(token)
             
@@ -326,7 +326,7 @@ class AuthService:
             
             logger.info(f"Sending email via SMTP to: {email}")
             
-            subject = "Your NeuroClima Access Code"
+            subject = "Your NeuroClima Bot Access Code"
             html_content = self._generate_html_email(token)
             text_content = self._generate_text_email(token)
             

@@ -29,8 +29,8 @@ export function PrivacyPolicy() {
 
           <h2>2. Data Controller</h2>
           <p>
-            <strong>NeuroClima</strong><br/>
-            Email: info@neuroclima.com<br/>
+            <strong>NeuroClimaBot</strong><br/>
+            Email: info@neuroclimabot.com<br/>
           </p>
 
           <h2>3. Information We Collect</h2>
@@ -117,7 +117,7 @@ export function PrivacyPolicy() {
             <li><strong>Right to Object:</strong> Object to processing based on legitimate interest</li>
             <li><strong>Right to Withdraw Consent:</strong> For consent-based processing</li>
           </ul>
-          <p>To exercise these rights, contact us at: <strong>info@neuroclima.com</strong></p>
+          <p>To exercise these rights, contact us at: <strong>info@neuroclimabot.com</strong></p>
 
           <h2>8. Data Security</h2>
           <p>We implement industry-standard security measures:</p>
@@ -142,7 +142,7 @@ export function PrivacyPolicy() {
 
           <h2>12. Contact and Complaints</h2>
           <p>
-            <strong>General Support:</strong> info@neuroclima.com
+            <strong>General Support:</strong> info@neuroclimabot.com
           </p>
           <p>
             You have the right to lodge a complaint with your local data protection authority 
@@ -244,7 +244,7 @@ export function Disclaimer() {
 
         <h2>8. Limitation of Liability</h2>
         <p>
-          To the fullest extent permitted by law, NeuroClima shall not be liable for any:
+          To the fullest extent permitted by law, NeuroClima Bot shall not be liable for any:
         </p>
         <ul>
           <li>Direct, indirect, incidental, or consequential damages</li>
@@ -262,7 +262,7 @@ export function Disclaimer() {
         <h2>10. Contact Information</h2>
         <p>
           For questions about this disclaimer:<br/>
-          <strong>Email:</strong> info@neuroclima.com<br/>
+          <strong>Email:</strong> info@neuroclimabot.com<br/>
         </p>
       </div>
     </div>
@@ -331,7 +331,7 @@ export function TermsOfUse() {
         
         <h3>5.1 Our Rights</h3>
         <ul>
-          <li>NeuroClima retains all rights to the Service, technology, and platform</li>
+          <li>NeuroClima Bot retains all rights to the Service, technology, and platform</li>
           <li>AI model, algorithms, and proprietary technology remain our property</li>
           <li>Service trademarks, logos, and branding are protected</li>
         </ul>
@@ -351,7 +351,7 @@ export function TermsOfUse() {
         <ul>
           <li>We collect minimal personal data necessary for service provision</li>
           <li>Anonymous usage data helps improve the AI system</li>
-          <li>Testing-phase data (via LangSmith) is temporary and will be deleted</li>
+          <li>Testing-phase data (via LangFuse) is temporary and will be deleted</li>
           <li>You have rights under GDPR and applicable privacy laws</li>
         </ul>
 
@@ -382,7 +382,7 @@ export function TermsOfUse() {
 
         <h2>10. Indemnification</h2>
         <p>
-          You agree to indemnify and hold NeuroClima harmless from any claims, damages, 
+          You agree to indemnify and hold NeuroClima Bot harmless from any claims, damages, 
           or expenses arising from your use of the Service, violation of these Terms, 
           or infringement of any rights.
         </p>
@@ -405,7 +405,7 @@ export function TermsOfUse() {
         <h2>12. Governing Law and Jurisdiction</h2>
         <p>
           These Terms are governed by the laws of the European Union and the jurisdiction 
-          where NeuroClima is established. Any disputes will be resolved through the 
+          where NeuroClima Bot is established. Any disputes will be resolved through the 
           appropriate courts or alternative dispute resolution mechanisms.
         </p>
 
@@ -425,10 +425,10 @@ export function TermsOfUse() {
 
         <h2>15. Contact Information</h2>
         <p>
-          <strong>General Inquiries:</strong> info@neuroclima.com<br/>
+          <strong>General Inquiries:</strong> info@neuroclimabot.com<br/>
         </p>
 
-        <p><em>These Terms constitute the complete agreement between you and NeuroClima regarding the Service.</em></p>
+        <p><em>These Terms constitute the complete agreement between you and NeuroClima Bot regarding the Service.</em></p>
       </div>
     </div>
   );
@@ -595,7 +595,7 @@ export function LearnMore() {
 
         <h2>8. Contact and Support</h2>
         <p>
-          <strong>General Questions:</strong> info@neuroclima.com<br/>
+          <strong>General Questions:</strong> info@neuroclimabot.com<br/>
         </p>
 
         <p>

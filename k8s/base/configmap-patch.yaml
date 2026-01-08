@@ -1,0 +1,13 @@
+# Patch to update neuroclima-config with actual VM endpoints
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neuroclima-config
+  namespace: uoulu
+data:
+  MILVUS_HOST: "193.167.189.127"
+  MILVUS_PORT: "19530"
+  MINIO_ENDPOINT: "neuroclima-minio.itml.space"
+  OLLAMA_API_URL: "http://86.50.23.167:11434"
+  OLLAMA_HOST: "86.50.23.167"
+  OLLAMA_PORT: "11434"

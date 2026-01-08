@@ -86,6 +86,21 @@ data:
 
 ### 5. Create Secrets
 
+**Option 1: Using the helper script (recommended):**
+
+```bash
+# Run the interactive helper script
+./k8s/apply-secrets.sh
+
+# The script will:
+# 1. Create secrets.yaml from template if it doesn't exist
+# 2. Prompt you to edit it with your actual credentials
+# 3. Apply the secrets to your cluster
+# 4. Verify the secrets were created successfully
+```
+
+**Option 2: Manual setup:**
+
 ```bash
 # Copy the template
 cp k8s/base/secrets.yaml.template k8s/base/secrets.yaml
@@ -97,7 +112,10 @@ nano k8s/base/secrets.yaml
 kubectl apply -f k8s/base/secrets.yaml
 ```
 
-**Important**: Add `k8s/base/secrets.yaml` to `.gitignore`!
+**Important**:
+- Add `k8s/base/secrets.yaml` to `.gitignore`
+- Update all placeholder values in secrets.yaml before applying
+- Required secrets: MILVUS_USER, MILVUS_PASSWORD, REDIS_PASSWORD, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, SECRET_KEY
 
 ### 6. Deploy the Application
 
@@ -266,6 +284,64 @@ kubectl rollout restart deployment/neuroclima-server -n uoulu
 ```
 
 ## Troubleshooting
+
+### Pydantic ValidationError for MilvusConfig
+
+**Error Message:**
+```
+pydantic_core._pydantic_core.ValidationError: 4 validation errors for MilvusConfig
+HOST
+  Field required [type=missing, input_value={}, input_type=dict]
+PORT
+  Field required [type=missing, input_value={}, input_type=dict]
+USER
+  Field required [type=missing, input_value={}, input_type=dict]
+PASSWORD
+  Field required [type=missing, input_value={}, input_type=dict]
+```
+
+**Cause:** The Kubernetes Secret `neuroclima-secrets` is missing required Milvus credentials.
+
+**Solution:**
+
+Option 1: Use the helper script (recommended):
+```bash
+# Run the helper script
+./k8s/apply-secrets.sh
+
+# Follow the prompts to create and apply secrets
+# Then restart the server
+kubectl rollout restart deployment/neuroclima-server -n uoulu
+```
+
+Option 2: Manual setup:
+```bash
+# 1. Create secrets.yaml from template
+cp k8s/base/secrets.yaml.template k8s/base/secrets.yaml
+
+# 2. Edit secrets.yaml and update the placeholder values
+nano k8s/base/secrets.yaml
+
+# 3. Apply the secrets
+kubectl apply -f k8s/base/secrets.yaml
+
+# 4. Verify the secret was created
+kubectl get secret neuroclima-secrets -n uoulu
+
+# 5. Restart the server to pick up the new secrets
+kubectl rollout restart deployment/neuroclima-server -n uoulu
+
+# 6. Check the logs
+kubectl logs -f deployment/neuroclima-server -n uoulu
+```
+
+**Note:** Make sure your secrets.yaml contains at minimum:
+- MILVUS_USER
+- MILVUS_PASSWORD
+- REDIS_PASSWORD
+- MINIO_ACCESS_KEY
+- MINIO_SECRET_KEY
+- SECRET_KEY
 
 ### Pods Not Starting
 

@@ -132,7 +132,7 @@ const Header = ({
   return (
     <div className="header-container">
       <div className="title" onClick={handleTitleClick}>
-        <img src="/assets/images/logo.svg" alt="NeuroClima Logo" className="header-logo" />
+        <img src="/assets/images/logo.svg" alt="NeuroClima Bot Logo" className="header-logo" />
       </div>
       
       <div className="header-controls">

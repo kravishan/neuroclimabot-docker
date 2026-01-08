@@ -236,7 +236,7 @@ const AdminDashboard = () => {
           <div className="adm-header-left">
             <img 
               src="/assets/icons/favicon.png" 
-              alt="NeuroClima" 
+              alt="NeuroClima Bot" 
               className="adm-header-logo"
             />
             <h1>NeuroClima Bot Admin Dashboard</h1>

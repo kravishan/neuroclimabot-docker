@@ -75,7 +75,7 @@ class Config:
     # Application Configuration
     def _load_app(self) -> Dict[str, Any]:
         return {
-            'name': os.getenv('APP_NAME', 'NeuroClima Document Processor'),
+            'name': os.getenv('APP_NAME', 'NeuroClima Bot Document Processor'),
             'version': os.getenv('APP_VERSION', '7.0.0'),  # Updated version
             'debug': os.getenv('DEBUG', 'False').lower() == 'true',
             'log_level': os.getenv('LOG_LEVEL', 'INFO'),

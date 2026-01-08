@@ -94,7 +94,7 @@ const AuthGuard = ({ children }) => {
     return (
       <div className="auth-guard-loading">
         <div className="loading-content">
-          <img src="/assets/images/logo.svg" alt="NeuroClima" className="loading-logo" />
+          <img src="/assets/images/logo.svg" alt="NeuroClima Bot" className="loading-logo" />
           <LoadingSpinner size="medium" text="Checking authentication..." />
         </div>
       </div>
