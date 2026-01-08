@@ -1,8 +1,6 @@
 # Monitoring Stack Extension for NeuroClima
 # Usage: docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
-version: '3.8'
-
 services:
   # Prometheus - Metrics collection and storage
   prometheus:
@@ -53,4 +51,3 @@ volumes:
 
 networks:
   neuroclima-network:
-    external: true

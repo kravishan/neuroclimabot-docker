@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Redis - Session and caching with password authentication
   # MUST START FIRST - Server depends on Redis being ready
