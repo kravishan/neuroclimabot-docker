@@ -468,8 +468,10 @@ def add_document_names_to_context(
         for _, doc in documents_df.iterrows():
             doc_id = str(doc.get(doc_id_column, ''))
             doc_name = str(doc.get('title', doc.get('filename', '')))
-            # Remove .txt extension
-            doc_name = doc_name.replace('.txt', '') if doc_name.endswith('.txt') else doc_name
+            # Remove file extension (e.g., .txt, .pdf, .p, etc.)
+            doc_name = os.path.splitext(doc_name)[0]
+            # Replace underscores with spaces for better readability
+            doc_name = doc_name.replace('_', ' ')
             doc_id_to_name[doc_id] = doc_name
 
         # Build comprehensive mappings from text_units
@@ -792,7 +794,7 @@ def extract_document_titles_from_context(
                 doc_id_column = 'document_id' if 'document_id' in documents.columns else 'id'
                 matching_docs = documents[documents[doc_id_column].astype(str).isin(all_doc_ids)]
                 if not matching_docs.empty and 'title' in matching_docs.columns:
-                    titles = [t.replace('.txt', '') if t.endswith('.txt') else t for t in matching_docs['title'].tolist()]
+                    titles = [os.path.splitext(t)[0].replace('_', ' ') for t in matching_docs['title'].tolist()]
                     logger.info(f"✅ Extracted {len(titles)} document titles from {len(sources_df)} sources")
                     return list(set(titles))
 
@@ -803,7 +805,7 @@ def extract_document_titles_from_context(
 
         logger.warning("⚠️ Could not match sources with text_units by text content, returning all document titles")
         if 'title' in documents.columns:
-            titles = [t.replace('.txt', '') if t.endswith('.txt') else t for t in documents['title'].tolist()]
+            titles = [os.path.splitext(t)[0].replace('_', ' ') for t in documents['title'].tolist()]
             return list(set(titles))
 
         return []
