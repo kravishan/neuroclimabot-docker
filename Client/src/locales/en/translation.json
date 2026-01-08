@@ -19,7 +19,7 @@
   "universityOfOulu": "University of Oulu",
   "ubicomp": "UBICOMP",
   "fcg": "FCG",
-  "neuroClimaAllRightsReserved": "NeuroClima. All rights reserved.",
+  "neuroClimaAllRightsReserved": "NeuroClimaBot. All rights reserved.",
   
   "references": "References",
   "referencesCount": "Top {{count}} of {{total}} references",
@@ -36,7 +36,7 @@
   "pressToSend": "Press {{key}} to send",
   "copied": "Copied to clipboard!",
   "explore": "Explore",
-  "NeuroClima": "NeuroClima",
+  "NeuroClima": "NeuroClima Bot",
   "showMore": "Show More",
   "showLess": "Show Less",
   "noReferencesFound": "No references found",

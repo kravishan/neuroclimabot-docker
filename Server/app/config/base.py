@@ -12,7 +12,7 @@ class BaseConfig(BaseSettings):
     """Core application settings."""
 
     # Application Info
-    APP_NAME: str = "NeuroClima RAG"
+    APP_NAME: str = "NeuroClima Bot RAG"
     APP_VERSION: str = "0.1.2"
     ENVIRONMENT: str  # From .env
 

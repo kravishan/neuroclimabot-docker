@@ -1,24 +1,22 @@
-🌍 NeuroClima - Your Access Code
+NeuroClima Bot - Your Access Code
 
 Hello there!
 
-Your 6-digit access code for NeuroClima is:
+Your 6-digit access code for NeuroClima Bot is:
 
     {{ token }}
 
 How to use this code:
 1. Copy the 6-digit code above
-2. Return to the NeuroClima application
+2. Return to the NeuroClima Bot application
 3. Enter the code in the authentication field
 4. Click "Verify Code" to gain access
 
-⚠️ Security Information:
+Security Information:
 • This code expires in {{ token_expiry_days }} days
 • Never share this code with anyone
 • If you didn't request this code, please ignore this email
 • Your email address is not saved for security purposes
 
 Best regards,
-The NeuroClima Team
-
-Advancing climate science through AI-powered insights
+The NeuroClimaBot Team

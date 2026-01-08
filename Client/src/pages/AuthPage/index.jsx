@@ -246,8 +246,8 @@ const AuthPage = ({ onAuthenticated }) => {
         <div className="auth-footer">
           <p className="auth-footer-text">
             Need help? Contact us at{' '}
-            <a href="mailto:info@neuroclima.com" className="auth-footer-link">
-              info@neuroclima.com
+            <a href="mailto:info@neuroclimabot.com" className="auth-footer-link">
+              info@neuroclimabot.com
             </a>
           </p>
         </div>

@@ -29,7 +29,7 @@ export const API_CONFIG = {
 }
 
 export const APP_CONFIG = {
-  NAME: import.meta.env.VITE_APP_NAME || 'NeuroClima',
+  NAME: import.meta.env.VITE_APP_NAME || 'NeuroClima Bot',
   VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
   ENVIRONMENT: import.meta.env.VITE_APP_ENVIRONMENT || 'development'
 }
