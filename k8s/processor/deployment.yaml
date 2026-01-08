@@ -99,6 +99,8 @@ spec:
         - name: graphrag-settings
           mountPath: /app/graphrag/settings.yaml
           subPath: settings.yaml
+        - name: graphrag-prompts
+          mountPath: /app/graphrag/prompts
         resources:
           requests:
             memory: "4Gi"
@@ -119,3 +121,6 @@ spec:
       - name: graphrag-settings
         configMap:
           name: graphrag-settings
+      - name: graphrag-prompts
+        configMap:
+          name: graphrag-prompts
