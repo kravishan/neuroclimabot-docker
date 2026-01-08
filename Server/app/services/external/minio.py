@@ -130,66 +130,124 @@ class MinIOClient:
             logger.error(f"Failed to generate shareable URL for {doc_name}: {e}")
             return None
     
+    def _normalize_filename_variations(self, filename: str) -> List[str]:
+        """
+        Generate filename variations to handle underscore/space mismatches.
+
+        GraphRAG may return names with underscores while MinIO stores with spaces,
+        or vice versa. This method generates common variations to try.
+        """
+        variations = [filename]  # Original
+
+        # Add variation with underscores replaced by spaces
+        if '_' in filename:
+            variations.append(filename.replace('_', ' '))
+
+        # Add variation with spaces replaced by underscores
+        if ' ' in filename:
+            variations.append(filename.replace(' ', '_'))
+
+        # Add URL-decoded version if it contains %
+        if '%' in filename:
+            try:
+                from urllib.parse import unquote
+                variations.append(unquote(filename))
+            except:
+                pass
+
+        return variations
+
+    def _matches_filename(self, object_name: str, doc_name: str) -> bool:
+        """
+        Check if object_name matches doc_name, handling name variations.
+
+        Handles:
+        - Exact matches
+        - Case-insensitive matches
+        - Underscore vs space variations
+        - Filename extraction from paths
+        """
+        # Get just the filename from the object path
+        object_filename = object_name.split('/')[-1]
+
+        # Generate variations of the doc_name to try
+        doc_variations = self._normalize_filename_variations(doc_name)
+
+        # Try each variation
+        for variation in doc_variations:
+            # Exact match (ends with)
+            if object_name.endswith(variation):
+                return True
+
+            # Case-insensitive match (ends with)
+            if object_name.lower().endswith(variation.lower()):
+                return True
+
+            # Exact filename match (no path)
+            if object_filename == variation:
+                return True
+
+            # Case-insensitive filename match (no path)
+            if object_filename.lower() == variation.lower():
+                return True
+
+        return False
+
     async def _find_document_path(self, doc_name: str, bucket_name: str) -> Optional[str]:
         """
-        Find the actual path of a document in MinIO bucket, handling folder structures.
+        Find the actual path of a document in MinIO bucket, handling folder structures
+        and filename variations (underscores vs spaces).
         Uses caching to improve performance for repeated requests.
         """
-        
+
         # Check cache first
         cache_key = f"{bucket_name}:{doc_name}"
         now = datetime.now()
-        
-        if (cache_key in self.path_cache and 
-            cache_key in self.cache_expiry and 
+
+        if (cache_key in self.path_cache and
+            cache_key in self.cache_expiry and
             now < self.cache_expiry[cache_key]):
             logger.debug(f"Using cached path for {doc_name}")
             return self.path_cache[cache_key]
-        
+
         try:
-            # First, try direct access (file might be in root)
-            try:
-                self.client.stat_object(bucket_name, doc_name)
-                actual_path = doc_name
-                logger.debug(f"Found {doc_name} in bucket root")
-                
-                # Cache the result
-                self.path_cache[cache_key] = actual_path
-                self.cache_expiry[cache_key] = now + self.cache_duration
-                
-                return actual_path
-                
-            except S3Error:
-                # File not in root, search recursively
-                logger.debug(f"Searching for {doc_name} in subfolders...")
-                
-                # Search through all objects in bucket
-                for obj in self.client.list_objects(bucket_name, recursive=True):
-                    object_name = obj.object_name
-                    
-                    # Check if this object matches our document name
-                    if object_name.endswith(doc_name):
-                        # logger.info(f"Found {doc_name} at path: {object_name}")
-                        
-                        # Cache the result
-                        self.path_cache[cache_key] = object_name
-                        self.cache_expiry[cache_key] = now + self.cache_duration
-                        
-                        return object_name
-                    
-                    # Also check if the filename matches (case-insensitive)
-                    if object_name.lower().endswith(doc_name.lower()):
-                        # logger.info(f"Found {doc_name} (case-insensitive) at path: {object_name}")
-                        
-                        # Cache the result
-                        self.path_cache[cache_key] = object_name
-                        self.cache_expiry[cache_key] = now + self.cache_duration
-                        
-                        return object_name
-                
-                logger.warning(f"Document {doc_name} not found in bucket {bucket_name}")
-                return None
-                
+            # First, try direct access with original name and variations
+            doc_variations = self._normalize_filename_variations(doc_name)
+
+            for variation in doc_variations:
+                try:
+                    self.client.stat_object(bucket_name, variation)
+                    actual_path = variation
+                    logger.debug(f"Found {doc_name} in bucket root as {variation}")
+
+                    # Cache the result (use original doc_name as key)
+                    self.path_cache[cache_key] = actual_path
+                    self.cache_expiry[cache_key] = now + self.cache_duration
+
+                    return actual_path
+                except S3Error:
+                    continue  # Try next variation
+
+            # File not in root, search recursively
+            logger.debug(f"Searching for {doc_name} in subfolders with name normalization...")
+
+            # Search through all objects in bucket
+            for obj in self.client.list_objects(bucket_name, recursive=True):
+                object_name = obj.object_name
+
+                # Check if this object matches our document name (with variations)
+                if self._matches_filename(object_name, doc_name):
+                    logger.debug(f"Found {doc_name} at path: {object_name}")
+
+                    # Cache the result
+                    self.path_cache[cache_key] = object_name
+                    self.cache_expiry[cache_key] = now + self.cache_duration
+
+                    return object_name
+
+            logger.warning(f"Document {doc_name} not found in bucket {bucket_name}")
+            return None
+
         except Exception as e:
             logger.error(f"Error searching for document {doc_name}: {e}")
             return None

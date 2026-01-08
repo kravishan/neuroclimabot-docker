@@ -290,62 +290,74 @@ async def _extract_reference_from_summary_with_shareable_url(
 
 
 async def _extract_reference_from_graph_document_with_shareable_url(
-    graph_doc: Dict[str, Any], 
+    graph_doc: Dict[str, Any],
     minio_client,
     index: int
 ) -> Dict[str, Any]:
     """Extract clean reference from a GraphRAG document with MinIO shareable URL generation."""
-    
+
     try:
         # Get document name from graph document
         document_name = (
-            graph_doc.get("document_name") or 
+            graph_doc.get("document_name") or
             graph_doc.get("metadata", {}).get("document_name") or
             graph_doc.get("doc_name")
         )
-        
+
         if not document_name or document_name.lower() in ['unknown', 'test', '']:
             return None
-        
+
+        # Handle comma-separated document names from GraphRAG
+        # GraphRAG joins multiple document names with ", " so we need to split and use the first one
+        if isinstance(document_name, str) and ", " in document_name:
+            doc_names = [name.strip() for name in document_name.split(", ")]
+            # Filter out empty strings
+            doc_names = [name for name in doc_names if name]
+            if not doc_names:
+                return None
+            # Use the first document name
+            document_name = doc_names[0]
+            logger.debug(f"GraphRAG returned multiple documents, using first: {document_name}")
+
         # Get bucket information
         bucket_source = (
-            graph_doc.get("bucket") or 
+            graph_doc.get("bucket") or
             graph_doc.get("metadata", {}).get("bucket") or
             graph_doc.get("metadata", {}).get("bucket_source") or
             "researchpapers"
         )
-        
+
         is_news = bucket_source.lower() == "news"
-        
+
         if is_news:
             title = _create_title_from_news_url(document_name) or "News Article"
             url = document_name
             doc_name = document_name
-            
+
             if not _is_valid_news_url(url):
                 return None
         else:
             doc_name = document_name
             title = _clean_document_name(document_name)
             url = await minio_client.generate_shareable_reference_url(document_name, bucket_source)
-            
+
             if not _is_valid_shareable_url(url):
                 return None
-        
+
         raw_score = (
-            graph_doc.get("similarity_score") or 
+            graph_doc.get("similarity_score") or
             graph_doc.get("score") or
             graph_doc.get("relevance_score", 0.0)
         )
         similarity_score = round(float(raw_score) * 100, 1)
-        
+
         return {
             "title": title,
             "doc_name": doc_name,
             "url": url,
             "similarity_score": similarity_score
         }
-        
+
     except Exception as e:
         logger.warning(f"Error extracting graph document reference {index}: {e}")
         return None
