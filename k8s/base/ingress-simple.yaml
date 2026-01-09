@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neuroclima-ingress
+  namespace: uoulu
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Disable for testing, enable later
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      # Client (Frontend)
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: neuroclima-client
+            port:
+              number: 80
+
+      # Server API
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: neuroclima-server
+            port:
+              number: 8000
+
+      # Processor API
+      - path: /processor
+        pathType: Prefix
+        backend:
+          service:
+            name: neuroclima-processor
+            port:
+              number: 5000

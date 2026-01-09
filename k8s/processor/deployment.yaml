@@ -96,13 +96,18 @@ spec:
           mountPath: /app/graphrag
         - name: lancedb-data
           mountPath: /app/lancedb
+        - name: graphrag-settings
+          mountPath: /app/graphrag/settings.yaml
+          subPath: settings.yaml
+        - name: graphrag-prompts
+          mountPath: /app/graphrag/prompts
         resources:
           requests:
-            memory: "4Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "500m"
           limits:
-            memory: "8Gi"
-            cpu: "4000m"
+            memory: "4Gi"
+            cpu: "2000m"
       volumes:
       - name: processor-data
         persistentVolumeClaim:
@@ -113,3 +118,9 @@ spec:
       - name: lancedb-data
         persistentVolumeClaim:
           claimName: lancedb-data-pvc
+      - name: graphrag-settings
+        configMap:
+          name: graphrag-settings
+      - name: graphrag-prompts
+        configMap:
+          name: graphrag-prompts

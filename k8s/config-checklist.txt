@@ -1,0 +1,67 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║              NeuroClima Kubernetes Configuration Checklist            ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+BEFORE DEPLOYMENT - REQUIRED UPDATES:
+
+📁 File: k8s/base/configmap.yaml
+═══════════════════════════════════════════════════════════════════════
+
+Line 12-17: Shared Configuration
+   [ ] OLLAMA_API_URL:     Replace "your_ollama_server_url_here"
+   [ ] OLLAMA_HOST:        Replace "your_ollama_server_host_here"
+   [ ] MINIO_ENDPOINT:     Replace "your_minio_server_endpoint_here"
+   [ ] MILVUS_HOST:        Replace "your_milvus_server_host_here"
+
+Line 110-123: GraphRAG Configuration (4 URLs to update)
+   [ ] GRAPHRAG_QUERY_CHAT_MODEL_API_BASE
+   [ ] GRAPHRAG_QUERY_EMBEDDING_MODEL_API_BASE
+   [ ] GRAPHRAG_INDEXING_CHAT_MODEL_API_BASE
+   [ ] GRAPHRAG_EMBEDDING_MODEL_API_BASE
+
+═══════════════════════════════════════════════════════════════════════
+
+📁 File: k8s/base/secrets-ready.yaml (Optional - has defaults)
+═══════════════════════════════════════════════════════════════════════
+
+   [ ] MINIO_ACCESS_KEY:    Current: "minioadmin"
+   [ ] MINIO_SECRET_KEY:    Current: "minioadmin"
+   [ ] MILVUS_USER:         Current: "root"
+   [ ] MILVUS_PASSWORD:     Current: "Milvus"
+   [ ] REDIS_PASSWORD:      Current: "redis-password-change-me"
+   [ ] ADMIN_USERNAME:      Current: "admin"
+   [ ] ADMIN_PASSWORD:      Current: "admin123"
+   [ ] SECRET_KEY:          Current: auto-generated
+
+═══════════════════════════════════════════════════════════════════════
+
+📁 File: k8s/client/deployment.yaml (Optional - for external access)
+═══════════════════════════════════════════════════════════════════════
+
+Line 29-35: Environment Variables
+   [ ] VITE_API_BASE_URL:       Replace "YOUR_DOMAIN" with your domain
+   [ ] VITE_API_DOCUMENT_URL:   Replace "YOUR_DOMAIN" with your domain
+   [ ] VITE_TRANSLATE_API_URL:  Replace "YOUR_DOMAIN" with your domain
+   [ ] VITE_STP_SERVICE_URL:    Replace "YOUR_DOMAIN" with your domain
+
+   Note: For local testing with port-forward, you can leave these as-is
+         and use internal cluster service names.
+
+═══════════════════════════════════════════════════════════════════════
+
+DEPLOYMENT COMMAND:
+═══════════════════════════════════════════════════════════════════════
+
+   cd k8s
+   .\deploy-k8s.ps1 -Action all
+
+═══════════════════════════════════════════════════════════════════════
+
+VERIFICATION COMMAND:
+═══════════════════════════════════════════════════════════════════════
+
+   kubectl --kubeconfig kubeconfig.yaml get pods -n uoulu
+
+   Expected output: All pods in "Running" status
+
+═══════════════════════════════════════════════════════════════════════
