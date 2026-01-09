@@ -38,8 +38,9 @@ data:
             listen 80;
 
             # API routes to backend server
-            location /api {
-                proxy_pass http://server;
+            # Strip /api prefix: /api/v1/users -> /v1/users
+            location /api/ {
+                proxy_pass http://server/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -47,8 +48,9 @@ data:
             }
 
             # Processor routes
-            location /processor {
-                proxy_pass http://processor;
+            # Strip /processor prefix: /processor/upload -> /upload
+            location /processor/ {
+                proxy_pass http://processor/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
