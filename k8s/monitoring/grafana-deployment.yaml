@@ -50,6 +50,8 @@ spec:
           mountPath: /etc/grafana/provisioning/datasources
         - name: grafana-dashboards-config
           mountPath: /etc/grafana/provisioning/dashboards
+        - name: grafana-dashboards
+          mountPath: /etc/grafana/dashboards
         resources:
           requests:
             memory: "512Mi"
@@ -79,3 +81,7 @@ spec:
       - name: grafana-dashboards-config
         configMap:
           name: grafana-dashboards-config
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+          optional: true

@@ -56,6 +56,37 @@ kubectl apply -f grafana-service.yaml
 kubectl apply -f monitoring/
 ```
 
+### 📊 Create Dashboard ConfigMap
+
+After deploying Grafana, you need to create a ConfigMap with the dashboard JSON:
+
+**Option 1: Use the provided script (Linux/Mac)**
+```bash
+cd k8s/monitoring
+chmod +x create-dashboard-configmap.sh
+./create-dashboard-configmap.sh
+```
+
+**Option 2: Use PowerShell script (Windows)**
+```powershell
+cd k8s\monitoring
+.\create-dashboard-configmap.ps1
+```
+
+**Option 3: Manual kubectl command**
+```bash
+# From the repository root
+kubectl create configmap grafana-dashboards \
+  --from-file=neuroclima-dashboard.json=Server/monitoring/grafana/dashboards/neuroclima-dashboard.json \
+  --namespace=uoulu \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Then restart Grafana to load the dashboard:
+```bash
+kubectl rollout restart deployment/neuroclima-grafana -n uoulu
+```
+
 ## 📊 Access Services
 
 ### Port Forwarding (for testing)
@@ -93,15 +124,6 @@ Apply changes:
 kubectl apply -f prometheus-configmap.yaml
 kubectl rollout restart deployment/neuroclima-prometheus -n uoulu
 ```
-
-### Import Grafana Dashboards
-
-1. Access Grafana UI
-2. Login with admin credentials
-3. Navigate to Dashboards → Import
-4. Upload: `../../Server/monitoring/grafana/dashboards/neuroclima-dashboard.json`
-
-Or use the Grafana API to import programmatically.
 
 ## 📝 Verify Deployment
 
