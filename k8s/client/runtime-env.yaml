@@ -60,8 +60,13 @@ spec:
           echo "Injecting runtime environment variables..."
           find /app/assets -name '*.js' -type f 2>/dev/null | while read -r file; do
             echo "Processing: $file"
+            # Replace base URLs (without paths) - these are concatenated in the app
+            sed -i 's|"http://localhost:8000"|""|g' "$file" || true
+            sed -i 's|'\''http://localhost:8000'\''|'\'''\''|g' "$file" || true
+            sed -i 's|"http://localhost:5000"|"/processor"|g' "$file" || true
+            sed -i 's|'\''http://localhost:5000'\''|'\''/processor'\''|g' "$file" || true
+            # Replace full URLs (with /api prefix)
             sed -i 's|http://localhost:8000/api|/api|g' "$file" || true
-            sed -i 's|http://localhost:5000|/processor|g' "$file" || true
             sed -i 's|https://YOUR_DOMAIN/api|/api|g' "$file" || true
             sed -i 's|https://YOUR_DOMAIN/processor|/processor|g' "$file" || true
           done
