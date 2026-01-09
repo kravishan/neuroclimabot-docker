@@ -26,13 +26,13 @@ spec:
           name: http
         env:
         - name: VITE_API_BASE_URL
-          value: "https://YOUR_DOMAIN/api"
+          value: "/api"
         - name: VITE_API_DOCUMENT_URL
-          value: "https://YOUR_DOMAIN/processor"
+          value: "/processor"
         - name: VITE_TRANSLATE_API_URL
-          value: "https://YOUR_DOMAIN/processor"
+          value: "/processor"
         - name: VITE_STP_SERVICE_URL
-          value: "https://YOUR_DOMAIN/processor"
+          value: "/processor"
         resources:
           requests:
             memory: "128Mi"
