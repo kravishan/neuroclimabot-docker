@@ -48,7 +48,7 @@ spec:
     spec:
       initContainers:
       - name: inject-runtime-env
-        image: docker.io/raviyah/neuroclima-client:latest
+        image: docker.io/raviyah/neuroclima-client:v1
         command: ["/bin/sh"]
         args:
         - -c

@@ -24,7 +24,7 @@ spec:
           - 0
       containers:
       - name: grafana
-        image: grafana/grafana:latest
+        image: grafana/grafana:v1
         ports:
         - containerPort: 3000
           name: http

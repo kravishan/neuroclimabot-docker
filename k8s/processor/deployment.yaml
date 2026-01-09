@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: unstructured
-        image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+        image: downloads.unstructured.io/unstructured-io/unstructured-api:v1
         ports:
         - containerPort: 8000
           name: http
@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
       - name: processor
-        image: docker.io/raviyah/neuroclima-processor:latest
+        image: docker.io/raviyah/neuroclima-processor:v1
         ports:
         - containerPort: 5000
           name: http

@@ -71,7 +71,7 @@ spec:
     spec:
       containers:
       - name: server
-        image: docker.io/raviyah/neuroclima-server:latest
+        image: docker.io/raviyah/neuroclima-server:v1
         ports:
         - containerPort: 8000
           name: http
