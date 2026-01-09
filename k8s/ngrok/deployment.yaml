@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuroclima-ngrok
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: ngrok
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: ngrok
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: ngrok
+    spec:
+      containers:
+      - name: ngrok
+        image: ngrok/ngrok:latest
+        command:
+        - ngrok
+        - http
+        - --authtoken=$(NGROK_AUTHTOKEN)
+        - --log=stdout
+        - nginx-gateway:80
+        env:
+        - name: NGROK_AUTHTOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ngrok-secret
+              key: authtoken
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"

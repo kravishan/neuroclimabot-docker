@@ -1,0 +1,44 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neuroclima-ingress
+  namespace: uoulu
+  annotations:
+    # Don't rewrite URLs - pass them as-is to backend services
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # Allow larger file uploads for document processing
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    # CORS settings for cross-origin requests
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      # Server API - must come BEFORE root to match first
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: neuroclima-server
+            port:
+              number: 8000
+
+      # Processor API
+      - path: /processor
+        pathType: Prefix
+        backend:
+          service:
+            name: neuroclima-processor
+            port:
+              number: 5000
+
+      # Client (Frontend) - must come LAST as catch-all
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: neuroclima-client
+            port:
+              number: 80

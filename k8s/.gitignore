@@ -1,5 +1,6 @@
 # Ignore secrets file (contains sensitive data)
 base/secrets.yaml
+ngrok/secret.yaml
 
 # Ignore kubeconfig files
 kubeconfig.yaml
