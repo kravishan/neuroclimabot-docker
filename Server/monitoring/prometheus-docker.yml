@@ -1,5 +1,5 @@
-# Prometheus Configuration for Local Development
-# This configuration scrapes metrics from the local Python backend
+# Prometheus Configuration for Docker Compose
+# This configuration scrapes metrics from containerized services
 
 global:
   scrape_interval: 15s      # How often to scrape targets
@@ -7,8 +7,8 @@ global:
 
   # Attach these labels to any time series or alerts
   external_labels:
-    monitor: 'neuroclima-local'
-    environment: 'development'
+    monitor: 'neuroclima-docker'
+    environment: 'production'
 
 # Scrape configuration
 scrape_configs:
@@ -19,16 +19,16 @@ scrape_configs:
         labels:
           service: 'prometheus'
 
-  # Scrape the NeuroClima Python Backend
+  # Scrape the NeuroClima Python Backend (Docker service name)
   - job_name: 'neuroclima-backend'
     scrape_interval: 10s
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['localhost:8001']
+      - targets: ['server:8001']
         labels:
           service: 'neuroclima'
           component: 'backend'
-          instance: 'local'
+          instance: 'docker'
 
   # Scrape GPU LLM Server Metrics
   - job_name: 'gpu-llm'
