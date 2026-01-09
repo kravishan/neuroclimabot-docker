@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-nginx-config
+  namespace: uoulu
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        # Root directory for static files
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Serve runtime config as JavaScript
+        location /config.js {
+            default_type application/javascript;
+            return 200 'window.RUNTIME_CONFIG = { API_BASE_URL: "/api", API_DOCUMENT_URL: "/processor", TRANSLATE_API_URL: "/processor", STP_SERVICE_URL: "/processor" };';
+        }
+
+        # Try to serve static files, fallback to index.html for SPA
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Gzip compression
+        gzip on;
+        gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    }
