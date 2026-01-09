@@ -37,9 +37,9 @@ data:
         server {
             listen 80;
 
-            # API routes to backend server
-            # Strip /api prefix: /api/v1/users -> /v1/users
-            location /api/ {
+            # Server API routes to backend server
+            # Strip /server prefix: /server/v1/users -> /v1/users
+            location /server/ {
                 proxy_pass http://server/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;

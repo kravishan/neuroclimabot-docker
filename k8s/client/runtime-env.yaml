@@ -65,9 +65,9 @@ spec:
             sed -i 's|'\''http://localhost:8000'\''|'\'''\''|g' "$file" || true
             sed -i 's|"http://localhost:5000"|"/processor"|g' "$file" || true
             sed -i 's|'\''http://localhost:5000'\''|'\''/processor'\''|g' "$file" || true
-            # Replace full URLs (with /api prefix)
-            sed -i 's|http://localhost:8000/api|/api|g' "$file" || true
-            sed -i 's|https://YOUR_DOMAIN/api|/api|g' "$file" || true
+            # Replace full URLs (with /server prefix)
+            sed -i 's|http://localhost:8000/api|/server|g' "$file" || true
+            sed -i 's|https://YOUR_DOMAIN/api|/server|g' "$file" || true
             sed -i 's|https://YOUR_DOMAIN/processor|/processor|g' "$file" || true
           done
           echo "Runtime environment injection complete!"
