@@ -1,3 +1,13 @@
+# ============================================================================
+# Nginx Gateway - Industry Standard Reverse Proxy Configuration
+# ============================================================================
+# This is the production-grade pattern used by major platforms:
+#   - Same as nginx-ingress, AWS API Gateway, Google Cloud Load Balancer
+#   - Single entry point with path-based routing
+#   - No CORS issues (all services on same domain)
+#   - Easy to scale and maintain
+# ============================================================================
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,6 +15,10 @@ metadata:
   namespace: uoulu
 data:
   nginx.conf: |
+    # ========================================================================
+    # Nginx Gateway Configuration
+    # ========================================================================
+
     events {
         worker_connections 1024;
     }
@@ -14,14 +28,18 @@ data:
         access_log /var/log/nginx/access.log;
         error_log /var/log/nginx/error.log;
 
-        # Timeouts and buffer sizes
+        # Timeouts and buffer sizes for long-running requests
         proxy_connect_timeout 600;
         proxy_send_timeout 600;
         proxy_read_timeout 600;
         send_timeout 600;
         client_max_body_size 100M;
 
-        # Upstream services
+        # ====================================================================
+        # Upstream Service Definitions
+        # ====================================================================
+        # These point to Kubernetes service names (internal DNS)
+
         upstream client {
             server neuroclima-client:80;
         }
@@ -34,21 +52,40 @@ data:
             server neuroclima-processor:5000;
         }
 
+        # ====================================================================
+        # Main Server Block - Path-Based Routing
+        # ====================================================================
+
         server {
             listen 80;
 
-            # Server API routes to backend server
-            # Strip /server prefix: /server/v1/users -> /v1/users
+            # ================================================================
+            # Backend API Routes
+            # ================================================================
+            # Routes: /server/* → neuroclima-server:8000/*
+            # Example: /server/api/v1/chat/start → http://server:8000/api/v1/chat/start
+            # Note: Trailing slash strips /server prefix
+
             location /server/ {
                 proxy_pass http://server/;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 proxy_set_header X-Forwarded-Proto $scheme;
+
+                # WebSocket support (if needed)
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
             }
 
-            # Processor routes
-            # Strip /processor prefix: /processor/upload -> /upload
+            # ================================================================
+            # Document Processor Routes
+            # ================================================================
+            # Routes: /processor/* → neuroclima-processor:5000/*
+            # Example: /processor/process/document → http://processor:5000/process/document
+            # Note: Trailing slash strips /processor prefix
+
             location /processor/ {
                 proxy_pass http://processor/;
                 proxy_set_header Host $host;
@@ -57,7 +94,13 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
             }
 
-            # Frontend - default route (must be last)
+            # ================================================================
+            # Frontend Routes (Default/Catch-All)
+            # ================================================================
+            # Routes: /* → neuroclima-client:80/*
+            # Must be last to catch all unmatched routes
+            # Handles React Router client-side routing
+
             location / {
                 proxy_pass http://client;
                 proxy_set_header Host $host;
