@@ -1,3 +1,28 @@
+# ============================================================================
+# NeuroClima Client Deployment - Nginx Gateway Architecture
+# ============================================================================
+# This deployment uses an industry-standard reverse proxy pattern:
+#
+# Architecture:
+#   Internet → ngrok → Nginx Gateway → Path-based routing:
+#                           ↓
+#         /          → neuroclima-client (Frontend)
+#         /server/*  → neuroclima-server (Backend API)
+#         /processor/* → neuroclima-processor (Document Processing)
+#
+# Benefits:
+#   ✅ Single entry point - One URL for all services
+#   ✅ No CORS issues - Everything on same domain
+#   ✅ Production-ready - Industry standard pattern
+#   ✅ Easy to scale - Add services by adding paths
+#   ✅ Works without domain - Use with ngrok, NodePort, or LoadBalancer
+#
+# Environment Variables (Optional):
+#   - These override the defaults set in config.js
+#   - Default values: /server and /processor (relative paths)
+#   - Only change if you need custom routing
+# ============================================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,18 +46,21 @@ spec:
       containers:
       - name: client
         image: docker.io/raviyah/neuroclima-client:latest
+        imagePullPolicy: Always  # Force pull latest image (important for :latest tag)
         ports:
         - containerPort: 80
           name: http
         env:
+        # Optional: Override default paths (already set to these values in config.js)
+        # These are injected at runtime via docker-entrypoint.sh if specified
         - name: VITE_API_BASE_URL
-          value: "/server"
+          value: "/server"  # Default: /server (routes to backend API)
         - name: VITE_API_DOCUMENT_URL
-          value: "/processor"
+          value: "/processor"  # Default: /processor (routes to document processor)
         - name: VITE_TRANSLATE_API_URL
-          value: "/processor"
+          value: "/processor"  # Routes translation API through processor
         - name: VITE_STP_SERVICE_URL
-          value: "/processor"
+          value: "/processor"  # Routes STP service through processor
         resources:
           requests:
             memory: "128Mi"

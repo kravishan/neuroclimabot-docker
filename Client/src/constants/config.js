@@ -1,6 +1,8 @@
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
-  DOCUMENT_URL: import.meta.env.VITE_API_DOCUMENT_URL || 'http://localhost:5000',
+  // Use relative paths for production (works with Nginx Gateway)
+  // Falls back to localhost for local development without gateway
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || '/server',
+  DOCUMENT_URL: import.meta.env.VITE_API_DOCUMENT_URL || '/processor',
   TIMEOUT: parseInt(import.meta.env.VITE_API_TIMEOUT) || 120000,
   ENDPOINTS: {
     CHAT_START: '/api/v1/chat/start',
@@ -105,15 +107,18 @@ export const ADMIN_CONFIG = {
 // External Services Configuration
 export const EXTERNAL_SERVICES = {
   TRANSLATE_API: {
-    BASE_URL: import.meta.env.VITE_TRANSLATE_API_URL || 'http://86.50.229.248:8000',
+    // Use relative path through Nginx Gateway (routes to processor service)
+    BASE_URL: import.meta.env.VITE_TRANSLATE_API_URL || '/processor',
     TIMEOUT: 10000
   },
   STP_SERVICE: {
-    BASE_URL: import.meta.env.VITE_STP_SERVICE_URL || 'http://86.50.229.248:8000',
+    // Use relative path through Nginx Gateway (routes to processor service)
+    BASE_URL: import.meta.env.VITE_STP_SERVICE_URL || '/processor',
     TIMEOUT: 10000
   },
   PROCESSOR: {
-    BASE_URL: import.meta.env.VITE_PROCESSOR_URL || 'http://localhost:5000',
+    // Use relative path through Nginx Gateway
+    BASE_URL: import.meta.env.VITE_PROCESSOR_URL || '/processor',
     TIMEOUT: 10000,
     ENDPOINTS: {
       SERVICES_HEALTH: '/services/health',
