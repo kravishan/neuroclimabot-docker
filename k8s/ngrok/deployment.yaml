@@ -20,7 +20,14 @@ spec:
     spec:
       containers:
       - name: ngrok
-        image: ngrok/ngrok:latest
+        image: ngrok/ngrok:3.5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         command:
         - ngrok
         - http
@@ -40,3 +47,15 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 4040
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 4040
+          initialDelaySeconds: 10
+          periodSeconds: 5

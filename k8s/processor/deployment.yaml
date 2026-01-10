@@ -20,7 +20,14 @@ spec:
     spec:
       containers:
       - name: unstructured
-        image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
+        image: downloads.unstructured.io/unstructured-io/unstructured-api:0.0.73
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 8000
           name: http
@@ -31,6 +38,18 @@ spec:
           limits:
             memory: "4Gi"
             cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 5
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -54,7 +73,14 @@ spec:
     spec:
       containers:
       - name: processor
-        image: docker.io/raviyah/neuroclima-processor:latest
+        image: docker.io/raviyah/neuroclima-processor:v1.0.0
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         ports:
         - containerPort: 5000
           name: http
@@ -108,6 +134,18 @@ spec:
           limits:
             memory: "4Gi"
             cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 5
       volumes:
       - name: processor-data
         persistentVolumeClaim:

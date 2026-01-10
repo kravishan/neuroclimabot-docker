@@ -9,6 +9,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
+  storageClassName: do-block-storage
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -21,6 +22,7 @@ spec:
   resources:
     requests:
       storage: 20Gi
+  storageClassName: do-block-storage
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -33,3 +35,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
+  storageClassName: do-block-storage
