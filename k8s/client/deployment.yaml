@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: client
-        image: docker.io/raviyah/neuroclima-client:v1.0.0
+        image: docker.io/raviyah/neuroclima-client:latest
         securityContext:
           runAsNonRoot: true
           runAsUser: 101

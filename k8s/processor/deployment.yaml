@@ -73,7 +73,7 @@ spec:
     spec:
       containers:
       - name: processor
-        image: docker.io/raviyah/neuroclima-processor:v1.0.0
+        image: docker.io/raviyah/neuroclima-processor:latest
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000

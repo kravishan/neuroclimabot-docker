@@ -88,7 +88,7 @@ spec:
     spec:
       containers:
       - name: server
-        image: docker.io/raviyah/neuroclima-server:v1.0.0
+        image: docker.io/raviyah/neuroclima-server:latest
         securityContext:
           runAsNonRoot: true
           runAsUser: 1000
