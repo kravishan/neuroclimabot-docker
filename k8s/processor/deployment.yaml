@@ -74,13 +74,6 @@ spec:
       containers:
       - name: processor
         image: docker.io/raviyah/neuroclima-processor:latest
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1000
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
         ports:
         - containerPort: 5000
           name: http
