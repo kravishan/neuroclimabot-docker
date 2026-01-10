@@ -8,7 +8,7 @@ This is an **industry-standard** approach to exposing multiple services through 
 Internet → ngrok → Nginx Gateway → Routes to services based on path
                         ↓
         /          → neuroclima-client (Frontend)
-        /api/*     → neuroclima-server (Backend API)
+        /server/*     → neuroclima-server (Backend API)
         /processor/* → neuroclima-processor (Document Processing)
 ```
 
@@ -28,7 +28,7 @@ This is **exactly** how production Kubernetes deployments work:
 
 1. **Nginx Gateway** acts as a reverse proxy (like nginx-ingress in production)
 2. Routes traffic based on URL path to the appropriate backend service
-3. Frontend uses **relative paths** (`/api`, `/processor`) - best practice!
+3. Frontend uses **relative paths** (`/server`, `/processor`) - best practice!
 4. No need for CORS configuration - everything is on the same domain
 
 ## Deployment
@@ -57,7 +57,7 @@ kubectl --kubeconfig ../kubeconfig.yaml port-forward svc/nginx-gateway 8080:80 -
 Then open: http://localhost:8080
 
 - Frontend: http://localhost:8080/
-- Backend API: http://localhost:8080/api
+- Backend API: http://localhost:8080/server
 - Processor: http://localhost:8080/processor
 
 ## Public Access with ngrok
@@ -66,7 +66,7 @@ The ngrok deployment is already configured to use the gateway. Just follow the i
 
 You'll get ONE URL that serves everything:
 - `https://your-ngrok-url.ngrok-free.app/` - Frontend
-- `https://your-ngrok-url.ngrok-free.app/api` - Backend
+- `https://your-ngrok-url.ngrok-free.app/server` - Backend
 - `https://your-ngrok-url.ngrok-free.app/processor` - Processor
 
 ## Future: Adding a Domain
@@ -107,7 +107,7 @@ kubectl --kubeconfig ../kubeconfig.yaml exec -it -n uoulu deployment/nginx-gatew
 
 # Test connectivity
 wget -O- http://neuroclima-client
-wget -O- http://neuroclima-server:8000/api/health
+wget -O- http://neuroclima-server:8000/server/health
 wget -O- http://neuroclima-processor:5000/health
 ```
 
