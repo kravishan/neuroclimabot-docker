@@ -21,13 +21,6 @@ spec:
       containers:
       - name: redis
         image: redis:7.2.4-alpine
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 999
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
         command:
         - redis-server
         - --requirepass
