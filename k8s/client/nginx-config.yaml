@@ -14,9 +14,10 @@ data:
         index index.html;
 
         # Serve runtime config as JavaScript
+        # Routes align with nginx-gateway: /server for API, /processor for document processing
         location /config.js {
             default_type application/javascript;
-            return 200 'window.RUNTIME_CONFIG = { API_BASE_URL: "/api", API_DOCUMENT_URL: "/processor", TRANSLATE_API_URL: "/processor", STP_SERVICE_URL: "/processor" };';
+            return 200 'window.RUNTIME_CONFIG = { API_BASE_URL: "/server", API_DOCUMENT_URL: "/processor", TRANSLATE_API_URL: "/processor", STP_SERVICE_URL: "/processor" };';
         }
 
         # Try to serve static files, fallback to index.html for SPA

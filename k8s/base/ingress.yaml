@@ -4,9 +4,11 @@ metadata:
   name: neuroclima-ingress
   namespace: uoulu
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    # Don't rewrite URLs - pass them as-is to nginx-gateway
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"  # If using cert-manager
+    # Allow larger file uploads for document processing
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
 spec:
   ingressClassName: nginx
   tls:
@@ -17,29 +19,13 @@ spec:
   - host: YOUR_DOMAIN.com
     http:
       paths:
-      # Client (Frontend)
+      # Route ALL traffic to nginx-gateway
+      # nginx-gateway will handle path-based routing internally
+      # Routes: / → client, /server/* → server, /processor/* → processor
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: neuroclima-client
+            name: nginx-gateway
             port:
               number: 80
-
-      # Server API
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: neuroclima-server
-            port:
-              number: 8000
-
-      # Processor API
-      - path: /processor
-        pathType: Prefix
-        backend:
-          service:
-            name: neuroclima-processor
-            port:
-              number: 5000
