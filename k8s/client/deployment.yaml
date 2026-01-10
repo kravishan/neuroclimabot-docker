@@ -46,6 +46,7 @@ spec:
       containers:
       - name: client
         image: docker.io/raviyah/neuroclima-client:latest
+        imagePullPolicy: Always  # Force pull latest image (important for :latest tag)
         ports:
         - containerPort: 80
           name: http
