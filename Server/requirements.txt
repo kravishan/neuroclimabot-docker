@@ -356,3 +356,6 @@ scikit-learn>=1.6.0
 textstat>=0.7.3
 pydantic[email]>=2.7.0
 flashrank>=0.2.4
+
+# TruLens for RAG evaluation
+trulens-eval==0.33.0
