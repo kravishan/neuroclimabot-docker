@@ -265,3 +265,46 @@ BUCKET_NAME_MAPPING = {
     "scientific_data": "scientificdata",
     "scientificdata": "scientificdata"
 }
+
+
+# =============================================================================
+# TruLens Evaluation Flags
+# =============================================================================
+# Fine-grained control for individual RAG evaluation metrics
+# These flags control which specific evaluations run when TRULENS_ENABLED=true
+# Change these values to enable/disable specific metrics without restarting
+
+# Enable/Disable individual evaluation metrics
+TRULENS_EVAL_CONTEXT_RELEVANCE = True    # Evaluate retrieval quality (are docs relevant to query?)
+TRULENS_EVAL_GROUNDEDNESS = True         # Detect hallucinations (is answer supported by context?)
+TRULENS_EVAL_ANSWER_RELEVANCE = True     # Evaluate response quality (does answer address question?)
+
+# Enable/Disable per-source context evaluation
+TRULENS_EVAL_MILVUS_CONTEXT = True       # Evaluate Milvus retrieval quality separately
+TRULENS_EVAL_GRAPHRAG_CONTEXT = True     # Evaluate GraphRAG retrieval quality separately
+
+# Evaluation performance settings
+TRULENS_EVAL_PARALLEL = True             # Run evaluations in parallel (faster)
+TRULENS_EVAL_TIMEOUT_SECONDS = 30.0      # Total timeout for all evaluations
+
+# Cost optimization presets (uncomment one to use)
+# Preset 1: Full evaluation (most accurate, highest cost)
+# TRULENS_EVAL_CONTEXT_RELEVANCE = True
+# TRULENS_EVAL_GROUNDEDNESS = True
+# TRULENS_EVAL_ANSWER_RELEVANCE = True
+
+# Preset 2: Hallucination detection only (medium cost, catches the most critical issues)
+# TRULENS_EVAL_CONTEXT_RELEVANCE = False
+# TRULENS_EVAL_GROUNDEDNESS = True
+# TRULENS_EVAL_ANSWER_RELEVANCE = False
+
+# Preset 3: Retrieval quality only (low cost, focuses on data quality)
+# TRULENS_EVAL_CONTEXT_RELEVANCE = True
+# TRULENS_EVAL_GROUNDEDNESS = False
+# TRULENS_EVAL_ANSWER_RELEVANCE = False
+
+# Preset 4: End-to-end quality (medium cost, skips detailed retrieval analysis)
+# TRULENS_EVAL_CONTEXT_RELEVANCE = False
+# TRULENS_EVAL_GROUNDEDNESS = True
+# TRULENS_EVAL_ANSWER_RELEVANCE = True
+

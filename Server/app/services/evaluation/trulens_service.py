@@ -13,6 +13,7 @@ import asyncio
 
 from app.config import get_settings
 from app.utils.logger import get_logger
+from app import constants
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -149,59 +150,114 @@ class TruLensService:
         try:
             from trulens_eval import Feedback
 
-            # Create feedback functions
-            f_context_relevance = Feedback(
-                self.feedback_provider.context_relevance,
-                name="Context Relevance"
-            ).on_input_output()
+            # Check which evaluations are enabled (from constants.py)
+            eval_context = constants.TRULENS_EVAL_CONTEXT_RELEVANCE
+            eval_groundedness = constants.TRULENS_EVAL_GROUNDEDNESS
+            eval_answer = constants.TRULENS_EVAL_ANSWER_RELEVANCE
+            eval_parallel = constants.TRULENS_EVAL_PARALLEL
 
-            f_groundedness = Feedback(
-                self.feedback_provider.groundedness_measure_with_cot_reasons,
-                name="Groundedness"
-            ).on_input_output()
+            # Log which evaluations are enabled
+            enabled_evals = []
+            if eval_context:
+                enabled_evals.append("context_relevance")
+            if eval_groundedness:
+                enabled_evals.append("groundedness")
+            if eval_answer:
+                enabled_evals.append("answer_relevance")
 
-            f_answer_relevance = Feedback(
-                self.feedback_provider.relevance,
-                name="Answer Relevance"
-            ).on_input_output()
+            logger.debug(f"Running TruLens evaluations: {', '.join(enabled_evals) if enabled_evals else 'none'}")
 
-            # Run evaluations in parallel for speed
-            tasks = [
-                self._evaluate_context_relevance(query, retrieved_contexts),
-                self._evaluate_groundedness(retrieved_contexts, generated_answer),
-                self._evaluate_answer_relevance(query, generated_answer)
-            ]
+            # Build tasks list based on enabled evaluations
+            tasks = []
+            task_names = []
 
-            context_rel, groundedness, answer_rel = await asyncio.gather(*tasks)
+            if eval_context:
+                tasks.append(self._evaluate_context_relevance(query, retrieved_contexts))
+                task_names.append("context")
 
-            # Per-source context relevance
+            if eval_groundedness:
+                tasks.append(self._evaluate_groundedness(retrieved_contexts, generated_answer))
+                task_names.append("groundedness")
+
+            if eval_answer:
+                tasks.append(self._evaluate_answer_relevance(query, generated_answer))
+                task_names.append("answer")
+
+            # Run evaluations (parallel or sequential based on flag)
+            if tasks:
+                if eval_parallel:
+                    results = await asyncio.gather(*tasks)
+                else:
+                    results = []
+                    for task in tasks:
+                        results.append(await task)
+            else:
+                logger.warning("No TruLens evaluations enabled in constants.py")
+                results = []
+
+            # Extract results based on which evaluations ran
+            context_rel = 0.0
+            groundedness = 0.0
+            answer_rel = 0.0
+
+            result_idx = 0
+            if eval_context:
+                context_rel = results[result_idx]
+                result_idx += 1
+            if eval_groundedness:
+                groundedness = results[result_idx]
+                result_idx += 1
+            if eval_answer:
+                answer_rel = results[result_idx]
+                result_idx += 1
+
+            # Per-source context relevance (if enabled)
             milvus_rel = None
             graphrag_rel = None
-            if milvus_contexts:
+
+            if eval_context and constants.TRULENS_EVAL_MILVUS_CONTEXT and milvus_contexts:
                 milvus_rel = await self._evaluate_context_relevance(query, milvus_contexts)
-            if graphrag_contexts:
+
+            if eval_context and constants.TRULENS_EVAL_GRAPHRAG_CONTEXT and graphrag_contexts:
                 graphrag_rel = await self._evaluate_context_relevance(query, graphrag_contexts)
 
-            # Calculate overall score
-            overall = (context_rel + groundedness + answer_rel) / 3.0
+            # Calculate overall score (only from enabled evaluations)
+            enabled_count = sum([eval_context, eval_groundedness, eval_answer])
+            if enabled_count > 0:
+                total_score = 0.0
+                if eval_context:
+                    total_score += context_rel
+                if eval_groundedness:
+                    total_score += groundedness
+                if eval_answer:
+                    total_score += answer_rel
+                overall = total_score / enabled_count
+            else:
+                overall = 0.0
 
-            # Update stats
+            # Update stats (only for enabled evaluations)
             self.stats["total_evaluations"] += 1
-            self.stats["avg_context_relevance"] = (
-                (self.stats["avg_context_relevance"] * (self.stats["total_evaluations"] - 1) + context_rel)
-                / self.stats["total_evaluations"]
-            )
-            self.stats["avg_groundedness"] = (
-                (self.stats["avg_groundedness"] * (self.stats["total_evaluations"] - 1) + groundedness)
-                / self.stats["total_evaluations"]
-            )
-            self.stats["avg_answer_relevance"] = (
-                (self.stats["avg_answer_relevance"] * (self.stats["total_evaluations"] - 1) + answer_rel)
-                / self.stats["total_evaluations"]
-            )
 
-            # Track potential hallucinations (low groundedness)
-            if groundedness < self.groundedness_threshold:
+            if eval_context:
+                self.stats["avg_context_relevance"] = (
+                    (self.stats["avg_context_relevance"] * (self.stats["total_evaluations"] - 1) + context_rel)
+                    / self.stats["total_evaluations"]
+                )
+
+            if eval_groundedness:
+                self.stats["avg_groundedness"] = (
+                    (self.stats["avg_groundedness"] * (self.stats["total_evaluations"] - 1) + groundedness)
+                    / self.stats["total_evaluations"]
+                )
+
+            if eval_answer:
+                self.stats["avg_answer_relevance"] = (
+                    (self.stats["avg_answer_relevance"] * (self.stats["total_evaluations"] - 1) + answer_rel)
+                    / self.stats["total_evaluations"]
+                )
+
+            # Track potential hallucinations (only if groundedness evaluation is enabled)
+            if eval_groundedness and groundedness < self.groundedness_threshold:
                 self.stats["low_groundedness_count"] += 1
                 logger.warning(
                     f"⚠️ Low groundedness detected: {groundedness:.2f} "
@@ -221,13 +277,21 @@ class TruLensService:
                 model_used=self._get_model_name()
             )
 
-            logger.info(
-                f"📊 TruLens Scores: "
-                f"Context={context_rel:.2f}, "
-                f"Groundedness={groundedness:.2f}, "
-                f"Answer={answer_rel:.2f}, "
-                f"Overall={overall:.2f}"
-            )
+            # Build log message with only enabled scores
+            log_parts = []
+            if eval_context:
+                log_parts.append(f"Context={context_rel:.2f}")
+            if eval_groundedness:
+                log_parts.append(f"Groundedness={groundedness:.2f}")
+            if eval_answer:
+                log_parts.append(f"Answer={answer_rel:.2f}")
+            if enabled_count > 0:
+                log_parts.append(f"Overall={overall:.2f}")
+
+            if log_parts:
+                logger.info(f"📊 TruLens Scores: {', '.join(log_parts)}")
+            else:
+                logger.info("📊 TruLens: No evaluations enabled")
 
             return scores
 
