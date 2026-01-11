@@ -126,10 +126,31 @@ class FeaturesConfig(BaseSettings):
         default="./data/trulens_evaluations.db",
         description="Path to TruLens SQLite database for storing evaluation results"
     )
+
+    # TruLens OpenAI Configuration (Separate from main application)
+    TRULENS_OPENAI_API_KEY: str = Field(
+        default="",
+        description="OpenAI API key specifically for TruLens evaluation (separate from main app)"
+    )
+    TRULENS_OPENAI_BASE_URL: str = Field(
+        default="https://api.openai.com/v1",
+        description="OpenAI API base URL for TruLens (use for Azure OpenAI or custom endpoints)"
+    )
+    TRULENS_OPENAI_MODEL: str = Field(
+        default="gpt-4",
+        description="OpenAI model for TruLens evaluation (gpt-4, gpt-4-turbo, gpt-3.5-turbo)"
+    )
+    TRULENS_OPENAI_ORGANIZATION: str = Field(
+        default="",
+        description="OpenAI organization ID for TruLens (optional)"
+    )
+
+    # Legacy setting (kept for backward compatibility)
     TRULENS_EVALUATION_MODEL: str = Field(
         default="gpt-4",
-        description="Model to use for TruLens evaluation (gpt-4, gpt-3.5-turbo, or ollama)"
+        description="DEPRECATED: Use TRULENS_OPENAI_MODEL instead. Fallback evaluation model."
     )
+
     TRULENS_GROUNDEDNESS_THRESHOLD: float = Field(
         default=0.7,
         description="Groundedness score threshold below which hallucination warnings are triggered"

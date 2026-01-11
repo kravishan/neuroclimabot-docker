@@ -18,18 +18,34 @@ Add these settings to your `Server/.env` file:
 # =============================================================================
 
 # Enable TruLens evaluation
-# Set to true to enable, false to disable
 TRULENS_ENABLED=true
 
 # Database path for storing evaluation results
 TRULENS_DB_PATH=./data/trulens_evaluations.db
 
-# Model to use for evaluation (gpt-4, gpt-3.5-turbo, or ollama)
-TRULENS_EVALUATION_MODEL=gpt-4
-
 # Groundedness threshold (scores below this trigger hallucination warnings)
 TRULENS_GROUNDEDNESS_THRESHOLD=0.7
+
+# -----------------------------------------------------------------------------
+# TruLens OpenAI Configuration (Dedicated for Evaluation Only)
+# -----------------------------------------------------------------------------
+# IMPORTANT: These settings are ONLY used for TruLens evaluation
+# They are separate from your main application's OpenAI configuration
+
+# OpenAI API key for TruLens (leave empty to use Ollama/Mixtral)
+TRULENS_OPENAI_API_KEY=sk-your-trulens-api-key-here
+
+# OpenAI model for evaluation
+TRULENS_OPENAI_MODEL=gpt-4
+
+# OpenAI API endpoint (use custom for Azure OpenAI)
+TRULENS_OPENAI_BASE_URL=https://api.openai.com/v1
+
+# Organization ID (optional)
+TRULENS_OPENAI_ORGANIZATION=
 ```
+
+**Note:** If you don't provide `TRULENS_OPENAI_API_KEY`, TruLens will automatically use Ollama/Mixtral (free, local).
 
 ### Step 2: Install Dependencies
 
@@ -289,6 +305,142 @@ TRULENS_GROUNDEDNESS_THRESHOLD=0.6
 ```
 ⚠️ Low groundedness detected: 0.65 (threshold: 0.7, potential hallucination)
 ```
+
+### TRULENS_OPENAI_API_KEY
+**Type:** String
+**Default:** `` (empty - uses Ollama)
+**Description:** Dedicated OpenAI API key for TruLens evaluation only
+
+```bash
+# Use OpenAI for evaluation
+TRULENS_OPENAI_API_KEY=sk-your-trulens-specific-key
+
+# Leave empty to use Ollama/Mixtral (free, local)
+TRULENS_OPENAI_API_KEY=
+```
+
+**IMPORTANT:** This is completely separate from your main application's `OPENAI_API_KEY`.
+You can use different API keys for different purposes:
+- Main app uses one OpenAI account
+- TruLens uses a different OpenAI account (or Ollama)
+
+### TRULENS_OPENAI_MODEL
+**Type:** String
+**Default:** `gpt-4`
+**Options:** `gpt-4`, `gpt-4-turbo`, `gpt-3.5-turbo`, `gpt-3.5-turbo-16k`
+**Description:** OpenAI model for TruLens evaluation
+
+```bash
+# Most accurate (recommended)
+TRULENS_OPENAI_MODEL=gpt-4
+
+# Faster, cheaper alternative
+TRULENS_OPENAI_MODEL=gpt-3.5-turbo
+
+# High capacity for long contexts
+TRULENS_OPENAI_MODEL=gpt-3.5-turbo-16k
+```
+
+**Cost Comparison:**
+- `gpt-4`: $0.03/1K input tokens, $0.06/1K output tokens
+- `gpt-3.5-turbo`: $0.001/1K input tokens, $0.002/1K output tokens (20x cheaper)
+
+### TRULENS_OPENAI_BASE_URL
+**Type:** String
+**Default:** `https://api.openai.com/v1`
+**Description:** OpenAI API endpoint (for custom endpoints like Azure OpenAI)
+
+```bash
+# Standard OpenAI API (default)
+TRULENS_OPENAI_BASE_URL=https://api.openai.com/v1
+
+# Azure OpenAI example
+TRULENS_OPENAI_BASE_URL=https://your-resource.openai.azure.com/
+
+# Custom proxy or gateway
+TRULENS_OPENAI_BASE_URL=https://your-proxy.com/v1
+```
+
+**Use Cases:**
+- **Azure OpenAI**: Enterprise deployments with Azure
+- **Proxy/Gateway**: Route through your own infrastructure
+- **Regional endpoints**: Use region-specific OpenAI endpoints
+
+### TRULENS_OPENAI_ORGANIZATION
+**Type:** String
+**Default:** `` (empty)
+**Description:** OpenAI organization ID (optional)
+
+```bash
+# If you have multiple organizations
+TRULENS_OPENAI_ORGANIZATION=org-your-org-id
+
+# Leave empty if not needed
+TRULENS_OPENAI_ORGANIZATION=
+```
+
+**Note:** Only needed if your API key has access to multiple organizations.
+
+---
+
+## 🎯 OpenAI Configuration Examples
+
+### Example 1: Dedicated OpenAI Account for TruLens
+
+```bash
+# Main app uses primary OpenAI account
+OPENAI_API_KEY=sk-main-app-key-xxxx
+
+# TruLens uses separate account (different billing)
+TRULENS_OPENAI_API_KEY=sk-trulens-key-yyyy
+TRULENS_OPENAI_MODEL=gpt-4
+TRULENS_OPENAI_BASE_URL=https://api.openai.com/v1
+```
+
+**Why?**
+- Separate billing/quota for evaluation
+- Track evaluation costs independently
+- Different rate limits
+
+### Example 2: Azure OpenAI for TruLens
+
+```bash
+# Use Azure OpenAI for evaluation
+TRULENS_OPENAI_API_KEY=your-azure-key
+TRULENS_OPENAI_MODEL=gpt-4
+TRULENS_OPENAI_BASE_URL=https://your-resource.openai.azure.com/
+```
+
+**Benefits:**
+- Enterprise security and compliance
+- Data residency requirements
+- Private network access
+
+### Example 3: Cost Optimization (GPT-3.5)
+
+```bash
+# Use cheaper GPT-3.5 for evaluation
+TRULENS_OPENAI_API_KEY=sk-your-key
+TRULENS_OPENAI_MODEL=gpt-3.5-turbo
+TRULENS_OPENAI_BASE_URL=https://api.openai.com/v1
+```
+
+**Savings:**
+- 20x cheaper than GPT-4
+- Still accurate for most evaluations
+- Faster response times
+
+### Example 4: Free Local Evaluation (Ollama)
+
+```bash
+# Don't set API key - uses Ollama/Mixtral
+TRULENS_OPENAI_API_KEY=
+```
+
+**Benefits:**
+- Zero API costs
+- Complete privacy (no data sent externally)
+- No rate limits
 
 ---
 

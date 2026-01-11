@@ -72,21 +72,42 @@ class TruLensService:
             # Initialize TruLens database
             self.tru = Tru(database_url=f"sqlite:///{self.db_path}")
 
-            # Initialize feedback provider (uses OpenAI by default)
-            # Falls back to your Mixtral/Ollama if needed
-            openai_api_key = settings.OPENAI_API_KEY if hasattr(settings, 'OPENAI_API_KEY') else None
+            # Initialize feedback provider
+            # Priority: TruLens-specific OpenAI settings > Ollama fallback
+            trulens_api_key = settings.TRULENS_OPENAI_API_KEY
 
-            if openai_api_key:
-                self.feedback_provider = TruLensOpenAI(api_key=openai_api_key)
-                logger.info("TruLens initialized with OpenAI feedback provider")
+            if trulens_api_key and trulens_api_key.strip():
+                # Use TruLens-specific OpenAI configuration
+                openai_config = {
+                    "api_key": trulens_api_key,
+                    "model_engine": settings.TRULENS_OPENAI_MODEL,
+                }
+
+                # Add base URL if custom endpoint (e.g., Azure OpenAI)
+                if settings.TRULENS_OPENAI_BASE_URL != "https://api.openai.com/v1":
+                    openai_config["api_base"] = settings.TRULENS_OPENAI_BASE_URL
+
+                # Add organization if specified
+                if settings.TRULENS_OPENAI_ORGANIZATION and settings.TRULENS_OPENAI_ORGANIZATION.strip():
+                    openai_config["organization"] = settings.TRULENS_OPENAI_ORGANIZATION
+
+                self.feedback_provider = TruLensOpenAI(**openai_config)
+                logger.info(
+                    f"✅ TruLens using dedicated OpenAI provider "
+                    f"(model: {settings.TRULENS_OPENAI_MODEL}, "
+                    f"endpoint: {settings.TRULENS_OPENAI_BASE_URL})"
+                )
             else:
-                # Use a custom feedback provider with your local Mixtral/Ollama
+                # Fallback to Ollama/Mixtral (local, free)
                 from app.services.evaluation.trulens_custom_provider import OllamaFeedbackProvider
                 self.feedback_provider = OllamaFeedbackProvider()
-                logger.info("TruLens initialized with Ollama/Mixtral feedback provider")
+                logger.info(
+                    "✅ TruLens using Ollama/Mixtral provider "
+                    "(no TRULENS_OPENAI_API_KEY configured, using local model)"
+                )
 
             self.is_initialized = True
-            logger.info(f"✅ TruLens service initialized (DB: {self.db_path})")
+            logger.info(f"📊 TruLens database: {self.db_path}")
 
         except ImportError as e:
             logger.error(f"TruLens not installed: {e}")
