@@ -137,7 +137,25 @@ Response: "Social tipping points are..." + Quality Scores
 
 ## Quick Start
 
-### 1. Installation
+### 1. Enable TruLens in `.env`
+
+**IMPORTANT:** TruLens is disabled by default. Enable it in `Server/.env`:
+
+```bash
+# Enable TruLens evaluation
+TRULENS_ENABLED=true
+
+# Optional: Configure settings
+TRULENS_DB_PATH=./data/trulens_evaluations.db
+TRULENS_EVALUATION_MODEL=gpt-4
+TRULENS_GROUNDEDNESS_THRESHOLD=0.7
+```
+
+**To disable:** Set `TRULENS_ENABLED=false` (default)
+
+See [QUICKSTART.md](./QUICKSTART.md) for detailed enable/disable instructions.
+
+### 2. Installation
 
 ```bash
 cd Server
@@ -146,7 +164,7 @@ pip install -r requirements.txt
 
 This installs `trulens-eval==0.33.0` along with other dependencies.
 
-### 2. Run Test
+### 3. Run Test
 
 ```bash
 cd Server
@@ -585,30 +603,53 @@ class EvaluationScores:
 
 ## Configuration
 
-### Environment Variables
+### Environment Variables (Primary Control)
+
+**IMPORTANT:** TruLens is controlled via `.env` file. Default is **disabled**.
 
 Add to `Server/.env`:
 
 ```env
-# TruLens Configuration
+# =============================================================================
+# TruLens RAG Evaluation
+# =============================================================================
+
+# Enable/Disable TruLens (default: false)
 TRULENS_ENABLED=true
+
+# Database path
 TRULENS_DB_PATH=./data/trulens_evaluations.db
 
-# OpenAI for evaluation (optional - uses Ollama if not set)
+# Evaluation model (gpt-4, gpt-3.5-turbo, or ollama)
+TRULENS_EVALUATION_MODEL=gpt-4
+
+# Hallucination threshold (0.0-1.0)
+TRULENS_GROUNDEDNESS_THRESHOLD=0.7
+
+# OpenAI API key (optional - uses Ollama/Mixtral if not set)
 OPENAI_API_KEY=sk-...
 ```
 
-### RAG Config
+**Configuration Notes:**
+- **Default:** `TRULENS_ENABLED=false` (no performance impact)
+- **To enable:** Set `TRULENS_ENABLED=true`
+- **To disable:** Set `TRULENS_ENABLED=false` or omit the variable
+- See `.env.example` for all available settings
 
-Add to `Server/app/config/rag.py`:
+### Programmatic Control (Optional)
+
+You can also override the `.env` setting in code:
 
 ```python
-class RAGConfig(BaseSettings):
-    # TruLens Evaluation
-    TRULENS_ENABLED: bool = Field(default=True)
-    TRULENS_DB_PATH: str = Field(default="./data/trulens_evaluations.db")
-    EVALUATION_GROUNDEDNESS_THRESHOLD: float = Field(default=0.7)
+from app.config import get_settings
+
+settings = get_settings()
+print(f"TruLens enabled: {settings.TRULENS_ENABLED}")
+print(f"DB path: {settings.TRULENS_DB_PATH}")
+print(f"Threshold: {settings.TRULENS_GROUNDEDNESS_THRESHOLD}")
 ```
+
+These settings are automatically loaded from `Server/app/config/features.py`
 
 ---
 

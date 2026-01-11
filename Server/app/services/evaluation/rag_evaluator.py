@@ -7,10 +7,12 @@ from typing import Any, Dict, List, Optional
 import time
 from dataclasses import asdict
 
+from app.config import get_settings
 from app.services.evaluation.trulens_service import get_trulens_service, EvaluationScores
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
+settings = get_settings()
 
 
 class RAGEvaluator:
@@ -31,7 +33,11 @@ class RAGEvaluator:
         )
     """
 
-    def __init__(self, enabled: bool = True):
+    def __init__(self, enabled: Optional[bool] = None):
+        # Check environment variable if enabled is not explicitly provided
+        if enabled is None:
+            enabled = settings.TRULENS_ENABLED
+
         self.enabled = enabled
         self.trulens_service = None
         self.is_initialized = False
@@ -39,13 +45,13 @@ class RAGEvaluator:
     async def initialize(self):
         """Initialize the TruLens service."""
         if not self.enabled:
-            logger.info("RAG evaluation disabled")
+            logger.info("RAG evaluation disabled (TRULENS_ENABLED=false in .env)")
             return
 
         try:
             self.trulens_service = await get_trulens_service()
             self.is_initialized = True
-            logger.info("✅ RAG evaluator initialized with TruLens")
+            logger.info("✅ RAG evaluator initialized with TruLens (TRULENS_ENABLED=true)")
         except Exception as e:
             logger.warning(f"Failed to initialize RAG evaluator: {e}")
             logger.info("Continuing without evaluation...")
@@ -219,8 +225,17 @@ class RAGEvaluator:
 _rag_evaluator = None
 
 
-async def get_rag_evaluator(enabled: bool = True) -> RAGEvaluator:
-    """Get or create the RAG evaluator singleton."""
+async def get_rag_evaluator(enabled: Optional[bool] = None) -> RAGEvaluator:
+    """
+    Get or create the RAG evaluator singleton.
+
+    Args:
+        enabled: If provided, explicitly enables/disables evaluation.
+                 If None, uses TRULENS_ENABLED from settings.
+
+    Returns:
+        RAGEvaluator instance
+    """
     global _rag_evaluator
     if _rag_evaluator is None:
         _rag_evaluator = RAGEvaluator(enabled=enabled)

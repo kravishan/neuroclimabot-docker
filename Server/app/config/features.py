@@ -115,6 +115,27 @@ class FeaturesConfig(BaseSettings):
     )
 
     # =============================================================================
+    # RAG Evaluation (TruLens)
+    # =============================================================================
+
+    TRULENS_ENABLED: bool = Field(
+        default=False,
+        description="Enable TruLens RAG evaluation (context relevance, groundedness, answer relevance)"
+    )
+    TRULENS_DB_PATH: str = Field(
+        default="./data/trulens_evaluations.db",
+        description="Path to TruLens SQLite database for storing evaluation results"
+    )
+    TRULENS_EVALUATION_MODEL: str = Field(
+        default="gpt-4",
+        description="Model to use for TruLens evaluation (gpt-4, gpt-3.5-turbo, or ollama)"
+    )
+    TRULENS_GROUNDEDNESS_THRESHOLD: float = Field(
+        default=0.7,
+        description="Groundedness score threshold below which hallucination warnings are triggered"
+    )
+
+    # =============================================================================
     # Memory and Session Configuration
     # =============================================================================
 

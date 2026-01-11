@@ -51,7 +51,8 @@ class TruLensService:
         self.tru = None
         self.feedback_provider = None
         self.is_initialized = False
-        self.db_path = settings.TRULENS_DB_PATH if hasattr(settings, 'TRULENS_DB_PATH') else "./trulens_data/default.db"
+        self.db_path = settings.TRULENS_DB_PATH
+        self.groundedness_threshold = settings.TRULENS_GROUNDEDNESS_THRESHOLD
 
         # Performance tracking
         self.stats = {
@@ -179,9 +180,12 @@ class TruLensService:
             )
 
             # Track potential hallucinations (low groundedness)
-            if groundedness < 0.7:
+            if groundedness < self.groundedness_threshold:
                 self.stats["low_groundedness_count"] += 1
-                logger.warning(f"⚠️ Low groundedness detected: {groundedness:.2f} (potential hallucination)")
+                logger.warning(
+                    f"⚠️ Low groundedness detected: {groundedness:.2f} "
+                    f"(threshold: {self.groundedness_threshold}, potential hallucination)"
+                )
 
             eval_time = time.perf_counter() - start_time
 
