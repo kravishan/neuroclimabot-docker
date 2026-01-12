@@ -61,3 +61,6 @@ k8s/base/secrets.yaml
 k8s/base/configmap.yaml
 k8s/base/secrets-ready.yaml
 k8s/ngrok.exe
+
+
+Server/venv/
