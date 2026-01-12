@@ -86,12 +86,12 @@ MAX_RESPONSE_TIME_SECONDS = 45.0        # Maximum acceptable response time
 # =============================================================================
 
 DEFAULT_REQUEST_TIMEOUT = 30            # Default API request timeout
-MILVUS_SEARCH_TIMEOUT = 5               # Milvus search operation timeout
-RETRIEVAL_MILVUS_TIMEOUT = 15.0         # Retrieval operation timeout
-RETRIEVAL_GRAPHRAG_API_TIMEOUT = 15.0   # GraphRAG API timeout
-RETRIEVAL_TOTAL_TIMEOUT = 25.0          # Total retrieval timeout
+MILVUS_SEARCH_TIMEOUT = 10               # Milvus search operation timeout
+RETRIEVAL_MILVUS_TIMEOUT = 30.0         # Retrieval operation timeout
+RETRIEVAL_GRAPHRAG_API_TIMEOUT = 25.0   # GraphRAG API timeout
+RETRIEVAL_TOTAL_TIMEOUT = 30.0          # Total retrieval timeout
 EMBEDDING_GENERATION_TIMEOUT = 10.0     # Embedding generation timeout
-RERANKING_TIMEOUT = 5                   # Reranking operation timeout
+RERANKING_TIMEOUT = 10                   # Reranking operation timeout
 
 
 # =============================================================================
