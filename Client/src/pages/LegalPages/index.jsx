@@ -16,15 +16,19 @@ export function PrivacyPolicy() {
       <div className="legal-container">
         <div className="legal-content">
           <h1>Privacy Policy</h1>
-          <p><strong>Last updated:</strong> May 2025</p>
-          <p><strong>Effective Date:</strong> May 2025</p>
-          
+          <p><strong>Last updated:</strong> January 12, 2026</p>
+          <p><strong>Effective Date:</strong> January 12, 2026</p>
+
           <h2>1. Introduction</h2>
           <p>
-            NeuroClima ("we," "our," or "us") is committed to protecting your privacy and personal data. 
-            This Privacy Policy explains how we collect, use, process, and protect your information when you 
-            use our NeuroClima Bot service ("Service") in accordance with the General Data Protection 
-            Regulation (GDPR) and other applicable data protection laws.
+            NeuroClima ("we," "our," or "us") is committed to protecting your privacy and personal data.
+            This Privacy Policy explains how we collect, use, process, and protect your information when you
+            use our NeuroClima Bot service ("Service") in accordance with the General Data Protection
+            Regulation (EU) 2016/679 ("GDPR") and other applicable data protection laws.
+          </p>
+          <p>
+            <strong>We implement a privacy-by-design approach with user consent management, allowing you
+            full control over your data collection preferences.</strong>
           </p>
 
           <h2>2. Data Controller</h2>
@@ -33,120 +37,327 @@ export function PrivacyPolicy() {
             Email: info@neuroclimabot.com<br/>
           </p>
 
-          <h2>3. Information We Collect</h2>
-          
-          <h3>3.1 Personal Data</h3>
-          <p>We collect minimal personal data necessary for service provision:</p>
+          <h2>3. Your Consent and Data Collection</h2>
+
+          <h3>3.1 Consent Management (GDPR Article 7)</h3>
+          <p>
+            We implement a <strong>transparent consent management system</strong> that gives you full control
+            over data collection. Upon your first visit, you will be presented with consent options:
+          </p>
           <ul>
-            <li><strong>Feedback Data:</strong> Information provided through our feedback forms (optional)</li>
-            <li><strong>Contact Information:</strong> Email address when you contact us for support</li>
-            {/* <li><strong>Technical Data:</strong> IP address, browser type, device information for security and performance</li> */}
+            <li><strong>Essential Functions:</strong> Required for basic service operation (cannot be disabled)</li>
+            <li><strong>Analytics & Research:</strong> Optional data collection for system improvement and training</li>
+          </ul>
+          <p>
+            <strong>Opt-out Model:</strong> Analytics and research data collection is enabled by default,
+            but you can opt-out at any time through the Privacy Settings accessible via the Privacy button in the header.
+          </p>
+
+          <h3>3.2 Essential Data (Always Collected - GDPR Article 6(1)(b))</h3>
+          <p>
+            <strong>Legal Basis:</strong> Contractual necessity for service provision
+          </p>
+          <ul>
+            <li><strong>Session Management:</strong> Temporary session IDs stored in your browser (no server storage)</li>
+            <li><strong>Conversation Context:</strong> Current session messages for contextual responses</li>
+            <li><strong>Language Preferences:</strong> Your selected language for response delivery</li>
+          </ul>
+          <p>
+            <strong>Important:</strong> Essential data is <strong>never</strong> linked to your personal identity.
+            All data is <strong>completely anonymized</strong> and cannot be traced back to you.
+          </p>
+
+          <h3>3.3 Analytics & Research Data (Optional - GDPR Article 6(1)(a))</h3>
+          <p>
+            <strong>Legal Basis:</strong> Your explicit consent (opt-out model)
+          </p>
+          <p>
+            If you consent to analytics data collection, we use <strong>Langfuse</strong> (an observability
+            platform) to collect anonymized interaction traces for:
+          </p>
+          <ul>
+            <li><strong>AI Model Training:</strong> Improving response accuracy and relevance</li>
+            <li><strong>System Monitoring:</strong> Identifying errors and performance bottlenecks</li>
+            <li><strong>Quality Assurance:</strong> Evaluating response quality and user satisfaction</li>
+            <li><strong>Research & Development:</strong> Advancing climate AI technology</li>
           </ul>
 
-          <h3>3.2 Usage Data (Anonymous)</h3>
-          <p>We collect anonymous usage data to improve our service:</p>
-          <ul>
-            <li>Chat interactions and queries (anonymized)</li>
-            <li>Response accuracy feedback</li>
-            <li>System performance metrics</li>
-            <li>Error logs and debugging information</li>
-          </ul>
-
-          <h3>3.3 Development Data (Testing Phase Only)</h3>
           <div className="important-notice">
-            <p><strong>IMPORTANT NOTICE - TESTING PHASE:</strong></p>
-            <p>
-              During our current testing and development phase, we use LangSmith (by LangChain) to 
-              monitor and improve our AI system. This service temporarily stores:
-            </p>
+            <p><strong>GDPR-COMPLIANT DATA COLLECTION:</strong></p>
             <ul>
-              <li>User queries and bot responses (anonymized)</li>
-              <li>Conversation flows and patterns</li>
-              <li>Error tracking and performance metrics</li>
-              <li>Prompt optimization data</li>
+              <li>✅ <strong>Completely Anonymous:</strong> No personal identifiers, IP addresses, or user tracking</li>
+              <li>✅ <strong>User Control:</strong> Disable analytics anytime via Privacy Settings</li>
+              <li>✅ <strong>Transparent Processing:</strong> Clear information about what data is collected and why</li>
+              <li>✅ <strong>Consent Versioning:</strong> Your consent preferences are tracked with timestamps</li>
+              <li>✅ <strong>Platform Independence:</strong> NeuroClima Bot data is separate from main platform</li>
+              <li>✅ <strong>No Third-Party Sharing:</strong> Data never sold or shared for commercial purposes</li>
             </ul>
-            <p>
-              <strong>This data collection is:</strong>
-            </p>
-            <ul>
-              <li>Anonymous (no personal identifiers)</li>
-              <li>Used solely for development and testing purposes</li>
-              <li>Stored securely with enterprise-grade encryption</li>
-              <li>Will be deleted upon official project handover</li>
-              <li>Not shared with third parties for commercial purposes</li>
-            </ul>
-            <p>
-              <em>This testing-phase data collection will cease when the project transitions 
-              from development to production status.</em>
-            </p>
           </div>
 
-          <h2>4. Legal Basis for Processing (GDPR Article 6)</h2>
+          <h3>3.4 What We DO NOT Collect</h3>
+          <p>To ensure your privacy, we explicitly <strong>do not collect:</strong></p>
           <ul>
-            <li><strong>Legitimate Interest:</strong> Service improvement, security, and technical support</li>
-            <li><strong>Consent:</strong> Feedback forms and voluntary communications</li>
-            <li><strong>Contractual Necessity:</strong> Service provision and user support</li>
+            <li>❌ Names, email addresses, or contact information (unless you voluntarily provide via support)</li>
+            <li>❌ IP addresses or geolocation data</li>
+            <li>❌ Device fingerprints or tracking cookies</li>
+            <li>❌ Cross-platform user tracking or profiling</li>
+            <li>❌ Authentication credentials or account information</li>
+            <li>❌ Payment or financial information</li>
+          </ul>
+
+          <h2>4. Legal Basis for Processing (GDPR Article 6)</h2>
+          <p>We process data under the following legal bases:</p>
+          <ul>
+            <li><strong>Consent (Article 6(1)(a)):</strong> Analytics & Research data collection (opt-out model)</li>
+            <li><strong>Contractual Necessity (Article 6(1)(b)):</strong> Essential service functions and session management</li>
+            <li><strong>Legitimate Interest (Article 6(1)(f)):</strong> System security, fraud prevention, and service improvement</li>
+            <li><strong>Legal Obligation (Article 6(1)(c)):</strong> Compliance with applicable EU and national laws</li>
           </ul>
 
           <h2>5. How We Use Your Information</h2>
+          <p>We use collected data strictly for the following purposes:</p>
+
+          <h3>5.1 Essential Service Operations</h3>
           <ul>
-            <li>Provide and maintain the NeuroClima Bot service</li>
-            <li>Improve AI model accuracy and performance</li>
-            <li>Ensure system security and prevent misuse</li>
-            <li>Respond to user feedback and support requests</li>
-            <li>Comply with legal obligations</li>
-            <li>Debug errors and optimize system performance</li>
+            <li>Provide conversational AI responses to your climate-related questions</li>
+            <li>Maintain conversation context within active sessions</li>
+            <li>Deliver responses in your preferred language</li>
+            <li>Ensure basic system functionality and security</li>
           </ul>
 
-          <h2>6. Data Sharing and Third Parties</h2>
-          <p>We do not sell or commercially share your personal data. Limited sharing occurs for:</p>
+          <h3>5.2 Analytics & Research (Only with Your Consent)</h3>
           <ul>
-            <li><strong>LangSmith (Testing Phase):</strong> Anonymous development data only</li>
-            <li><strong>Cloud Infrastructure:</strong> Secure hosting and data processing</li>
-            <li><strong>Legal Requirements:</strong> When required by law or legal process</li>
+            <li>Train and improve AI models for better response accuracy</li>
+            <li>Monitor system performance and identify technical issues</li>
+            <li>Conduct research to advance climate AI technology</li>
+            <li>Evaluate user satisfaction and response quality</li>
+            <li>Debug errors and optimize system architecture</li>
           </ul>
 
-          <h2>7. Your Rights Under GDPR</h2>
-          <p>You have the following rights regarding your personal data:</p>
-          <ul>
-            <li><strong>Right of Access:</strong> Request information about your data</li>
-            <li><strong>Right to Rectification:</strong> Correct inaccurate data</li>
-            <li><strong>Right to Erasure:</strong> Request deletion of your data</li>
-            <li><strong>Right to Restrict Processing:</strong> Limit how we use your data</li>
-            <li><strong>Right to Data Portability:</strong> Receive your data in structured format</li>
-            <li><strong>Right to Object:</strong> Object to processing based on legitimate interest</li>
-            <li><strong>Right to Withdraw Consent:</strong> For consent-based processing</li>
-          </ul>
-          <p>To exercise these rights, contact us at: <strong>info@neuroclimabot.com</strong></p>
-
-          <h2>8. Data Security</h2>
-          <p>We implement industry-standard security measures:</p>
-          <ul>
-            <li>End-to-end encryption for data transmission</li>
-            <li>Secure cloud infrastructure with access controls</li>
-            <li>Regular security audits and vulnerability assessments</li>
-            <li>Staff training on data protection principles</li>
-          </ul>
-
-          <h2>10. International Data Transfers</h2>
+          <h2>6. Data Sharing and Third-Party Processors</h2>
           <p>
-            Data may be processed in the EU/EEA and other countries with adequate protection levels. 
-            All transfers comply with GDPR requirements and include appropriate safeguards.
+            <strong>We do NOT sell, rent, or commercially share your data.</strong> We only share anonymized
+            data with trusted processors for specific purposes:
           </p>
 
-          <h2>11. Changes to This Policy</h2>
+          <h3>6.1 Analytics Platform (Langfuse)</h3>
+          <ul>
+            <li><strong>Purpose:</strong> AI observability and model improvement</li>
+            <li><strong>Data Shared:</strong> Anonymized conversation traces (only if you consent)</li>
+            <li><strong>Legal Basis:</strong> Your explicit consent (GDPR Article 6(1)(a))</li>
+            <li><strong>Safeguards:</strong> Data Processing Agreement, EU-adequate protections</li>
+            <li><strong>Your Control:</strong> Opt-out anytime via Privacy Settings</li>
+          </ul>
+
+          <h3>6.2 Cloud Infrastructure</h3>
+          <ul>
+            <li><strong>Purpose:</strong> Secure hosting and service delivery</li>
+            <li><strong>Legal Basis:</strong> Contractual necessity</li>
+            <li><strong>Safeguards:</strong> Enterprise-grade encryption, EU/EEA or adequate country hosting</li>
+          </ul>
+
+          <h3>6.3 Legal Disclosures</h3>
           <p>
-            We may update this Privacy Policy to reflect changes in our practices or legal requirements. 
-            Material changes will be communicated with at least 30 days notice.
+            We may disclose data when required by law, court order, or to protect our legal rights,
+            in compliance with GDPR Article 6(1)(c) and (f).
           </p>
 
-          <h2>12. Contact and Complaints</h2>
+          <h2>7. Your Rights Under GDPR (Chapter III)</h2>
           <p>
-            <strong>General Support:</strong> info@neuroclimabot.com
+            As a data subject under GDPR, you have comprehensive rights over your personal data.
+            We are committed to facilitating the exercise of these rights:
+          </p>
+
+          <h3>7.1 Right to Withdraw Consent (Article 7(3))</h3>
+          <p><strong>Easy Opt-Out:</strong> Manage your analytics consent anytime:</p>
+          <ul>
+            <li>Click the <strong>"Privacy"</strong> button in the header</li>
+            <li>Open <strong>Privacy Settings</strong> modal</li>
+            <li>Toggle <strong>"Analytics & Research"</strong> OFF/ON</li>
+            <li>Changes take effect immediately for future interactions</li>
+          </ul>
+          <p>
+            <em>Withdrawing consent does not affect the lawfulness of processing based on consent before withdrawal.</em>
+          </p>
+
+          <h3>7.2 Right of Access (Article 15)</h3>
+          <p>
+            Request confirmation of whether we process your data and obtain a copy of:
+          </p>
+          <ul>
+            <li>What data we hold (if any - note: we use anonymization)</li>
+            <li>Processing purposes and legal basis</li>
+            <li>Categories of data and recipients</li>
+            <li>Retention periods</li>
+          </ul>
+
+          <h3>7.3 Right to Rectification (Article 16)</h3>
+          <p>Request correction of inaccurate or incomplete personal data.</p>
+
+          <h3>7.4 Right to Erasure / "Right to be Forgotten" (Article 17)</h3>
+          <p>
+            Request deletion of your data when:
+          </p>
+          <ul>
+            <li>Data is no longer necessary for original purpose</li>
+            <li>You withdraw consent and no other legal ground exists</li>
+            <li>You object to processing and no overriding legitimate grounds exist</li>
+            <li>Data was unlawfully processed</li>
+          </ul>
+          <p>
+            <strong>Note:</strong> Due to complete anonymization, we cannot identify specific user data.
+            Withdrawing analytics consent prevents future collection.
+          </p>
+
+          <h3>7.5 Right to Restrict Processing (Article 18)</h3>
+          <p>Request limitation of processing in certain circumstances.</p>
+
+          <h3>7.6 Right to Data Portability (Article 20)</h3>
+          <p>
+            Receive your data in structured, machine-readable format and transmit to another controller.
+          </p>
+
+          <h3>7.7 Right to Object (Article 21)</h3>
+          <p>
+            Object to processing based on legitimate interests. For analytics, simply withdraw consent
+            via Privacy Settings.
+          </p>
+
+          <h3>7.8 Automated Decision-Making Rights (Article 22)</h3>
+          <p>
+            Our AI provides information but does not make automated decisions with legal or similarly
+            significant effects about you.
+          </p>
+
+          <h3>7.9 How to Exercise Your Rights</h3>
+          <ul>
+            <li><strong>Email:</strong> info@neuroclimabot.com</li>
+            <li><strong>Response Time:</strong> Within 1 month (extensible to 3 months for complex requests)</li>
+            <li><strong>Free of Charge:</strong> First request is free; excessive requests may incur reasonable fees</li>
+            <li><strong>Identity Verification:</strong> We may request proof of identity to protect your privacy</li>
+          </ul>
+
+          <h2>8. Data Security (GDPR Article 32)</h2>
+          <p>
+            We implement appropriate technical and organizational measures to ensure data security:
+          </p>
+
+          <h3>8.1 Technical Safeguards</h3>
+          <ul>
+            <li><strong>Encryption:</strong> TLS/SSL encryption for all data transmission</li>
+            <li><strong>Anonymization:</strong> Complete anonymization by design - no personal identifiers</li>
+            <li><strong>Access Controls:</strong> Role-based access limitations and authentication</li>
+            <li><strong>Secure Infrastructure:</strong> Enterprise-grade cloud hosting with security certifications</li>
+            <li><strong>Regular Audits:</strong> Periodic security assessments and vulnerability scanning</li>
+          </ul>
+
+          <h3>8.2 Organizational Safeguards</h3>
+          <ul>
+            <li>Staff training on GDPR and data protection principles</li>
+            <li>Data processing agreements with all third-party processors</li>
+            <li>Incident response procedures for data breaches</li>
+            <li>Regular review and updates of security measures</li>
+          </ul>
+
+          <h3>8.3 Data Breach Notification</h3>
+          <p>
+            In the unlikely event of a data breach affecting personal data, we will:
+          </p>
+          <ul>
+            <li>Notify the relevant supervisory authority within 72 hours (GDPR Article 33)</li>
+            <li>Inform affected individuals if high risk to their rights (GDPR Article 34)</li>
+            <li>Document the breach and our response measures</li>
+          </ul>
+
+          <h2>9. Data Retention and Deletion</h2>
+
+          <h3>9.1 Retention Periods</h3>
+          <ul>
+            <li><strong>Session Data:</strong> Deleted when session ends (browser storage only)</li>
+            <li><strong>Analytics Traces:</strong> Retained for model improvement, typically 12-24 months</li>
+            <li><strong>Consent Records:</strong> Maintained for compliance demonstration (up to 3 years)</li>
+          </ul>
+
+          <h3>9.2 Automated Deletion</h3>
+          <p>
+            Anonymized data is subject to automated deletion policies. No data is retained indefinitely.
+          </p>
+
+          <h2>10. Cookies and Similar Technologies</h2>
+          <p>
+            <strong>We do NOT use tracking cookies.</strong> We only use:
+          </p>
+          <ul>
+            <li><strong>Essential Storage:</strong> Browser localStorage for consent preferences and session IDs</li>
+            <li><strong>Purpose:</strong> Service functionality only</li>
+            <li><strong>No Tracking:</strong> No analytics cookies, advertising cookies, or cross-site tracking</li>
+          </ul>
+
+          <h2>11. International Data Transfers (GDPR Chapter V)</h2>
+          <p>
+            Data processing primarily occurs within the EU/EEA. Any transfers outside the EU/EEA comply
+            with GDPR requirements through:
+          </p>
+          <ul>
+            <li><strong>Adequacy Decisions:</strong> Transfers to countries with adequate protection (Article 45)</li>
+            <li><strong>Standard Contractual Clauses:</strong> EU-approved SCCs where applicable (Article 46)</li>
+            <li><strong>Safeguards:</strong> Additional technical measures (encryption, anonymization)</li>
+          </ul>
+
+          <h2>12. Children's Privacy</h2>
+          <p>
+            Our Service is not directed to children under 16. We do not knowingly collect data from
+            children. If you believe a child has provided data, contact us for immediate deletion.
+          </p>
+
+          <h2>13. Changes to This Privacy Policy</h2>
+          <p>
+            We reserve the right to update this Privacy Policy to reflect:
+          </p>
+          <ul>
+            <li>Changes in our data processing practices</li>
+            <li>Legal or regulatory requirements</li>
+            <li>New features or services</li>
+          </ul>
+          <p>
+            <strong>Material changes will be communicated with at least 30 days advance notice</strong> via:
+          </p>
+          <ul>
+            <li>Prominent notice on our Service</li>
+            <li>Updated consent banner if consent requirements change</li>
+            <li>Email notification if we have your contact information</li>
+          </ul>
+          <p>
+            <em>Last Updated: January 12, 2026 - Version 2.0</em>
+          </p>
+
+          <h2>14. Supervisory Authority and Complaints</h2>
+          <p>
+            You have the right to lodge a complaint with a supervisory authority, particularly in:
+          </p>
+          <ul>
+            <li>Your EU Member State of habitual residence</li>
+            <li>Your place of work</li>
+            <li>The place of alleged infringement</li>
+          </ul>
+          <p>
+            <strong>EU Data Protection Authorities:</strong> Find your local DPA at{' '}
+            <a href="https://edpb.europa.eu/about-edpb/about-edpb/members_en" target="_blank" rel="noopener noreferrer">
+              https://edpb.europa.eu
+            </a>
+          </p>
+
+          <h2>15. Contact Information</h2>
+          <p>
+            For questions, concerns, or to exercise your GDPR rights:
           </p>
           <p>
-            You have the right to lodge a complaint with your local data protection authority 
-            if you believe your rights have been violated.
+            <strong>Data Controller:</strong> NeuroClimaBot<br/>
+            <strong>Email:</strong> info@neuroclimabot.com<br/>
+            <strong>Privacy Inquiries:</strong> Include "GDPR Request" in subject line
+          </p>
+          <p>
+            We are committed to responding to all inquiries within the GDPR-mandated timeframes.
           </p>
         </div>
       </div>
@@ -166,14 +377,19 @@ export function Disclaimer() {
     <div className="legal-pages">
       <div className="legal-container">
         <h1>Disclaimer</h1>
-        <p><strong>Last updated:</strong> May 2025</p>
+        <p><strong>Last updated:</strong> January 12, 2026</p>
+        <p><strong>Effective Date:</strong> January 12, 2026</p>
 
         <h2>1. General Information Disclaimer</h2>
         <p>
-          The NeuroClima Bot service ("Service") provides AI-generated information about 
-          climate policy and environmental topics for informational and educational purposes only. 
-          The information provided should not be considered as professional advice, legal counsel, 
+          The NeuroClima Bot service ("Service") provides AI-generated information about
+          climate policy and environmental topics for informational and educational purposes only.
+          The information provided should not be considered as professional advice, legal counsel,
           or authoritative policy guidance.
+        </p>
+        <p>
+          <strong>Your use of the Service is entirely at your own risk.</strong> We provide the Service
+          on an "as is" and "as available" basis without any warranties.
         </p>
 
         <h2>2. AI-Generated Content Limitations</h2>
@@ -281,20 +497,28 @@ export function TermsOfUse() {
     <div className="legal-pages">
       <div className="legal-container">
         <h1>Terms of Use</h1>
-        <p><strong>Last updated:</strong> May 2025</p>
-        <p><strong>Effective Date:</strong> May 2025</p>
+        <p><strong>Last updated:</strong> January 12, 2026</p>
+        <p><strong>Effective Date:</strong> January 12, 2026</p>
 
         <h2>1. Agreement to Terms</h2>
         <p>
-          By accessing or using the NeuroClima Bot service ("Service"), you agree to be bound by 
+          By accessing or using the NeuroClima Bot service ("Service"), you agree to be bound by
           these Terms of Use ("Terms"). If you do not agree to these Terms, you may not use the Service.
+        </p>
+        <p>
+          These Terms incorporate our Privacy Policy and Disclaimer by reference. By using the Service,
+          you also agree to those policies.
         </p>
 
         <h2>2. Description of Service</h2>
         <p>
-          NeuroClima Bot is an AI-powered conversational service that provides information about 
-          climate policy and environmental topics. The Service is currently in testing phase and 
-          may be subject to changes, improvements, and updates.
+          NeuroClima Bot is an AI-powered conversational service that provides information about
+          climate policy and environmental topics through advanced machine learning and retrieval
+          systems.
+        </p>
+        <p>
+          <strong>Development Phase:</strong> The Service is continuously improving with new features,
+          updates, and optimizations. Your feedback helps us enhance accuracy and functionality.
         </p>
 
         <h2>3. Eligibility and Account Requirements</h2>
@@ -345,15 +569,31 @@ export function TermsOfUse() {
 
         <h2>6. Privacy and Data Collection</h2>
         <p>
-          Your privacy is governed by our Privacy Policy, which is incorporated by reference. 
+          Your privacy is governed by our Privacy Policy, which is incorporated by reference.
           Key points:
         </p>
+
+        <h3>6.1 Consent Management</h3>
         <ul>
-          <li>We collect minimal personal data necessary for service provision</li>
-          <li>Anonymous usage data helps improve the AI system</li>
-          <li>Testing-phase data (via LangFuse) is temporary and will be deleted</li>
-          <li>You have rights under GDPR and applicable privacy laws</li>
+          <li><strong>User Control:</strong> You control analytics data collection via Privacy Settings</li>
+          <li><strong>Opt-Out Model:</strong> Analytics enabled by default; opt-out anytime</li>
+          <li><strong>Essential Data:</strong> Minimal data required for service functionality (cannot be disabled)</li>
         </ul>
+
+        <h3>6.2 Data Protection Commitments</h3>
+        <ul>
+          <li><strong>Complete Anonymization:</strong> No personal identifiers in any collected data</li>
+          <li><strong>GDPR Compliance:</strong> Full compliance with EU data protection regulations</li>
+          <li><strong>Langfuse Analytics:</strong> Optional AI observability for system improvement (with your consent)</li>
+          <li><strong>Your Rights:</strong> Access, rectification, erasure, and data portability under GDPR</li>
+          <li><strong>No Tracking:</strong> No cookies, no cross-site tracking, no user profiling</li>
+        </ul>
+
+        <h3>6.3 Managing Your Privacy</h3>
+        <p>
+          Access Privacy Settings anytime by clicking the <strong>"Privacy"</strong> button in the header.
+          Toggle analytics consent ON/OFF instantly - changes apply immediately.
+        </p>
 
         <h2>7. Service Availability and Modifications</h2>
         <ul>
