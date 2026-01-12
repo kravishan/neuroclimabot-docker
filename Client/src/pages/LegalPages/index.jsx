@@ -85,24 +85,24 @@ export function PrivacyPolicy() {
           <div className="important-notice">
             <p><strong>GDPR-COMPLIANT DATA COLLECTION:</strong></p>
             <ul>
-              <li>✅ <strong>Completely Anonymous:</strong> No personal identifiers, IP addresses, or user tracking</li>
-              <li>✅ <strong>User Control:</strong> Disable analytics anytime via Privacy Settings</li>
-              <li>✅ <strong>Transparent Processing:</strong> Clear information about what data is collected and why</li>
-              <li>✅ <strong>Consent Versioning:</strong> Your consent preferences are tracked with timestamps</li>
-              <li>✅ <strong>Platform Independence:</strong> NeuroClima Bot data is separate from main platform</li>
-              <li>✅ <strong>No Third-Party Sharing:</strong> Data never sold or shared for commercial purposes</li>
+              <li><strong>Completely Anonymous:</strong> No personal identifiers, IP addresses, or user tracking</li>
+              <li><strong>User Control:</strong> Disable analytics anytime via Privacy Settings</li>
+              <li><strong>Transparent Processing:</strong> Clear information about what data is collected and why</li>
+              <li><strong>Consent Versioning:</strong> Your consent preferences are tracked with timestamps</li>
+              <li><strong>Platform Independence:</strong> NeuroClima Bot data is separate from main platform</li>
+              <li><strong>No Third-Party Sharing:</strong> Data never sold or shared for commercial purposes</li>
             </ul>
           </div>
 
           <h3>3.4 What We DO NOT Collect</h3>
           <p>To ensure your privacy, we explicitly <strong>do not collect:</strong></p>
           <ul>
-            <li>❌ Names, email addresses, or contact information (unless you voluntarily provide via support)</li>
-            <li>❌ IP addresses or geolocation data</li>
-            <li>❌ Device fingerprints or tracking cookies</li>
-            <li>❌ Cross-platform user tracking or profiling</li>
-            <li>❌ Authentication credentials or account information</li>
-            <li>❌ Payment or financial information</li>
+            <li>Names, email addresses, or contact information (unless you voluntarily provide via support)</li>
+            <li>IP addresses or geolocation data</li>
+            <li>Device fingerprints or tracking cookies</li>
+            <li>Cross-platform user tracking or profiling</li>
+            <li>Authentication credentials or account information</li>
+            <li>Payment or financial information</li>
           </ul>
 
           <h2>4. Legal Basis for Processing (GDPR Article 6)</h2>
