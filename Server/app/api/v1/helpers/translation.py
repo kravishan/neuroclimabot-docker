@@ -1,6 +1,7 @@
 """
 Translation helper functions to eliminate code duplication.
 Centralizes translation logic for all chat endpoints.
+Includes GDPR-compliant consent enforcement.
 """
 
 import time
@@ -10,6 +11,7 @@ from uuid import UUID
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.external.translation_client import get_translation_client
 from app.services.analytics.integration import track_chat_analytics
+from app.services.tracing import set_analytics_consent
 from app.utils.logger import get_logger
 from app.constants import MAX_TRACE_OUTPUT_LENGTH
 
@@ -114,6 +116,14 @@ async def process_with_translation(
     start_time = time.perf_counter()
     translation_client = get_translation_client()
 
+    # GDPR: Set analytics consent for this request context
+    analytics_consent = True  # Default: ON (opt-out model)
+    if request.consent_metadata:
+        analytics_consent = request.consent_metadata.analytics_consent
+
+    set_analytics_consent(analytics_consent)
+    logger.info(f"📊 Analytics consent for this request: {analytics_consent}")
+
     # Step 1: Input Translation (auto-detect → English)
     english_message, detected_language = await translation_client.translate_to_english(request.message)
 
@@ -198,7 +208,7 @@ async def process_with_translation_and_tracing(
     translation_client = get_translation_client()
     langfuse_client = get_langfuse_client()
 
-    # Extract consent metadata
+    # GDPR: Extract and set analytics consent for this request context
     consent_metadata = {}
     analytics_consent = True  # Default: ON (opt-out model)
 
@@ -211,10 +221,15 @@ async def process_with_translation_and_tracing(
         }
         analytics_consent = request.consent_metadata.analytics_consent
 
+    # Set consent in context - this will affect ALL trace creation in the call stack
+    set_analytics_consent(analytics_consent)
+    logger.info(f"📊 Analytics consent for this request: {analytics_consent}")
+
     # Check if user has consented to analytics/tracing (GDPR compliance)
     if not analytics_consent:
-        logger.info(f"⚠️  Skipping Langfuse trace - user declined analytics consent")
+        logger.info(f"⚠️  User declined analytics consent - processing without traces")
         # Process without tracing - use the non-tracing workflow
+        # Note: consent is already set in context, so no traces will be created anywhere
         return await process_with_translation(
             request=request,
             orchestration_fn=orchestration_fn,
