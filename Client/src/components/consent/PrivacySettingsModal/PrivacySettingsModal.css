@@ -1,11 +1,11 @@
-/* Privacy Settings Modal - Google-like Design */
+/* Privacy Settings Modal - Matching Application Design */
 .privacy-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -25,17 +25,17 @@
 }
 
 .privacy-modal {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(40px);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   max-width: 650px;
   width: 100%;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: modalSlideIn 0.3s ease-out;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -54,26 +54,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28px 32px 24px 32px;
+  padding: 24px 32px 20px 32px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .privacy-modal-title {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .privacy-modal-title svg {
-  color: #4285f4;
+  color: #3a7d45;
   flex-shrink: 0;
 }
 
 .privacy-modal-title h2 {
-  font-size: 24px;
-  font-weight: 500;
-  color: #202124;
+  font-size: 22px;
+  font-weight: 600;
+  color: #000000;
   margin: 0;
   letter-spacing: -0.2px;
 }
@@ -83,7 +83,7 @@
   border: none;
   cursor: pointer;
   padding: 8px;
-  color: #5f6368;
+  color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,12 +94,12 @@
 }
 
 .privacy-modal-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #202124;
+  background: rgba(0, 0, 0, 0.04);
+  color: #000000;
 }
 
 .privacy-modal-close:active {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* Tabs */
@@ -108,17 +108,17 @@
   gap: 0;
   padding: 0 32px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .privacy-tab {
-  padding: 16px 20px;
+  padding: 14px 20px;
   border: none;
   background: transparent;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #5f6368;
+  color: #64748b;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
   display: flex;
@@ -128,21 +128,21 @@
 }
 
 .privacy-tab:hover {
-  color: #202124;
-  background: rgba(0, 0, 0, 0.04);
+  color: #000000;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .privacy-tab.active {
-  color: #4285f4;
-  border-bottom-color: #4285f4;
+  color: #3a7d45;
+  border-bottom-color: #3a7d45;
 }
 
 /* Content */
 .privacy-modal-content {
-  padding: 32px;
+  padding: 28px 32px;
   overflow-y: auto;
   flex: 1;
-  background: rgba(255, 255, 255, 0.5);
+  background: white;
 }
 
 /* Custom Scrollbar */
@@ -166,26 +166,25 @@
 .privacy-info-box {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 16px 20px;
-  background: rgba(66, 133, 244, 0.08);
-  border-left: 3px solid #4285f4;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(58, 125, 69, 0.08);
+  border-left: 3px solid #3a7d45;
   border-radius: 8px;
-  margin-bottom: 28px;
-  color: #1967d2;
+  margin-bottom: 24px;
 }
 
 .privacy-info-box svg {
   flex-shrink: 0;
   margin-top: 2px;
-  color: #4285f4;
+  color: #3a7d45;
 }
 
 .privacy-info-box p {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #3c4043;
+  color: #555;
 }
 
 /* Consent Preferences List */
@@ -197,16 +196,17 @@
 }
 
 .consent-preference-item {
-  padding: 20px;
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 18px;
+  background: #fafafa;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
 .consent-preference-item:hover {
-  border-color: rgba(0, 0, 0, 0.12);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
 }
 
 .consent-preference-header {
@@ -223,13 +223,13 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: #4285f4;
+  accent-color: #3a7d45;
   flex-shrink: 0;
 }
 
 .consent-preference-toggle input[type="checkbox"]:disabled {
   cursor: not-allowed;
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
 .consent-preference-toggle label {
@@ -238,7 +238,7 @@
   gap: 10px;
   cursor: pointer;
   font-size: 15px;
-  color: #202124;
+  color: #000000;
   flex: 1;
   font-weight: 500;
 }
@@ -257,25 +257,25 @@
 }
 
 .consent-badge-required {
-  color: #d93025;
-  background: rgba(217, 48, 37, 0.1);
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
 }
 
 .consent-badge-optional {
-  color: #188038;
-  background: rgba(24, 128, 56, 0.1);
+  color: #3a7d45;
+  background: rgba(58, 125, 69, 0.1);
 }
 
 .consent-preference-description {
   font-size: 14px;
-  color: #5f6368;
+  color: #555;
   line-height: 1.5;
   margin: 0 0 6px 32px;
 }
 
 .consent-preference-details {
   font-size: 13px;
-  color: #80868b;
+  color: #64748b;
   line-height: 1.5;
   margin: 0 0 0 32px;
 }
@@ -283,7 +283,7 @@
 /* Save Message */
 .privacy-save-message {
   padding: 12px 20px;
-  background: #1e8e3e;
+  background: #3a7d45;
   color: white;
   border-radius: 8px;
   text-align: center;
@@ -291,6 +291,7 @@
   margin-bottom: 20px;
   animation: slideDown 0.3s ease-out;
   font-size: 14px;
+  box-shadow: 0 2px 4px rgba(58, 125, 69, 0.2);
 }
 
 @keyframes slideDown {
@@ -309,9 +310,9 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 20px 32px;
+  padding: 18px 32px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   justify-content: flex-end;
 }
 
@@ -331,63 +332,66 @@
 }
 
 .privacy-btn-primary {
-  background: #4285f4;
+  background: #3a7d45;
   color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 4px rgba(58, 125, 69, 0.2);
 }
 
 .privacy-btn-primary:hover {
-  background: #3b78e7;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: #2e6e39;
+  box-shadow: 0 4px 8px rgba(58, 125, 69, 0.3);
+  transform: translateY(-1px);
 }
 
 .privacy-btn-primary:active {
-  background: #3367d6;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: #276033;
+  box-shadow: 0 1px 2px rgba(58, 125, 69, 0.3);
+  transform: translateY(0);
 }
 
 .privacy-btn-secondary {
-  background: white;
-  color: #5f6368;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
 }
 
 .privacy-btn-secondary:hover {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.18);
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
 }
 
 .privacy-btn-secondary:active {
-  background: rgba(0, 0, 0, 0.08);
+  background: #e2e8f0;
 }
 
 .privacy-btn-danger {
   background: transparent;
-  color: #d93025;
-  border: 1px solid rgba(217, 48, 37, 0.3);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.3);
 }
 
 .privacy-btn-danger:hover {
-  background: rgba(217, 48, 37, 0.04);
-  border-color: #d93025;
+  background: rgba(220, 53, 69, 0.04);
+  border-color: #dc3545;
 }
 
 .privacy-btn-danger:active {
-  background: rgba(217, 48, 37, 0.1);
+  background: rgba(220, 53, 69, 0.1);
 }
 
 /* Info Section */
 .privacy-info-section {
   font-size: 14px;
   line-height: 1.6;
-  color: #3c4043;
+  color: #555;
 }
 
 .privacy-info-section h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #202124;
-  margin: 28px 0 12px 0;
+  color: #000000;
+  margin: 24px 0 12px 0;
 }
 
 .privacy-info-section h3:first-child {
@@ -405,22 +409,22 @@
 
 .privacy-info-section li {
   margin-bottom: 8px;
-  color: #5f6368;
+  color: #64748b;
 }
 
 .privacy-info-links {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 20px;
-  background: rgba(66, 133, 244, 0.04);
-  border: 1px solid rgba(66, 133, 244, 0.12);
+  padding: 18px;
+  background: rgba(58, 125, 69, 0.04);
+  border: 1px solid rgba(58, 125, 69, 0.12);
   border-radius: 8px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .privacy-info-links a {
-  color: #4285f4;
+  color: #3a7d45;
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
@@ -431,8 +435,9 @@
 }
 
 .privacy-info-links a:hover {
-  background: rgba(66, 133, 244, 0.08);
+  background: rgba(58, 125, 69, 0.08);
   text-decoration: underline;
+  color: #2e6e39;
 }
 
 /* Responsive Design */
@@ -474,142 +479,5 @@
   .consent-preference-description,
   .consent-preference-details {
     margin-left: 32px;
-  }
-}
-
-/* Light Theme Optimizations */
-@media (prefers-color-scheme: light) {
-  .privacy-modal {
-    background: rgba(255, 255, 255, 0.98);
-  }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .privacy-modal-overlay {
-    background: rgba(0, 0, 0, 0.6);
-  }
-
-  .privacy-modal {
-    background: rgba(45, 45, 45, 0.98);
-    backdrop-filter: blur(40px);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .privacy-modal-header {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  .privacy-modal-title h2 {
-    color: #e8eaed;
-  }
-
-  .privacy-modal-title svg {
-    color: #8ab4f8;
-  }
-
-  .privacy-modal-close {
-    color: #9aa0a6;
-  }
-
-  .privacy-modal-close:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #e8eaed;
-  }
-
-  .privacy-modal-tabs {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .privacy-tab {
-    color: #9aa0a6;
-  }
-
-  .privacy-tab:hover {
-    color: #e8eaed;
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .privacy-tab.active {
-    color: #8ab4f8;
-    border-bottom-color: #8ab4f8;
-  }
-
-  .privacy-modal-content {
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .privacy-info-box {
-    background: rgba(138, 180, 248, 0.12);
-    border-left-color: #8ab4f8;
-    color: #8ab4f8;
-  }
-
-  .privacy-info-box p {
-    color: #bdc1c6;
-  }
-
-  .consent-preference-item {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.12);
-  }
-
-  .consent-preference-item:hover {
-    border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.06);
-  }
-
-  .consent-preference-toggle label {
-    color: #e8eaed;
-  }
-
-  .consent-preference-description {
-    color: #9aa0a6;
-  }
-
-  .consent-preference-details {
-    color: #80868b;
-  }
-
-  .privacy-btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    color: #e8eaed;
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .privacy-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.12);
-  }
-
-  .privacy-modal-actions {
-    border-top-color: rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.03);
-  }
-
-  .privacy-info-section {
-    color: #bdc1c6;
-  }
-
-  .privacy-info-section h3 {
-    color: #e8eaed;
-  }
-
-  .privacy-info-section li {
-    color: #9aa0a6;
-  }
-
-  .privacy-info-links {
-    background: rgba(138, 180, 248, 0.08);
-    border-color: rgba(138, 180, 248, 0.2);
-  }
-
-  .privacy-info-links a {
-    color: #8ab4f8;
-  }
-
-  .privacy-info-links a:hover {
-    background: rgba(138, 180, 248, 0.12);
   }
 }
