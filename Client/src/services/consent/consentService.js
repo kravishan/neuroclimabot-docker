@@ -24,10 +24,10 @@ class ConsentService {
 
       const consent = JSON.parse(stored)
 
-      // Check if consent version matches (for policy updates)
-      if (consent.version !== CONSENT_VERSION) {
-        console.log('Consent version mismatch - requesting new consent')
-        return null
+      // Backward compatibility: if old format with version exists, remove it
+      if (consent.version) {
+        delete consent.version
+        localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consent))
       }
 
       return consent
@@ -44,7 +44,6 @@ class ConsentService {
   setConsent(preferences) {
     try {
       const consent = {
-        version: CONSENT_VERSION,
         timestamp: new Date().toISOString(),
         preferences: {
           [CONSENT_TYPES.ESSENTIAL]: true, // Always true
@@ -131,7 +130,7 @@ class ConsentService {
     return {
       consent_given: this.hasConsentBeenSet(),
       analytics_consent: this.hasConsent(CONSENT_TYPES.ANALYTICS),
-      consent_version: consent?.version || null,
+      consent_version: CONSENT_VERSION,
       consent_timestamp: consent?.timestamp || null
     }
   }
