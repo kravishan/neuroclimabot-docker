@@ -76,103 +76,110 @@ const ExplorePage = () => {
 
     hasFetchedData.current = true
 
+    // Helper function to check if result has actual graph data
+    function hasGraphData(result) {
+      if (!result || !result.entities) return false
+      const entitiesCount = result.entities.length || result.metadata?.entities_count || 0
+      return entitiesCount > 0
+    }
+
     async function fetchGraphData() {
+      setLoading(true)
+      console.log("Fetching GraphRAG data for doc_name:", docName)
+      console.log("Fallback doc_name available:", fallbackDocName)
+
+      let result = null
+
+      // ATTEMPT 1: Try with primary docName
       try {
-        setLoading(true)
-        console.log("Fetching GraphRAG data for doc_name:", docName)
-        console.log("Fallback doc_name available:", fallbackDocName)
+        console.log("🔍 Attempt 1: Trying with primary doc_name:", docName)
+        result = await fetchTippingPointsGraphByDocName(docName)
+        console.log("📊 Attempt 1 response:", result)
 
-        let result = await fetchTippingPointsGraphByDocName(docName)
-
-        console.log("GraphRAG API response:", result)
-
-        // If first attempt failed and we have a fallback doc name, try with fallback
-        if ((!result.success || !result.graph) && fallbackDocName) {
-          console.log("First doc failed, trying fallback doc_name:", fallbackDocName)
-          setDocName(fallbackDocName)
-
-          result = await fetchTippingPointsGraphByDocName(fallbackDocName)
-
-          console.log("Fallback GraphRAG API response:", result)
-        }
-
-        if (result.success && result.graph) {
-          const transformedGraphData = transformEnhancedGraphRAGData(result.graph)
-
-          // Check if the transformed data has any nodes
-          if (!transformedGraphData.nodes || transformedGraphData.nodes.length === 0) {
-            setError('Sorry, we don\'t have the knowledge graph data for this question.')
-            setLoading(false)
-            return
-          }
-
-          setGraphData(transformedGraphData)
-
-          // Store all data for displaying in tabs
-          const allDataObj = {
-            entities: result.entities || [],
-            relationships: result.relationships || [],
-            communities: result.communities || [],
-            claims: result.claims || [],
-            community_reports: result.community_reports || [],
-            metadata: result.metadata || {}
-          }
-          console.log('📊 All Data received:', allDataObj)
-          console.log('📊 Entities count:', allDataObj.entities?.length || 0)
-          console.log('📊 Relationships count:', allDataObj.relationships?.length || 0)
-          console.log('📊 Communities count:', allDataObj.communities?.length || 0)
-          console.log('📊 Claims count:', allDataObj.claims?.length || 0)
-          console.log('📊 Community Reports count:', allDataObj.community_reports?.length || 0)
-          setAllData(allDataObj)
+        if (result.success && result.graph && hasGraphData(result)) {
+          console.log("✅ Attempt 1 succeeded!")
+          return handleSuccessfulResult(result)
         } else {
-          setError(result.error || 'Failed to generate enhanced graph visualization')
+          console.log("⚠️ Attempt 1: No graph data found (entities count: " + (result.entities?.length || 0) + ")")
         }
-
-        setLoading(false)
       } catch (err) {
-        console.error('Error fetching enhanced graph data:', err)
-
-        // Try fallback if available
-        if (fallbackDocName) {
-          console.log("Error occurred, trying fallback doc_name:", fallbackDocName)
-          try {
-            setDocName(fallbackDocName)
-
-            const fallbackResult = await fetchTippingPointsGraphByDocName(fallbackDocName)
-
-            if (fallbackResult.success && fallbackResult.graph) {
-              const transformedGraphData = transformEnhancedGraphRAGData(fallbackResult.graph)
-
-              if (!transformedGraphData.nodes || transformedGraphData.nodes.length === 0) {
-                setError('Sorry, we don\'t have the knowledge graph data for this question.')
-                setLoading(false)
-                return
-              }
-
-              setGraphData(transformedGraphData)
-
-              const fallbackAllData = {
-                entities: fallbackResult.entities || [],
-                relationships: fallbackResult.relationships || [],
-                communities: fallbackResult.communities || [],
-                claims: fallbackResult.claims || [],
-                community_reports: fallbackResult.community_reports || [],
-                metadata: fallbackResult.metadata || {}
-              }
-              setAllData(fallbackAllData)
-
-              setLoading(false)
-              return
-            }
-          } catch (fallbackErr) {
-            console.error('Fallback also failed:', fallbackErr)
-          }
-        }
-
-        setError('Failed to load knowledge graph data from GraphRAG service')
-        setLoading(false)
-        hasFetchedData.current = false
+        console.error("❌ Attempt 1 failed with error:", err)
       }
+
+      // ATTEMPT 2: Retry with primary docName
+      try {
+        console.log("🔍 Attempt 2: Retrying with primary doc_name:", docName)
+        result = await fetchTippingPointsGraphByDocName(docName)
+        console.log("📊 Attempt 2 response:", result)
+
+        if (result.success && result.graph && hasGraphData(result)) {
+          console.log("✅ Attempt 2 succeeded!")
+          return handleSuccessfulResult(result)
+        } else {
+          console.log("⚠️ Attempt 2: No graph data found (entities count: " + (result.entities?.length || 0) + ")")
+        }
+      } catch (err) {
+        console.error("❌ Attempt 2 failed with error:", err)
+      }
+
+      console.log("❌ Both attempts with primary doc_name failed. No relevant data found.")
+
+      // ATTEMPT 3: Try with fallback docName if available
+      if (fallbackDocName) {
+        try {
+          console.log("🔍 Attempt 3: Trying with fallback doc_name:", fallbackDocName)
+          setDocName(fallbackDocName)
+          result = await fetchTippingPointsGraphByDocName(fallbackDocName)
+          console.log("📊 Attempt 3 (fallback) response:", result)
+
+          if (result.success && result.graph && hasGraphData(result)) {
+            console.log("✅ Fallback succeeded!")
+            return handleSuccessfulResult(result)
+          } else {
+            console.log("⚠️ Fallback: No graph data found (entities count: " + (result.entities?.length || 0) + ")")
+          }
+        } catch (err) {
+          console.error("❌ Fallback attempt failed with error:", err)
+        }
+      }
+
+      // ALL ATTEMPTS FAILED
+      console.error("❌ All attempts failed. No data found for primary or fallback documents.")
+      setError('Sorry, we don\'t have the knowledge graph data for this question.')
+      setLoading(false)
+      hasFetchedData.current = false
+    }
+
+    function handleSuccessfulResult(result) {
+      const transformedGraphData = transformEnhancedGraphRAGData(result.graph)
+
+      // Check if the transformed data has any nodes
+      if (!transformedGraphData.nodes || transformedGraphData.nodes.length === 0) {
+        setError('Sorry, we don\'t have the knowledge graph data for this question.')
+        setLoading(false)
+        return
+      }
+
+      setGraphData(transformedGraphData)
+
+      // Store all data for displaying in tabs
+      const allDataObj = {
+        entities: result.entities || [],
+        relationships: result.relationships || [],
+        communities: result.communities || [],
+        claims: result.claims || [],
+        community_reports: result.community_reports || [],
+        metadata: result.metadata || {}
+      }
+      console.log('📊 All Data received:', allDataObj)
+      console.log('📊 Entities count:', allDataObj.entities?.length || 0)
+      console.log('📊 Relationships count:', allDataObj.relationships?.length || 0)
+      console.log('📊 Communities count:', allDataObj.communities?.length || 0)
+      console.log('📊 Claims count:', allDataObj.claims?.length || 0)
+      console.log('📊 Community Reports count:', allDataObj.community_reports?.length || 0)
+      setAllData(allDataObj)
+
+      setLoading(false)
     }
 
     fetchGraphData()
