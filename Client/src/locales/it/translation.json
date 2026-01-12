@@ -1,8 +1,8 @@
 {
-  "NeuroClima Bot": "NeuroClima Bot",
+  "NeuroClima Bot": "Neuroclima Bot",
   "askAnything": "Chiedere qualsiasi cosa",
   "askContinue": "Continua la conversazione...",
-  "disclaimer": "NeuroClima Bot può fare degli errori. Assicurati sempre di ricontrollare le informazioni importanti nelle sue risposte.",
+  "disclaimer": "Neuroclima Bot può fare degli errori. Assicurati sempre di ricontrollare le informazioni importanti nelle sue risposte.",
   "learnMore": "Scopri di più",
   
   "participateResearch": "Feedback",
@@ -34,7 +34,7 @@
   "pressToSend": "Premi {{key}} per inviare",
   "copied": "Copiato negli appunti!",
   "explore": "Esplora",
-  "NeuroClima": "NeuroClima Bot",
+  "NeuroClima": "Neuroclima Bot",
   "showMore": "Mostra altro",
   "showLess": "Mostra meno",
   "noReferencesFound": "Nessun riferimento trovato",
@@ -48,5 +48,59 @@
   "knowledgeGraph": "Grafico della Conoscenza",
   "aboutTippingPoints": "Informazioni sui Punti Critici",
   "loadingGraphData": "Caricamento dei dati del grafico...",
-  "returnToHome": "Ritorna alla Home"
+  "returnToHome": "Ritorna alla Home",
+
+  "consent": {
+    "banner": {
+      "title": "La Tua Privacy Conta",
+      "description": "Utilizziamo cookie e tecnologie simili per migliorare la tua esperienza. I tuoi dati ci aiutano a migliorare il nostro modello di IA e fornire migliori informazioni sul clima.",
+      "anonymized": "Tutti i dati sono anonimizzati e non possono essere ricondotti a te",
+      "acceptAll": "Accetta Tutto",
+      "rejectOptional": "Rifiuta Opzionali",
+      "customize": "Personalizza",
+      "savePreferences": "Salva Preferenze",
+      "back": "Indietro"
+    },
+    "settings": {
+      "title": "Impostazioni Privacy",
+      "preferencesTab": "Preferenze di Consenso",
+      "infoTab": "Informazioni sulla Privacy",
+      "description": "Gestisci le tue preferenze di raccolta dati. Puoi modificare queste impostazioni in qualsiasi momento.",
+      "saved": "Le tue preferenze sono state salvate!",
+      "resetConfirm": "Sei sicuro di voler ripristinare le tue preferenze di consenso? La pagina verrà ricaricata.",
+      "resetSuccess": "Preferenze di consenso ripristinate. Ricaricamento pagina...",
+      "save": "Salva Preferenze",
+      "cancel": "Annulla",
+      "reset": "Ripristina Tutto"
+    },
+    "essential": {
+      "name": "Servizi Essenziali",
+      "description": "Necessari per il corretto funzionamento dell'applicazione. Include gestione della sessione e funzionalità di chat principali.",
+      "details": "Questi servizi sono sempre attivi e non possono essere disabilitati."
+    },
+    "analytics": {
+      "name": "Analisi e Ricerca",
+      "description": "Ci aiuta a migliorare il modello di IA e analizzare le interazioni degli utenti per scopi di ricerca.",
+      "details": "Include: registrazione delle domande, raccolta di tracce in Langfuse, monitoraggio delle prestazioni e dati di addestramento del modello."
+    },
+    "required": "Richiesto",
+    "optional": "Opzionale",
+    "info": {
+      "anonymizationTitle": "I Tuoi Dati Sono Anonimizzati",
+      "anonymizationDescription": "Tutti i dati raccolti tramite Neuroclima Bot sono completamente anonimizzati. Non raccogliamo informazioni personali e le tue interazioni non possono essere ricondotte a te individualmente.",
+      "platformIndependenceTitle": "Indipendenza della Piattaforma",
+      "platformIndependenceDescription": "Neuroclima Bot opera indipendentemente dalla piattaforma principale Neuroclima Solutions. Anche se hai un account sulla piattaforma principale, tutte le interazioni su Neuroclima Bot rimangono anonime.",
+      "dataCollectionTitle": "Quali Dati Raccogliamo",
+      "dataItem1": "Domande e query che invii al chatbot",
+      "dataItem2": "Risposte dell'IA e modelli di interazione",
+      "dataItem3": "Informazioni sulla sessione (durata, visualizzazioni di pagina)",
+      "dataItem4": "Metriche di prestazioni tecniche",
+      "dataUsageTitle": "Come Utilizziamo I Tuoi Dati",
+      "usageItem1": "Migliorare l'accuratezza e le risposte del modello di IA",
+      "usageItem2": "Ricerca sui modelli di comunicazione climatica",
+      "usageItem3": "Ottimizzazione delle prestazioni del sistema",
+      "yourRightsTitle": "I Tuoi Diritti",
+      "yourRightsDescription": "Puoi ritirare il consenso in qualsiasi momento tramite Impostazioni Privacy nell'intestazione. Le modifiche hanno effetto immediato."
+    }
+  }
 }

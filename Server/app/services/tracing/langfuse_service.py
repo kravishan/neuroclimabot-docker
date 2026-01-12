@@ -1,17 +1,22 @@
 """
 Langfuse service with PROPER hierarchical tracing using context managers
+and GDPR-compliant consent checking
 """
 
 import logging
 import time
 from typing import Any, Dict, Optional, List
 from contextlib import contextmanager
+from contextvars import ContextVar
 
 logger = logging.getLogger(__name__)
 
 # Global langfuse client instance
 _langfuse_client = None
 _langfuse_enabled = False
+
+# Context variable to store user's analytics consent for current request
+_analytics_consent: ContextVar[bool] = ContextVar('analytics_consent', default=True)
 
 
 def get_langfuse_client():
@@ -50,20 +55,55 @@ def get_langfuse_client():
     return _langfuse_client
 
 
+def set_analytics_consent(consent: bool):
+    """
+    Set analytics consent for the current request context.
+    This affects all Langfuse tracing for the current request.
+
+    Args:
+        consent: True if user consented to analytics, False otherwise
+    """
+    _analytics_consent.set(consent)
+    logger.info(f"📊 Analytics consent set to: {consent}")
+
+
+def get_analytics_consent() -> bool:
+    """
+    Get analytics consent from the current request context.
+    Defaults to True (opt-out model).
+    """
+    return _analytics_consent.get()
+
+
 def is_langfuse_enabled(feature: str = None) -> bool:
-    """Check if langfuse is enabled"""
+    """
+    Check if langfuse is enabled AND user has consented to analytics.
+
+    This function now checks:
+    1. Global Langfuse configuration (LANGFUSE_ENABLED setting)
+    2. User's analytics consent (from request context)
+
+    Returns False if either check fails (GDPR compliance).
+    """
     try:
         from app.config import get_settings
         settings = get_settings()
-        
+
+        # Check 1: Global Langfuse configuration
         if not settings.LANGFUSE_ENABLED:
             return False
-        
+
         if not settings.langfuse_is_configured:
             return False
-        
+
+        # Check 2: User's analytics consent (GDPR compliance)
+        user_consent = get_analytics_consent()
+        if not user_consent:
+            logger.debug("🚫 Langfuse disabled for this request - user declined analytics consent")
+            return False
+
         return True
-        
+
     except Exception:
         return False
 
@@ -178,11 +218,16 @@ class ConversationTracer:
         """Start main conversation trace using context manager"""
         if not is_langfuse_enabled():
             return
-        
+
+        # Check user consent for analytics - GDPR compliance
+        if metadata and not metadata.get("analytics_consent", True):
+            logger.info(f"⚠️  Skipping Langfuse trace - user declined analytics consent for session {self.session_id}")
+            return
+
         self.langfuse_client = get_langfuse_client()
         if not self.langfuse_client:
             return
-        
+
         try:
             self.start_time = time.time()
             
@@ -200,6 +245,11 @@ class ConversationTracer:
                     "language": metadata.get("language", "en") if metadata else "en",
                     "difficulty": metadata.get("difficulty", "low") if metadata else "low",
                     "include_sources": metadata.get("include_sources", True) if metadata else True,
+                    # Consent information for audit trail
+                    "consent_given": metadata.get("consent_given", True) if metadata else True,
+                    "analytics_consent": metadata.get("analytics_consent", True) if metadata else True,
+                    "consent_version": metadata.get("consent_version") if metadata else None,
+                    "consent_timestamp": metadata.get("consent_timestamp") if metadata else None,
                     **(metadata or {})
                 }
             )

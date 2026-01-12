@@ -58,9 +58,18 @@ class ContinueConversationRequest(BaseModel):
     temperature: Optional[float] = Field(None, ge=0.0, le=2.0, description="Response creativity")
 
 
+class ConsentMetadata(BaseModel):
+    """GDPR consent metadata from frontend."""
+
+    consent_given: bool = Field(True, description="Whether user has provided consent")
+    analytics_consent: bool = Field(True, description="Whether user consented to analytics/training data")
+    consent_version: Optional[str] = Field(None, description="Consent policy version")
+    consent_timestamp: Optional[str] = Field(None, description="When consent was given")
+
+
 class ChatRequest(BaseModel):
     """Generic chat request model (for backward compatibility)."""
-    
+
     message: str = Field(..., min_length=1, max_length=2000, description="User message")
     session_id: Optional[UUID] = None
     language: str = Field("en", description="Response language")
@@ -69,6 +78,7 @@ class ChatRequest(BaseModel):
     include_sources: bool = Field(True, description="Include source documents")
     max_tokens: Optional[int] = Field(None, ge=1, le=4000, description="Maximum response tokens")
     temperature: Optional[float] = Field(None, ge=0.0, le=2.0, description="Response creativity")
+    consent_metadata: Optional[ConsentMetadata] = Field(None, description="GDPR consent metadata")
 
 
 class Source(BaseModel):

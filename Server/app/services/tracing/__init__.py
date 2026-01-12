@@ -6,6 +6,8 @@ try:
         get_langfuse_service,
         get_langfuse_client,
         is_langfuse_enabled,
+        set_analytics_consent,
+        get_analytics_consent,
         langfuse_service,
         ConversationTracer,
         trace_api_call
@@ -25,7 +27,13 @@ except ImportError as e:
     
     def is_langfuse_enabled(feature=None):
         return False
-    
+
+    def set_analytics_consent(consent: bool):
+        pass
+
+    def get_analytics_consent():
+        return True
+
     langfuse_service = None
     
     # Simple fallback tracer
@@ -69,8 +77,10 @@ except ImportError as e:
 
 __all__ = [
     "get_langfuse_service",
-    "get_langfuse_client", 
+    "get_langfuse_client",
     "is_langfuse_enabled",
+    "set_analytics_consent",
+    "get_analytics_consent",
     "langfuse_service",
     "ConversationTracer",
     "trace_api_call"

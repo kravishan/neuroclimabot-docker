@@ -110,10 +110,10 @@ class MilvusClient:
             try:
                 completed_tasks = await asyncio.wait_for(
                     asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
-                    timeout=30.0  # 10 second timeout for all parallel searches
+                    timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
                 )
             except asyncio.TimeoutError:
-                logger.warning("Parallel chunk searches timed out after 10s")
+                logger.warning(f"Parallel chunk searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
                 # Cancel remaining tasks
                 for _, task in search_tasks:
                     if not task.done():
@@ -277,10 +277,10 @@ class MilvusClient:
             try:
                 completed_tasks = await asyncio.wait_for(
                     asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
-                    timeout=30.0  # 10 second timeout for all parallel searches
+                    timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
                 )
             except asyncio.TimeoutError:
-                logger.warning("Parallel summary searches timed out after 10s")
+                logger.warning(f"Parallel summary searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
                 # Cancel remaining tasks
                 for _, task in search_tasks:
                     if not task.done():
