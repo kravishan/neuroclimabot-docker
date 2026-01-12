@@ -6,14 +6,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
+        - VITE_API_DOCUMENT_URL=${VITE_API_DOCUMENT_URL:-http://localhost:5000}
+        - VITE_TRANSLATE_API_URL=${VITE_TRANSLATE_API_URL:-http://localhost:5000}
+        - VITE_STP_SERVICE_URL=${VITE_STP_SERVICE_URL:-http://localhost:5000}
     container_name: neuroclima-client
     ports:
       - "80:80"
-    environment:
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
-      - VITE_API_DOCUMENT_URL=${VITE_API_DOCUMENT_URL:-http://localhost:5000}
-      - VITE_TRANSLATE_API_URL=${VITE_TRANSLATE_API_URL:-http://localhost:5000}
-      - VITE_STP_SERVICE_URL=${VITE_STP_SERVICE_URL:-http://localhost:5000}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
       interval: 30s

@@ -12,7 +12,19 @@ RUN npm install
 # Copy application files
 COPY . .
 
-# Build the application
+# Accept build arguments for Vite environment variables
+ARG VITE_API_BASE_URL
+ARG VITE_API_DOCUMENT_URL
+ARG VITE_TRANSLATE_API_URL
+ARG VITE_STP_SERVICE_URL
+
+# Set environment variables for the build
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+ENV VITE_API_DOCUMENT_URL=${VITE_API_DOCUMENT_URL}
+ENV VITE_TRANSLATE_API_URL=${VITE_TRANSLATE_API_URL}
+ENV VITE_STP_SERVICE_URL=${VITE_STP_SERVICE_URL}
+
+# Build the application with environment variables
 RUN npm run build
 
 # Production stage with nginx
