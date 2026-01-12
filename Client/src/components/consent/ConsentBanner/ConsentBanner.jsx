@@ -67,7 +67,6 @@ const ConsentBanner = ({ onOpenSettings }) => {
               {t('consent.banner.description')}
             </p>
             <p className="consent-banner-anonymized">
-              <Shield size={14} />
               {t('consent.banner.anonymized')}
             </p>
 

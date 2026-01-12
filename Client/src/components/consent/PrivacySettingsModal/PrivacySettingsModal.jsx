@@ -80,7 +80,6 @@ const PrivacySettingsModal = ({ isOpen, onClose }) => {
           {activeTab === 'preferences' ? (
             <>
               <div className="privacy-info-box">
-                <Shield size={18} />
                 <p>{t('consent.settings.description')}</p>
               </div>
 

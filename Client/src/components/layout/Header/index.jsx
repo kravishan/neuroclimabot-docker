@@ -147,7 +147,7 @@ const Header = ({
           aria-label="Privacy Settings"
           title={t('consent.settings.title')}
         >
-          <Shield size={18} />
+          <span className="button-text">Privacy</span>
         </button>
 
         {isVoiceModelPage && (

@@ -164,20 +164,11 @@
 }
 
 .privacy-info-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
   padding: 14px 18px;
   background: rgba(58, 125, 69, 0.08);
   border-left: 3px solid #3a7d45;
   border-radius: 8px;
   margin-bottom: 24px;
-}
-
-.privacy-info-box svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-  color: #3a7d45;
 }
 
 .privacy-info-box p {

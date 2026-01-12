@@ -75,9 +75,6 @@
 }
 
 .consent-banner-anonymized {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: 13px;
   color: #3a7d45;
   background: rgba(58, 125, 69, 0.1);
