@@ -132,7 +132,8 @@
 .difficulty-button,
 .language-button,
 .voice-settings-button,
-.dashboard-button {  
+.dashboard-button,
+.privacy-settings-button {  
   padding: 8px 16px;
   border-radius: 12px;
   font-size: 15px;
@@ -150,7 +151,8 @@
 .difficulty-button:hover,
 .language-button:hover,
 .voice-settings-button:hover,
-.dashboard-button:hover {
+.dashboard-button:hover,
+.privacy-settings-button:hover {
   background: rgba(255, 255, 255, 0.8);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -160,7 +162,8 @@
 .difficulty-button:active,
 .language-button:active,
 .voice-settings-button:active,
-.dashboard-button:active {
+.dashboard-button:active,
+.privacy-settings-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
@@ -315,14 +318,16 @@
 .form-button svg,
 .difficulty-button svg,
 .voice-settings-button svg,
-.dashboard-button svg {
+.dashboard-button svg,
+.privacy-settings-button svg {
   transition: transform 0.2s ease;
 }
 
 .form-button:hover svg,
 .difficulty-button:hover svg,
 .voice-settings-button:hover svg,
-.dashboard-button:hover svg {
+.dashboard-button:hover svg,
+.privacy-settings-button:hover svg {
   transform: scale(1.1);
 }
 
@@ -343,7 +348,8 @@
   .difficulty-button,
   .language-button,
   .voice-settings-button,
-  .dashboard-button {
+  .dashboard-button,
+  .privacy-settings-button {
     padding: 8px;
     border-radius: 10px;
   }

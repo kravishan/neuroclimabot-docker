@@ -7,11 +7,14 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import AppRoutes from '@/routes/AppRoutes'
 import ErrorBoundary from '@/components/common/ErrorBoundary'
+import ConsentBanner from '@/components/consent/ConsentBanner/ConsentBanner'
+import PrivacySettingsModal from '@/components/consent/PrivacySettingsModal/PrivacySettingsModal'
 
 function AppContent() {
   const { selectedLanguage, changeLanguage } = useLanguage()
   const [difficultyLevel, setDifficultyLevel] = useState('low')
   const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false)
+  const [isPrivacySettingsOpen, setIsPrivacySettingsOpen] = useState(false)
   const [countdownDisplay, setCountdownDisplay] = useState({
     minutes: 0,
     seconds: 0,
@@ -134,9 +137,17 @@ function AppContent() {
   const handleVoiceSettingsOpen = () => {
     setIsVoiceSettingsOpen(true)
   }
-  
+
   const updateVoiceSettingsOpen = (isOpen) => {
     setIsVoiceSettingsOpen(isOpen)
+  }
+
+  const handlePrivacySettingsOpen = () => {
+    setIsPrivacySettingsOpen(true)
+  }
+
+  const handlePrivacySettingsClose = () => {
+    setIsPrivacySettingsOpen(false)
   }
   
   // Render admin page without header/footer
@@ -157,18 +168,19 @@ function AppContent() {
   
   return (
     <div className={`app-container ${isHomePage ? 'blurred-bg' : ''}`}>
-      <Header 
-        selectedLanguage={selectedLanguage} 
-        changeLanguage={changeLanguage} 
+      <Header
+        selectedLanguage={selectedLanguage}
+        changeLanguage={changeLanguage}
         difficultyLevel={difficultyLevel}
         setDifficultyLevel={setDifficultyLevel}
         onVoiceSettingsOpen={handleVoiceSettingsOpen}
+        onPrivacySettingsOpen={handlePrivacySettingsOpen}
         sessionStatus={sessionStatus}
         countdownDisplay={countdownDisplay}
       />
 
       <main className="main-content">
-        <AppRoutes 
+        <AppRoutes
           selectedLanguage={selectedLanguage}
           difficultyLevel={difficultyLevel}
           isVoiceSettingsOpen={isVoiceSettingsOpen}
@@ -177,6 +189,13 @@ function AppContent() {
       </main>
 
       <Footer />
+
+      {/* Consent Management */}
+      <ConsentBanner onOpenSettings={handlePrivacySettingsOpen} />
+      <PrivacySettingsModal
+        isOpen={isPrivacySettingsOpen}
+        onClose={handlePrivacySettingsClose}
+      />
     </div>
   )
 }

@@ -59,5 +59,59 @@
   "howToUseThisView": "How to Use This View",
   "graphViewExplanation": "The graph view shows the relationship between concepts related to this social tipping point.",
   "referencesExplanation": "The references tab provides scientific literature and sources related to this social tipping point.",
-  "clickNodesInteraction": "Click on nodes to see more details or access linked documents."
+  "clickNodesInteraction": "Click on nodes to see more details or access linked documents.",
+
+  "consent": {
+    "banner": {
+      "title": "Your Privacy Matters",
+      "description": "We use cookies and similar technologies to improve your experience. Your data helps us enhance our AI model and provide better climate insights.",
+      "anonymized": "All data is anonymized and cannot be traced back to you",
+      "acceptAll": "Accept All",
+      "rejectOptional": "Reject Optional",
+      "customize": "Customize",
+      "savePreferences": "Save Preferences",
+      "back": "Back"
+    },
+    "settings": {
+      "title": "Privacy Settings",
+      "preferencesTab": "Consent Preferences",
+      "infoTab": "Privacy Information",
+      "description": "Manage your data collection preferences. You can change these settings at any time.",
+      "saved": "Your preferences have been saved!",
+      "resetConfirm": "Are you sure you want to reset your consent preferences? The page will reload.",
+      "resetSuccess": "Consent preferences reset. Reloading page...",
+      "save": "Save Preferences",
+      "cancel": "Cancel",
+      "reset": "Reset All"
+    },
+    "essential": {
+      "name": "Essential Services",
+      "description": "Required for the application to function properly. Includes session management and core chat functionality.",
+      "details": "These services are always active and cannot be disabled."
+    },
+    "analytics": {
+      "name": "Analytics & Research",
+      "description": "Helps us improve the AI model and analyze user interactions for research purposes.",
+      "details": "Includes: question logging, trace collection in Langfuse, performance monitoring, and model training data."
+    },
+    "required": "Required",
+    "optional": "Optional",
+    "info": {
+      "anonymizationTitle": "Your Data is Anonymized",
+      "anonymizationDescription": "All data collected through Neuroclima Bot is completely anonymized. We do not collect personal information, and your interactions cannot be linked back to you individually.",
+      "platformIndependenceTitle": "Platform Independence",
+      "platformIndependenceDescription": "Neuroclima Bot operates independently from the main Neuroclima Solutions platform. Even if you have an account on the main platform, all interactions on Neuroclima Bot remain anonymous.",
+      "dataCollectionTitle": "What Data We Collect",
+      "dataItem1": "Questions and queries you submit to the chatbot",
+      "dataItem2": "AI responses and interaction patterns",
+      "dataItem3": "Session information (duration, page views)",
+      "dataItem4": "Technical performance metrics",
+      "dataUsageTitle": "How We Use Your Data",
+      "usageItem1": "Improving AI model accuracy and responses",
+      "usageItem2": "Research on climate communication patterns",
+      "usageItem3": "System performance optimization",
+      "yourRightsTitle": "Your Rights",
+      "yourRightsDescription": "You can withdraw consent at any time through Privacy Settings in the header. Changes take effect immediately."
+    }
+  }
 }

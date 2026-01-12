@@ -38,5 +38,59 @@
   "showMore": "Mostrar mais",
   "showLess": "Mostrar menos",
   "noReferencesFound": "Nenhuma referência encontrada",
-  "qualifyingFactors": "Fatores Qualificadores"
+  "qualifyingFactors": "Fatores Qualificadores",
+
+  "consent": {
+    "banner": {
+      "title": "A Sua Privacidade Importa",
+      "description": "Usamos cookies e tecnologias semelhantes para melhorar a sua experiência. Os seus dados ajudam-nos a aprimorar o nosso modelo de IA e fornecer melhores informações sobre o clima.",
+      "anonymized": "Todos os dados são anonimizados e não podem ser rastreados até você",
+      "acceptAll": "Aceitar Tudo",
+      "rejectOptional": "Rejeitar Opcionais",
+      "customize": "Personalizar",
+      "savePreferences": "Guardar Preferências",
+      "back": "Voltar"
+    },
+    "settings": {
+      "title": "Configurações de Privacidade",
+      "preferencesTab": "Preferências de Consentimento",
+      "infoTab": "Informações de Privacidade",
+      "description": "Gerencie as suas preferências de recolha de dados. Pode alterar estas configurações a qualquer momento.",
+      "saved": "As suas preferências foram guardadas!",
+      "resetConfirm": "Tem certeza de que deseja redefinir as suas preferências de consentimento? A página será recarregada.",
+      "resetSuccess": "Preferências de consentimento redefinidas. A recarregar página...",
+      "save": "Guardar Preferências",
+      "cancel": "Cancelar",
+      "reset": "Redefinir Tudo"
+    },
+    "essential": {
+      "name": "Serviços Essenciais",
+      "description": "Necessários para o correto funcionamento da aplicação. Inclui gestão de sessão e funcionalidade principal de chat.",
+      "details": "Estes serviços estão sempre ativos e não podem ser desativados."
+    },
+    "analytics": {
+      "name": "Análise e Pesquisa",
+      "description": "Ajuda-nos a melhorar o modelo de IA e analisar interações de utilizadores para fins de pesquisa.",
+      "details": "Inclui: registo de perguntas, recolha de rastreios no Langfuse, monitorização de desempenho e dados de treino do modelo."
+    },
+    "required": "Obrigatório",
+    "optional": "Opcional",
+    "info": {
+      "anonymizationTitle": "Os Seus Dados São Anonimizados",
+      "anonymizationDescription": "Todos os dados recolhidos através do Neuroclima Bot são completamente anonimizados. Não recolhemos informações pessoais e as suas interações não podem ser ligadas a si individualmente.",
+      "platformIndependenceTitle": "Independência da Plataforma",
+      "platformIndependenceDescription": "O Neuroclima Bot opera independentemente da plataforma principal Neuroclima Solutions. Mesmo que tenha uma conta na plataforma principal, todas as interações no Neuroclima Bot permanecem anónimas.",
+      "dataCollectionTitle": "Que Dados Recolhemos",
+      "dataItem1": "Perguntas e consultas que submete ao chatbot",
+      "dataItem2": "Respostas da IA e padrões de interação",
+      "dataItem3": "Informações da sessão (duração, visualizações de página)",
+      "dataItem4": "Métricas de desempenho técnico",
+      "dataUsageTitle": "Como Utilizamos Os Seus Dados",
+      "usageItem1": "Melhorar a precisão e respostas do modelo de IA",
+      "usageItem2": "Pesquisa sobre padrões de comunicação climática",
+      "usageItem3": "Otimização do desempenho do sistema",
+      "yourRightsTitle": "Os Seus Direitos",
+      "yourRightsDescription": "Pode retirar o consentimento a qualquer momento através das Configurações de Privacidade no cabeçalho. As alterações têm efeito imediato."
+    }
+  }
 }

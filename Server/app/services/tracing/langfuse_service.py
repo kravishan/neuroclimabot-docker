@@ -178,11 +178,16 @@ class ConversationTracer:
         """Start main conversation trace using context manager"""
         if not is_langfuse_enabled():
             return
-        
+
+        # Check user consent for analytics - GDPR compliance
+        if metadata and not metadata.get("analytics_consent", True):
+            logger.info(f"⚠️  Skipping Langfuse trace - user declined analytics consent for session {self.session_id}")
+            return
+
         self.langfuse_client = get_langfuse_client()
         if not self.langfuse_client:
             return
-        
+
         try:
             self.start_time = time.time()
             
@@ -200,6 +205,11 @@ class ConversationTracer:
                     "language": metadata.get("language", "en") if metadata else "en",
                     "difficulty": metadata.get("difficulty", "low") if metadata else "low",
                     "include_sources": metadata.get("include_sources", True) if metadata else True,
+                    # Consent information for audit trail
+                    "consent_given": metadata.get("consent_given", True) if metadata else True,
+                    "analytics_consent": metadata.get("analytics_consent", True) if metadata else True,
+                    "consent_version": metadata.get("consent_version") if metadata else None,
+                    "consent_timestamp": metadata.get("consent_timestamp") if metadata else None,
                     **(metadata or {})
                 }
             )

@@ -6,12 +6,13 @@ import { SUPPORTED_LANGUAGES, DIFFICULTY_LEVELS } from '@/constants/languages'
 import { EXTERNAL_URLS } from '@/constants/config'
 import './Header.css'
 
-const Header = ({ 
-  selectedLanguage, 
-  changeLanguage, 
-  difficultyLevel, 
-  setDifficultyLevel, 
+const Header = ({
+  selectedLanguage,
+  changeLanguage,
+  difficultyLevel,
+  setDifficultyLevel,
   onVoiceSettingsOpen,
+  onPrivacySettingsOpen,
   sessionStatus,
   countdownDisplay
 }) => {
@@ -138,7 +139,17 @@ const Header = ({
       <div className="header-controls">
         {/* Session Status - only shows on response pages */}
         <SessionStatusInHeader />
-        
+
+        {/* Privacy Settings - always visible */}
+        <button
+          className="privacy-settings-button"
+          onClick={onPrivacySettingsOpen}
+          aria-label="Privacy Settings"
+          title={t('consent.settings.title')}
+        >
+          <Shield size={18} />
+        </button>
+
         {isVoiceModelPage && (
           <button 
             className="voice-settings-button" 
