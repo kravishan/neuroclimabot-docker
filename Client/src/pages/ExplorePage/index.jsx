@@ -76,6 +76,13 @@ const ExplorePage = () => {
 
     hasFetchedData.current = true
 
+    // Helper function to check if result has actual graph data
+    function hasGraphData(result) {
+      if (!result || !result.entities) return false
+      const entitiesCount = result.entities.length || result.metadata?.entities_count || 0
+      return entitiesCount > 0
+    }
+
     async function fetchGraphData() {
       setLoading(true)
       console.log("Fetching GraphRAG data for doc_name:", docName)
@@ -89,9 +96,11 @@ const ExplorePage = () => {
         result = await fetchTippingPointsGraphByDocName(docName)
         console.log("📊 Attempt 1 response:", result)
 
-        if (result.success && result.graph) {
+        if (result.success && result.graph && hasGraphData(result)) {
           console.log("✅ Attempt 1 succeeded!")
           return handleSuccessfulResult(result)
+        } else {
+          console.log("⚠️ Attempt 1: No graph data found (entities count: " + (result.entities?.length || 0) + ")")
         }
       } catch (err) {
         console.error("❌ Attempt 1 failed with error:", err)
@@ -103,9 +112,11 @@ const ExplorePage = () => {
         result = await fetchTippingPointsGraphByDocName(docName)
         console.log("📊 Attempt 2 response:", result)
 
-        if (result.success && result.graph) {
+        if (result.success && result.graph && hasGraphData(result)) {
           console.log("✅ Attempt 2 succeeded!")
           return handleSuccessfulResult(result)
+        } else {
+          console.log("⚠️ Attempt 2: No graph data found (entities count: " + (result.entities?.length || 0) + ")")
         }
       } catch (err) {
         console.error("❌ Attempt 2 failed with error:", err)
@@ -121,9 +132,11 @@ const ExplorePage = () => {
           result = await fetchTippingPointsGraphByDocName(fallbackDocName)
           console.log("📊 Attempt 3 (fallback) response:", result)
 
-          if (result.success && result.graph) {
+          if (result.success && result.graph && hasGraphData(result)) {
             console.log("✅ Fallback succeeded!")
             return handleSuccessfulResult(result)
+          } else {
+            console.log("⚠️ Fallback: No graph data found (entities count: " + (result.entities?.length || 0) + ")")
           }
         } catch (err) {
           console.error("❌ Fallback attempt failed with error:", err)
