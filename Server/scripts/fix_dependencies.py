@@ -75,8 +75,22 @@ def main():
         print("   pip uninstall protobuf -y")
         print("   pip install protobuf==3.20.3")
 
-    # Step 2: Reinstall TruLens
-    print_step(2, "Reinstall TruLens with Fixed Dependencies")
+    # Step 2: Install compatible gRPC packages
+    print_step(2, "Install Compatible gRPC Packages")
+    print("   Issue: pymilvus requires grpcio, which must match protobuf version")
+    print("   Solution: Install grpcio 1.48.0 (compatible with protobuf 3.20.3)")
+
+    success = run_command(
+        [sys.executable, "-m", "pip", "install", "grpcio==1.48.0", "grpcio-tools==1.48.0", "--force-reinstall"],
+        "Install gRPC 1.48.0"
+    )
+
+    if not success:
+        print("\n⚠️  gRPC installation failed. Try manually:")
+        print("   pip install grpcio==1.48.0 grpcio-tools==1.48.0")
+
+    # Step 3: Reinstall TruLens
+    print_step(3, "Reinstall TruLens with Fixed Dependencies")
 
     success = run_command(
         [sys.executable, "-m", "pip", "install", "trulens-eval==0.33.0", "--no-deps"],
@@ -89,8 +103,8 @@ def main():
             "Reinstall TruLens dependencies"
         )
 
-    # Step 3: Verify TruLens import
-    print_step(3, "Verify TruLens Import")
+    # Step 4: Verify TruLens import
+    print_step(4, "Verify TruLens Import")
 
     try:
         print("   Attempting to import TruLens...")
@@ -105,8 +119,8 @@ def main():
         print("   2. pip install protobuf==3.20.3")
         print("   3. pip install transformers tensorflow")
 
-    # Step 4: Check .env file
-    print_step(4, "Check Environment Configuration")
+    # Step 5: Check .env file
+    print_step(5, "Check Environment Configuration")
 
     env_file = server_dir / ".env"
     if env_file.exists():
@@ -140,8 +154,8 @@ def main():
         print("   Please create .env from .env.example:")
         print(f"   cp {server_dir}/.env.example {server_dir}/.env")
 
-    # Step 5: Run health check
-    print_step(5, "Run External Services Health Check")
+    # Step 6: Run health check
+    print_step(6, "Run External Services Health Check")
 
     health_check_script = server_dir / "tests" / "test_external_services.py"
     if health_check_script.exists():

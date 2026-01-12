@@ -51,6 +51,49 @@ python -c "from trulens_eval.feedback.provider.openai import OpenAI; print('✅ 
 
 ---
 
+## Issue 1b: gRPC Module Not Found ❌
+
+### Error Message:
+```
+ModuleNotFoundError: No module named 'grpc'
+```
+
+This error occurs when importing pymilvus after downgrading protobuf.
+
+### Root Cause:
+The protobuf downgrade (required for TruLens) can break the gRPC installation that pymilvus depends on. gRPC and protobuf versions must be compatible.
+
+### Solution:
+
+**Option A: Quick Fix (Recommended)**
+```bash
+cd Server
+python scripts/fix_dependencies.py
+```
+
+**Option B: Manual Fix**
+```bash
+cd Server
+
+# Install compatible gRPC version
+pip install grpcio==1.48.0 grpcio-tools==1.48.0 --force-reinstall
+
+# Reinstall pymilvus if needed
+pip install pymilvus==2.5.8 --force-reinstall
+```
+
+**Verify the Fix:**
+```bash
+python -c "from pymilvus import connections; print('✅ pymilvus working!')"
+```
+
+**Expected Output:**
+```
+✅ pymilvus working!
+```
+
+---
+
 ## Issue 2: Milvus Connection Error ❌
 
 ### Error Messages:

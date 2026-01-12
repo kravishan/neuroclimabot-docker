@@ -362,3 +362,5 @@ trulens-eval==0.33.0
 
 # Fix protobuf compatibility issue with TruLens/TensorFlow
 protobuf==3.20.3
+grpcio==1.48.0
+grpcio-tools==1.48.0
