@@ -198,6 +198,31 @@ async def process_with_translation_and_tracing(
     translation_client = get_translation_client()
     langfuse_client = get_langfuse_client()
 
+    # Extract consent metadata
+    consent_metadata = {}
+    analytics_consent = True  # Default: ON (opt-out model)
+
+    if request.consent_metadata:
+        consent_metadata = {
+            "consent_given": request.consent_metadata.consent_given,
+            "analytics_consent": request.consent_metadata.analytics_consent,
+            "consent_version": request.consent_metadata.consent_version,
+            "consent_timestamp": request.consent_metadata.consent_timestamp
+        }
+        analytics_consent = request.consent_metadata.analytics_consent
+
+    # Check if user has consented to analytics/tracing (GDPR compliance)
+    if not analytics_consent:
+        logger.info(f"⚠️  Skipping Langfuse trace - user declined analytics consent")
+        # Process without tracing - use the non-tracing workflow
+        return await process_with_translation(
+            request=request,
+            orchestration_fn=orchestration_fn,
+            conversation_type=conversation_type,
+            session_id=session_id,
+            **orchestrator_kwargs
+        )
+
     with langfuse_client.start_as_current_span(
         name=langfuse_span_name,
         input=request.message,
@@ -206,7 +231,8 @@ async def process_with_translation_and_tracing(
             "session_id": str(session_id) if session_id else "new",
             "frontend_language": request.language,
             "include_sources": request.include_sources,
-            "translation_flow": "auto_detect_then_batch"
+            "translation_flow": "auto_detect_then_batch",
+            **consent_metadata
         }
     ) as main_span:
 
@@ -219,7 +245,8 @@ async def process_with_translation_and_tracing(
             metadata={
                 "api_endpoint": conversation_type,
                 "session_id": str(session_id) if session_id else "new",
-                "original_message": request.message
+                "original_message": request.message,
+                **consent_metadata
             }
         )
 
@@ -293,7 +320,8 @@ async def process_with_translation_and_tracing(
                 metadata={
                     "api_success": True,
                     "sources_count": len(response.sources),
-                    "translation_traced": True
+                    "translation_traced": True,
+                    **consent_metadata
                 }
             )
 

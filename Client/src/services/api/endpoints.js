@@ -1,5 +1,6 @@
 import apiClient from './client'
 import { API_CONFIG, SESSION_CONFIG } from '@/constants/config'
+import { consentService } from '@/services/consent/consentService'
 
 // Session Management
 export const startConversationSession = async (query, language = 'en', difficulty = 'low', retryCount = 0) => {
@@ -7,11 +8,15 @@ export const startConversationSession = async (query, language = 'en', difficult
     // Clear any existing session before starting new one
     sessionStorage.removeItem(SESSION_CONFIG.STORAGE_KEY)
 
+    // Get consent metadata
+    const consentMetadata = consentService.getConsentMetadata()
+
     const response = await apiClient.post(API_CONFIG.ENDPOINTS.CHAT_START, {
       message: query,
       language,
       difficulty_level: difficulty,
-      include_sources: true
+      include_sources: true,
+      consent_metadata: consentMetadata
     })
 
     const data = response.data
@@ -92,9 +97,13 @@ export const continueConversationSession = async (sessionId, message, language =
       throw new Error('No session ID available. Please start a new conversation.')
     }
 
+    // Get consent metadata
+    const consentMetadata = consentService.getConsentMetadata()
+
     const requestBody = {
       message,
-      include_sources: true
+      include_sources: true,
+      consent_metadata: consentMetadata
     }
 
     if (language) requestBody.language = language
