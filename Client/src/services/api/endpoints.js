@@ -3,7 +3,7 @@ import { API_CONFIG, SESSION_CONFIG } from '@/constants/config'
 import { consentService } from '@/services/consent/consentService'
 
 // Session Management
-export const startConversationSession = async (query, language = 'en', difficulty = 'low', retryCount = 0) => {
+export const startConversationSession = async (query, language = 'en', difficulty = 'low') => {
   try {
     // Clear any existing session before starting new one
     sessionStorage.removeItem(SESSION_CONFIG.STORAGE_KEY)
@@ -20,19 +20,19 @@ export const startConversationSession = async (query, language = 'en', difficult
     })
 
     const data = response.data
-    
+
     if (data.session_id) {
       sessionStorage.setItem(SESSION_CONFIG.STORAGE_KEY, data.session_id)
     }
-    
+
     // Determine source type and handle accordingly
     const sourceType = data.source_type || 'rag' // Default to 'rag' if not specified
     const isWebSearch = sourceType === 'web'
-    
+
     // Parse social tipping point - handle both old and new formats
     let socialTippingPoint = ''
     let qualifyingFactors = []
-    
+
     if (data.social_tipping_point) {
       if (typeof data.social_tipping_point === 'string') {
         // Old format - just a string
@@ -45,7 +45,7 @@ export const startConversationSession = async (query, language = 'en', difficult
     } else {
       socialTippingPoint = isWebSearch ? '' : 'No specific social tipping point available.'
     }
-    
+
     return {
       success: data.success !== false,
       session_id: data.session_id,
@@ -78,16 +78,34 @@ export const startConversationSession = async (query, language = 'en', difficult
       }
     }
   } catch (error) {
-    if (retryCount < 2 && (!error.response || error.code === 'ECONNABORTED')) {
-      console.log(`Retrying start conversation request (${retryCount + 1}/2)...`)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return startConversationSession(query, language, difficulty, retryCount + 1)
+    // Enhanced error handling with user-friendly messages
+    let errorMessage = 'We cannot generate response'
+
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = 'Request timeout. The server is taking too long to respond.'
+    } else if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+      errorMessage = 'Network error. Please check your connection and try again.'
+    } else if (error.response) {
+      const status = error.response.status
+      if (status === 500) {
+        errorMessage = 'Server error. Please try again later.'
+      } else if (status === 503) {
+        errorMessage = 'Service unavailable. The server is currently down.'
+      } else if (status === 404) {
+        errorMessage = 'Service not found. Please contact support.'
+      } else if (error.response.data?.error) {
+        errorMessage = error.response.data.error
+      }
     }
-    throw error
+
+    console.error('Error starting conversation:', error)
+    const enhancedError = new Error(errorMessage)
+    enhancedError.originalError = error
+    throw enhancedError
   }
 }
 
-export const continueConversationSession = async (sessionId, message, language = null, difficulty = null, retryCount = 0) => {
+export const continueConversationSession = async (sessionId, message, language = null, difficulty = null) => {
   try {
     if (!sessionId) {
       sessionId = sessionStorage.getItem(SESSION_CONFIG.STORAGE_KEY)
@@ -111,17 +129,17 @@ export const continueConversationSession = async (sessionId, message, language =
 
     // Use the continue endpoint with session_id in URL
     const response = await apiClient.post(`${API_CONFIG.ENDPOINTS.CHAT_CONTINUE}/${sessionId}`, requestBody)
-    
+
     const data = response.data
-    
+
     // Determine source type and handle accordingly
     const sourceType = data.source_type || 'rag' // Default to 'rag' if not specified
     const isWebSearch = sourceType === 'web'
-    
+
     // Parse social tipping point - handle both old and new formats
     let socialTippingPoint = ''
     let qualifyingFactors = []
-    
+
     if (data.social_tipping_point) {
       if (typeof data.social_tipping_point === 'string') {
         // Old format - just a string
@@ -134,7 +152,7 @@ export const continueConversationSession = async (sessionId, message, language =
     } else {
       socialTippingPoint = isWebSearch ? '' : 'No specific social tipping point available.'
     }
-    
+
     return {
       success: data.success !== false,
       session_id: data.session_id || sessionId,
@@ -168,16 +186,34 @@ export const continueConversationSession = async (sessionId, message, language =
       memoryContextUsed: data.specialized_processing?.context_used ? true : false
     }
   } catch (error) {
-    if (retryCount < 2 && (!error.response || error.code === 'ECONNABORTED')) {
-      console.log(`Retrying continue conversation request (${retryCount + 1}/2)...`)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return continueConversationSession(sessionId, message, language, difficulty, retryCount + 1)
+    // Enhanced error handling with user-friendly messages
+    let errorMessage = 'We cannot generate response'
+
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = 'Request timeout. The server is taking too long to respond.'
+    } else if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+      errorMessage = 'Network error. Please check your connection and try again.'
+    } else if (error.response) {
+      const status = error.response.status
+      if (status === 500) {
+        errorMessage = 'Server error. Please try again later.'
+      } else if (status === 503) {
+        errorMessage = 'Service unavailable. The server is currently down.'
+      } else if (status === 404) {
+        errorMessage = 'Session not found. Please start a new conversation.'
+      } else if (error.response.data?.error) {
+        errorMessage = error.response.data.error
+      }
     }
-    throw error
+
+    console.error('Error continuing conversation:', error)
+    const enhancedError = new Error(errorMessage)
+    enhancedError.originalError = error
+    throw enhancedError
   }
 }
 
-export const endConversationSession = async (sessionId = null, retryCount = 0) => {
+export const endConversationSession = async (sessionId = null) => {
   try {
     if (!sessionId) {
       sessionId = sessionStorage.getItem(SESSION_CONFIG.STORAGE_KEY)
@@ -189,22 +225,20 @@ export const endConversationSession = async (sessionId = null, retryCount = 0) =
     }
 
     const response = await apiClient.delete(`${API_CONFIG.ENDPOINTS.SESSIONS}/${sessionId}`)
-    
+
     sessionStorage.removeItem(SESSION_CONFIG.STORAGE_KEY)
-    
+
     return response.data
   } catch (error) {
-    if (retryCount < 1 && (!error.response || error.code === 'ECONNABORTED')) {
-      console.log(`Retrying end session request (${retryCount + 1}/1)...`)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return endConversationSession(sessionId, retryCount + 1)
-    }
+    console.error('Error ending session:', error)
+    // Still remove session from storage even if deletion fails
+    sessionStorage.removeItem(SESSION_CONFIG.STORAGE_KEY)
     throw error
   }
 }
 
 // Feedback
-export const sendResponseFeedback = async (responseId, feedbackType, userId = 'anonymous', comment = '', conversationType = 'unknown', language = 'en', retryCount = 0) => {
+export const sendResponseFeedback = async (responseId, feedbackType, userId = 'anonymous', comment = '', conversationType = 'unknown', language = 'en') => {
   try {
     const sessionId = sessionStorage.getItem(SESSION_CONFIG.STORAGE_KEY)
 
@@ -218,11 +252,7 @@ export const sendResponseFeedback = async (responseId, feedbackType, userId = 'a
 
     return response.data
   } catch (error) {
-    if (retryCount < 2 && (!error.response || error.code === 'ECONNABORTED')) {
-      console.log(`Retrying feedback submission (${retryCount + 1}/2)...`)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return sendResponseFeedback(responseId, feedbackType, userId, comment, conversationType, language, retryCount + 1)
-    }
+    console.error('Error submitting feedback:', error)
     throw error
   }
 }

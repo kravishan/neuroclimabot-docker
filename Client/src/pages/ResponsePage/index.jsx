@@ -328,7 +328,8 @@ const ResponsePage = () => {
       }
     } catch (error) {
       console.error('Error fetching initial data:', error)
-      setTitle('Error Loading Response')
+      setTitle('We cannot generate response')
+      setAIResponse(error.message || 'We cannot generate response. Please try again.')
       setIsInitialLoading(false)
       setLoadingTitle(false)
       setLoadingResponse(false)
@@ -476,16 +477,16 @@ const ResponsePage = () => {
       }
     } catch (error) {
       console.error('Error in continuous chat:', error)
-      
+
       setMessages(prevMessages => {
-        return prevMessages.map(msg => 
-          msg.id === placeholderAIMessageId 
-            ? { 
-                ...msg, 
-                content: 'Sorry, there was an error processing your message. Please try starting a new conversation.', 
+        return prevMessages.map(msg =>
+          msg.id === placeholderAIMessageId
+            ? {
+                ...msg,
+                content: error.message || 'We cannot generate response. Please try again.',
                 isLoading: false,
                 isError: true
-              } 
+              }
             : msg
         )
       })
