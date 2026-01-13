@@ -125,8 +125,9 @@ class RedisConfig(BaseSettings):
     CONNECTION_TIMEOUT: int = 10
     SOCKET_TIMEOUT: int = 10
     
-    # Session Configuration
-    SESSION_TIMEOUT_MINUTES: int = 30
+    # Session Configuration (from .env)
+    SESSION_TIMEOUT_MINUTES: int = Field(default=10)  # From .env (REDIS_SESSION_TIMEOUT_MINUTES)
+    SESSION_WARNING_MINUTES: int = Field(default=1)  # From .env (REDIS_SESSION_WARNING_MINUTES) - Warning appears when remaining time ≤ this value
     MAX_CONVERSATION_HISTORY: int = 30
     MEMORY_WINDOW_SIZE: int = 6
     

@@ -74,7 +74,7 @@ def get_model_name(source_lang: str, target_lang: str) -> str:
     model_map = {
         ('it', 'en'): 'Helsinki-NLP/opus-mt-it-en',
         ('pt', 'en'): 'Helsinki-NLP/opus-mt-roa-en',
-        ('el', 'en'): 'Helsinki-NLP/opus-mt-el-en',
+        ('el', 'en'): 'Helsinki-NLP/opus-mt-tc-big-el-en',  # Fixed: Use tc-big model for Greek
         ('en', 'it'): 'Helsinki-NLP/opus-mt-en-it',
         ('en', 'pt'): 'Helsinki-NLP/opus-mt-en-roa',
         ('en', 'el'): 'Helsinki-NLP/opus-mt-en-el'
@@ -188,7 +188,7 @@ async def translate_in(request: TranslateInRequest):
 
 @router.post("/translate/out")
 async def translate_out(request: TranslateOutRequest):
-    """Translate outgoing response from English to target language"""
+    """Translate outgoing response from English to target language - PARALLEL VERSION"""
     try:
         target_lang = request.target_lang.lower()
 
@@ -198,36 +198,67 @@ async def translate_out(request: TranslateOutRequest):
                 detail=f'Unsupported language: {target_lang}'
             )
 
-        translated_response = {'target_lang': target_lang}
+        # Skip translation if target language is English
+        if target_lang == 'en':
+            translated_response = {'target_lang': target_lang}
+            if request.title:
+                translated_response['title'] = request.title
+            if request.response:
+                translated_response['response'] = request.response
+            if request.social_tipping_point:
+                translated_response['social_tipping_point'] = request.social_tipping_point
+            return translated_response
+
+        # Collect all translation tasks to execute in parallel
+        translation_tasks = []
+        field_mapping = []
 
         if request.title:
-            translated_response['title'] = await translate_text(
-                request.title, 'en', target_lang
-            )
+            translation_tasks.append(translate_text(request.title, 'en', target_lang))
+            field_mapping.append(('title', None))
 
         if request.response:
-            translated_response['response'] = await translate_text(
-                request.response, 'en', target_lang
-            )
+            translation_tasks.append(translate_text(request.response, 'en', target_lang))
+            field_mapping.append(('response', None))
 
         if request.social_tipping_point and isinstance(request.social_tipping_point, dict):
-            translated_response['social_tipping_point'] = {}
-
             if 'text' in request.social_tipping_point:
-                translated_response['social_tipping_point']['text'] = await translate_text(
-                    request.social_tipping_point['text'], 'en', target_lang
-                )
+                translation_tasks.append(translate_text(request.social_tipping_point['text'], 'en', target_lang))
+                field_mapping.append(('stp_text', None))
 
             if 'qualifying_factors' in request.social_tipping_point:
                 factors = request.social_tipping_point['qualifying_factors']
                 if isinstance(factors, list):
-                    translated_factors = []
-                    for factor in factors:
-                        translated_factor = await translate_text(factor, 'en', target_lang)
-                        translated_factors.append(translated_factor)
-                    translated_response['social_tipping_point']['qualifying_factors'] = translated_factors
+                    for i, factor in enumerate(factors):
+                        translation_tasks.append(translate_text(factor, 'en', target_lang))
+                        field_mapping.append(('qualifying_factor', i))
 
-        logger.info(f"Translated OUT: en -> {target_lang}")
+        # Execute all translations in parallel
+        if translation_tasks:
+            translated_results = await asyncio.gather(*translation_tasks)
+        else:
+            translated_results = []
+
+        # Build response from parallel results
+        translated_response = {'target_lang': target_lang}
+
+        for i, (field_type, index) in enumerate(field_mapping):
+            if field_type == 'title':
+                translated_response['title'] = translated_results[i]
+            elif field_type == 'response':
+                translated_response['response'] = translated_results[i]
+            elif field_type == 'stp_text':
+                if 'social_tipping_point' not in translated_response:
+                    translated_response['social_tipping_point'] = {}
+                translated_response['social_tipping_point']['text'] = translated_results[i]
+            elif field_type == 'qualifying_factor':
+                if 'social_tipping_point' not in translated_response:
+                    translated_response['social_tipping_point'] = {}
+                if 'qualifying_factors' not in translated_response['social_tipping_point']:
+                    translated_response['social_tipping_point']['qualifying_factors'] = []
+                translated_response['social_tipping_point']['qualifying_factors'].append(translated_results[i])
+
+        logger.info(f"Translated OUT: en -> {target_lang} (parallel: {len(translation_tasks)} fields)")
 
         return translated_response
 

@@ -90,6 +90,14 @@ const AdminDashboard = () => {
         adminApi.getFeedbackData()          // http://localhost:8000/api/v1/feedback/stats (ALL feedback, not filtered)
       ])
 
+      // Debug logging for processor health
+      console.log('[AdminDashboard] Processor health result:', processorHealthResult)
+      if (processorHealthResult.status === 'fulfilled') {
+        console.log('[AdminDashboard] Processor health value:', processorHealthResult.value)
+      } else {
+        console.error('[AdminDashboard] Processor health error:', processorHealthResult.reason)
+      }
+
       const newData = {
         health: healthResult.status === 'fulfilled' ? healthResult.value :
           { success: false, services: {}, status: 'error', error: 'Failed to load health data', details: {} },
@@ -112,6 +120,8 @@ const AdminDashboard = () => {
 
         logs: data.logs // Keep existing logs data
       }
+
+      console.log('[AdminDashboard] Final processor health data:', newData.processorHealth)
 
       setData(newData)
 
@@ -410,7 +420,24 @@ const OverviewTab = ({ data, performAction, actionLoading, toggleWebhook }) => {
           <Server size={20} />
           System Health Processor
         </h2>
+
+        {/* Show error message if processor health check failed */}
+        {!data.processorHealth.success && (
+          <div className="adm-admin-warning" style={{ marginBottom: '16px' }}>
+            <AlertTriangle size={16} />
+            Failed to load processor health: {data.processorHealth.error}
+          </div>
+        )}
+
         <div className="adm-health-grid">
+          {Object.entries(data.processorHealth.services || {}).length === 0 && data.processorHealth.success && (
+            <div className="adm-health-item" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px' }}>
+              <div style={{ color: '#999', fontSize: '0.9rem' }}>
+                No processor services found
+              </div>
+            </div>
+          )}
+
           {Object.entries(data.processorHealth.services || {}).map(([service, status]) => {
             const displayName = getProcessorServiceDisplayName(service)
             const isHealthy = status === 'healthy'

@@ -85,35 +85,20 @@ const Header = ({
     }
   }
 
-  // Session Status Component for Header - Only show on response pages
+  // Session Status Component for Header - Only show on response pages (WebSocket-based)
   const SessionStatusInHeader = () => {
     // Only show session badge on response pages
     if (!isResponsePage) {
       return null
     }
 
-    // Debug logging
-    console.log('Header SessionStatus Debug:', {
-      hasActiveSession: sessionStatus?.hasActiveSession,
-      sessionId: sessionStatus?.sessionId,
-      sessionStatus,
-      countdownDisplay,
-      isResponsePage
-    })
-    
     // Show session badge when session is active and we're on response page
-    if (!sessionStatus?.hasActiveSession || !sessionStatus?.sessionId) {
-      console.log('Header: No session badge - no active session')
+    if (!sessionStatus?.isSessionActive || !sessionStatus?.sessionId) {
       return null
     }
-    
-    const { isWarning, isCritical, showCountdown } = countdownDisplay || {}
-    const remainingMs = sessionStatus?.remainingMs || 0
-    const minutes = Math.floor(remainingMs / 60000)
-    const seconds = Math.floor((remainingMs % 60000) / 1000)
-    
-    console.log('Header: Showing session badge', { minutes, seconds, showCountdown })
-    
+
+    const { isWarning, isCritical, showCountdown, minutes, seconds } = countdownDisplay || {}
+
     return (
       <div className="session-status-header">
         <div className="session-info-header">
@@ -123,7 +108,10 @@ const Header = ({
           </span>
           <span className={`session-timeout-header ${isWarning ? 'warning' : ''} ${isCritical ? 'critical' : ''}`}>
             <Coffee size={12} />
-            {showCountdown ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `${Math.ceil(remainingMs / 60000)}m`}
+            {showCountdown && minutes !== undefined && seconds !== undefined
+              ? `${minutes}:${seconds.toString().padStart(2, '0')}`
+              : '...'
+            }
           </span>
         </div>
       </div>

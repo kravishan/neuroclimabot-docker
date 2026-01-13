@@ -15,113 +15,23 @@ function AppContent() {
   const [difficultyLevel, setDifficultyLevel] = useState('low')
   const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false)
   const [isPrivacySettingsOpen, setIsPrivacySettingsOpen] = useState(false)
-  const [countdownDisplay, setCountdownDisplay] = useState({
-    minutes: 0,
-    seconds: 0,
-    isWarning: false,
-    isCritical: false,
-    showCountdown: false
-  })
-  
+
   const location = useLocation()
   const isHomePage = location.pathname === '/' || location.pathname === '/index'
   const isResponsePage = location.pathname.includes('/response/')
   const isAdminPage = location.pathname === '/admin'
-  
-  // Get session status
-  const { sessionStatus, isSessionActive, updateSessionStatus } = useSession()
-  
-  // Force session status update when location changes to response page
-  useEffect(() => {
-    if (isResponsePage) {
-      console.log('App.jsx: Response page detected, forcing session status update')
-      updateSessionStatus()
-    }
-  }, [isResponsePage, updateSessionStatus])
-  
-  // Debug logging for session status
-  useEffect(() => {
-    console.log('App.jsx Session Debug:', {
-      sessionStatus,
-      isSessionActive,
-      isResponsePage,
-      pathname: location.pathname
-    })
-  }, [sessionStatus, isSessionActive, isResponsePage, location.pathname])
-  
-  // Set up countdown display for session status
-  useEffect(() => {
-    let intervalId
-    
-    if (isSessionActive) {
-      // Update countdown display every second, but only for visual display
-      intervalId = setInterval(() => {
-        const status = sessionStatus
-        
-        if (!status || !status.hasActiveSession) {
-          setCountdownDisplay(prev => ({
-            ...prev,
-            showCountdown: false
-          }))
-          return
-        }
 
-        const remainingMs = status.remainingMs || 0
-        
-        if (remainingMs <= 0) {
-          setCountdownDisplay({
-            minutes: 0,
-            seconds: 0,
-            isWarning: false,
-            isCritical: true,
-            showCountdown: false
-          })
-          
-          if (intervalId) {
-            clearInterval(intervalId)
-          }
-          return
-        }
+  // Get session status with WebSocket-based countdown
+  const {
+    sessionStatus,
+    isSessionActive,
+    remainingMinutes,
+    remainingSeconds,
+    isWarning,
+    isCritical,
+    showCountdown
+  } = useSession()
 
-        const totalSeconds = Math.floor(remainingMs / 1000)
-        const minutes = Math.floor(totalSeconds / 60)
-        const seconds = totalSeconds % 60
-        
-        // Use environment variables for thresholds
-        const warningMinutes = parseInt(import.meta.env.VITE_INACTIVITY_WARNING_MINUTES) || 1
-        const isWarning = minutes < warningMinutes && minutes >= 0
-        const isCritical = minutes < 1 && seconds <= 30
-
-        // Only update if values actually changed to prevent unnecessary re-renders
-        setCountdownDisplay(prev => {
-          if (prev.minutes !== minutes || prev.seconds !== seconds || 
-              prev.isWarning !== isWarning || prev.isCritical !== isCritical ||
-              prev.showCountdown !== (status.showCountdown || false)) {
-            return {
-              minutes,
-              seconds,
-              isWarning,
-              isCritical,
-              showCountdown: status.showCountdown || false
-            }
-          }
-          return prev
-        })
-      }, 1000)
-    } else {
-      setCountdownDisplay(prev => ({
-        ...prev,
-        showCountdown: false
-      }))
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [isSessionActive, sessionStatus.hasActiveSession, sessionStatus.isInactive])
-  
   useEffect(() => {
     if (isHomePage) {
       document.body.classList.add('index-page')
@@ -166,6 +76,15 @@ function AppContent() {
     )
   }
   
+  // Create countdown display object for Header (WebSocket-based)
+  const countdownDisplay = {
+    minutes: remainingMinutes,
+    seconds: remainingSeconds,
+    isWarning,
+    isCritical,
+    showCountdown
+  }
+
   return (
     <div className={`app-container ${isHomePage ? 'blurred-bg' : ''}`}>
       <Header

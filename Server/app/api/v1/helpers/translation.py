@@ -5,12 +5,14 @@ Includes GDPR-compliant consent enforcement.
 """
 
 import time
+from datetime import datetime
 from typing import Callable, Dict, Any, Optional
 from uuid import UUID
 
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.external.translation_client import get_translation_client
 from app.services.analytics.integration import track_chat_analytics
+from app.services.memory.session import get_session_manager
 from app.services.tracing import set_analytics_consent
 from app.utils.logger import get_logger
 from app.constants import MAX_TRACE_OUTPUT_LENGTH
@@ -146,6 +148,19 @@ async def process_with_translation(
             language="en",
             **orchestrator_kwargs
         )
+
+    # Reset session timer after response generation (timer starts when response is ready)
+    try:
+        session_manager = get_session_manager()
+        response_session_id = session_id if session_id else response.session_id
+        if response_session_id:
+            session = await session_manager.get_session(response_session_id)
+            if session:
+                session.last_activity_time = datetime.now()
+                await session_manager.update_session(response_session_id, session, update_activity=True)
+                logger.debug(f"Session timer reset after response generation: {response_session_id}")
+    except Exception as e:
+        logger.warning(f"Failed to reset session timer: {e}")
 
     # Step 3: Output Translation (English → user's detected or requested language)
     target_language = detected_language if detected_language != "en" else request.language
@@ -285,6 +300,19 @@ async def process_with_translation_and_tracing(
                     language="en",
                     **orchestrator_kwargs
                 )
+
+            # Reset session timer after response generation (timer starts when response is ready)
+            try:
+                session_manager = get_session_manager()
+                response_session_id = session_id if session_id else response.session_id
+                if response_session_id:
+                    session = await session_manager.get_session(response_session_id)
+                    if session:
+                        session.last_activity_time = datetime.now()
+                        await session_manager.update_session(response_session_id, session, update_activity=True)
+                        logger.debug(f"Session timer reset after response generation: {response_session_id}")
+            except Exception as e:
+                logger.warning(f"Failed to reset session timer: {e}")
 
             # Step 3: Output Translation
             target_language = detected_language if detected_language != "en" else request.language

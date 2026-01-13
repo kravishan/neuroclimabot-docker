@@ -1,3 +1,10 @@
+/**
+ * useSession Hook
+ *
+ * React hook for managing session state with WebSocket real-time updates.
+ * Subscribes to WebSocket status updates from SessionManager.
+ */
+
 import { useState, useCallback, useEffect } from 'react'
 import { sessionManager } from '@/services/session/sessionManager'
 
@@ -6,48 +13,32 @@ export const useSession = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const updateSessionStatus = useCallback(() => {
-    const newStatus = sessionManager.getSessionStatus()
-    console.log('useSession: updating session status:', newStatus)
-    setSessionStatus(newStatus)
-  }, [])
-
+  // Subscribe to WebSocket status updates
   useEffect(() => {
-    let intervalId
-    
-    // Update session status immediately
-    updateSessionStatus()
-    
-    // Set up regular updates every second
-    intervalId = setInterval(() => {
-      const newStatus = sessionManager.getSessionStatus()
-      setSessionStatus(prevStatus => {
-        // Only update if there's actually a change to avoid unnecessary re-renders
-        if (JSON.stringify(prevStatus) !== JSON.stringify(newStatus)) {
-          console.log('useSession: session status changed:', newStatus)
-          return newStatus
-        }
-        return prevStatus
-      })
-    }, 1000)
+    console.log('[useSession] Subscribing to session status updates')
 
+    // Set initial status
+    setSessionStatus(sessionManager.getSessionStatus())
+
+    // Subscribe to status updates from WebSocket
+    const unsubscribe = sessionManager.onStatusUpdate((status) => {
+      console.log('[useSession] Status update received:', status)
+      setSessionStatus(status)
+    })
+
+    // Cleanup: Unsubscribe on unmount
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
+      console.log('[useSession] Unsubscribing from session status updates')
+      unsubscribe()
     }
   }, [])
 
   const startConversation = useCallback(async (query, language = 'en', difficulty = 'low') => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const result = await sessionManager.startConversation(query, language, difficulty)
-      // Force immediate update after starting conversation
-      setTimeout(() => {
-        updateSessionStatus()
-      }, 100)
       return result
     } catch (err) {
       setError(err.message)
@@ -55,15 +46,14 @@ export const useSession = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [updateSessionStatus])
+  }, [])
 
   const continueConversation = useCallback(async (message, language, difficulty) => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const result = await sessionManager.continueConversation(message, language, difficulty)
-      updateSessionStatus()
       return result
     } catch (err) {
       setError(err.message)
@@ -71,59 +61,54 @@ export const useSession = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [updateSessionStatus])
+  }, [])
 
   const endSession = useCallback(async () => {
     setIsLoading(true)
     setError(null)
-    
+
     try {
       await sessionManager.endSession()
-      updateSessionStatus()
     } catch (err) {
       setError(err.message)
-      console.error('Error ending session:', err)
+      console.error('[useSession] Error ending session:', err)
     } finally {
       setIsLoading(false)
     }
-  }, [updateSessionStatus])
+  }, [])
 
   const clearError = useCallback(() => {
     setError(null)
   }, [])
 
-  const resetSession = useCallback(() => {
-    sessionManager.resetSession()
-    updateSessionStatus()
-    setError(null)
-  }, [updateSessionStatus])
-
   const recordActivity = useCallback(() => {
-    if (sessionStatus.hasActiveSession) {
+    if (sessionStatus.isSessionActive) {
       sessionManager.onUserActivity()
-      updateSessionStatus()
     }
-  }, [sessionStatus.hasActiveSession, updateSessionStatus])
+  }, [sessionStatus.isSessionActive])
 
   return {
+    // State
     sessionStatus,
     isLoading,
     error,
+
+    // Methods
     startConversation,
     continueConversation,
     endSession,
-    resetSession,
     recordActivity,
     clearError,
-    updateSessionStatus,
-    isSessionActive: sessionStatus.hasActiveSession,
+
+    // Computed properties (for backward compatibility)
+    isSessionActive: sessionStatus.isSessionActive,
     sessionId: sessionStatus.sessionId,
     messageCount: sessionStatus.messageCount,
-    remainingMinutes: sessionStatus.remainingMinutes,
-    remainingSeconds: sessionStatus.remainingSeconds,
+    remainingMinutes: sessionStatus.minutes,
+    remainingSeconds: sessionStatus.seconds,
     hasError: !!error,
-    isInactive: sessionStatus.isInactive,
-    showCountdown: sessionStatus.showCountdown,
-    timeSinceLastActivity: sessionStatus.timeSinceLastActivity
+    isWarning: sessionStatus.isWarning,
+    isCritical: sessionStatus.isCritical,
+    showCountdown: sessionStatus.isSessionActive  // Always show countdown when session is active
   }
 }
