@@ -37,7 +37,11 @@ const ResponsePage = () => {
     clearError,
     isSessionActive,
     messageCount: sessionMessageCount,
-    updateSessionStatus
+    remainingMinutes,
+    remainingSeconds,
+    isWarning,
+    isCritical,
+    showCountdown
   } = useSession()
 
   const {  
@@ -68,37 +72,18 @@ const ResponsePage = () => {
   // Track expansion states for each perspective
   const [expandedPerspectives, setExpandedPerspectives] = useState({})
 
-  const [countdownDisplay, setCountdownDisplay] = useState({
-    minutes: 20,
-    seconds: 0,
-    isWarning: false,
-    isCritical: false,
-    showCountdown: false
-  })
-
   const isDataFetched = useRef(false)
   const messagesEndRef = useRef(null)
-  const countdownUpdateRef = useRef(null)
 
   useDocumentTitle(title)
 
-  // Set up session timeout callback and countdown
+  // Set up session expiration callback (WebSocket-based)
   useEffect(() => {
-    sessionManager.setTimeoutCallback(() => {
-      console.log('Session timeout - redirecting to home')
+    sessionManager.onSessionExpired(() => {
+      console.log('[ResponsePage] Session expired - redirecting to home')
       navigate('/', { replace: true })
     })
-
-    if (isSessionActive) {
-      startCountdownDisplay()
-    }
-
-    return () => {
-      if (countdownUpdateRef.current) {
-        clearInterval(countdownUpdateRef.current)
-      }
-    }
-  }, [isSessionActive, navigate])
+  }, [navigate])
 
   // Track user activity for inactivity monitoring
   useEffect(() => {
@@ -120,57 +105,6 @@ const ResponsePage = () => {
       })
     }
   }, [isSessionActive])
-
-  const startCountdownDisplay = () => {
-    if (countdownUpdateRef.current) {
-      clearInterval(countdownUpdateRef.current)
-    }
-
-    countdownUpdateRef.current = setInterval(() => {
-      const status = sessionManager.getSessionStatus()
-      
-      if (!status.showCountdown) {
-        setCountdownDisplay(prev => ({
-          ...prev,
-          showCountdown: false
-        }))
-        return
-      }
-
-      const remainingMs = status.remainingMs
-      
-      if (remainingMs <= 0) {
-        setCountdownDisplay({
-          minutes: 0,
-          seconds: 0,
-          isWarning: false,
-          isCritical: true,
-          showCountdown: false
-        })
-        
-        if (countdownUpdateRef.current) {
-          clearInterval(countdownUpdateRef.current)
-          countdownUpdateRef.current = null
-        }
-        return
-      }
-
-      const totalSeconds = Math.floor(remainingMs / 1000)
-      const minutes = Math.floor(totalSeconds / 60)
-      const seconds = totalSeconds % 60
-      
-      const isWarning = minutes < 5 && minutes >= 1
-      const isCritical = minutes < 1
-
-      setCountdownDisplay({
-        minutes,
-        seconds,
-        isWarning,
-        isCritical,
-        showCountdown: true
-      })
-    }, 1000)
-  }
 
   // Handle URL session ID validation and updates
   useEffect(() => {
@@ -661,20 +595,17 @@ const ResponsePage = () => {
   }
 
   const formatCountdown = () => {
-    const { minutes, seconds } = countdownDisplay
-    if (minutes > 0) {
-      return `${minutes} min${minutes !== 1 ? 's' : ''}`
+    if (remainingMinutes > 0) {
+      return `${remainingMinutes} min${remainingMinutes !== 1 ? 's' : ''}`
     } else {
-      return `${seconds}s`
+      return `${remainingSeconds}s`
     }
   }
 
-  // Inactivity Warning Component
+  // Inactivity Warning Component (WebSocket-based)
   const InactivityWarning = () => {
-    const { showCountdown, isWarning, isCritical } = countdownDisplay
-    
     if (!showCountdown || !isSessionActive) return null
-    
+
     return (
       <div className={`inactivity-warning ${isCritical ? 'critical' : isWarning ? 'warning' : ''}`}>
         <div className="inactivity-content">
@@ -684,7 +615,7 @@ const ResponsePage = () => {
               {isCritical ? 'Session ending soon!' : 'You seem inactive'}
             </p>
             <p className="inactivity-message">
-              Your session will end in {formatCountdown()} due to inactivity. 
+              Your session will end in {formatCountdown()} due to inactivity.
               {isCritical ? ' Click anywhere to stay active.' : ' Any interaction will reset the timer.'}
             </p>
           </div>
