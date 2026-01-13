@@ -188,12 +188,6 @@ const ResponsePage = () => {
     }
   }, [messages, scrollToBottom])
 
-  // Force session status update when component mounts
-  useEffect(() => {
-    console.log('ResponsePage: Forcing session status update on mount')
-    updateSessionStatus()
-  }, [updateSessionStatus])
-  
   const fetchInitialData = async (queryText) => {
     setIsInitialLoading(true)
     setLoadingTitle(true)
