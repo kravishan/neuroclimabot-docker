@@ -51,58 +51,58 @@ class SemaphoreManager:
 
         # Chat processing semaphore
         self.chat_semaphore = asyncio.Semaphore(
-            settings.features.MAX_CONCURRENT_CHAT_REQUESTS
+            settings.MAX_CONCURRENT_CHAT_REQUESTS
         )
         logger.info(
             f"Chat semaphore initialized with limit: "
-            f"{settings.features.MAX_CONCURRENT_CHAT_REQUESTS}"
+            f"{settings.MAX_CONCURRENT_CHAT_REQUESTS}"
         )
 
         # LLM API call semaphore
         self.llm_semaphore = asyncio.Semaphore(
-            settings.features.MAX_CONCURRENT_LLM_CALLS
+            settings.MAX_CONCURRENT_LLM_CALLS
         )
         logger.info(
             f"LLM semaphore initialized with limit: "
-            f"{settings.features.MAX_CONCURRENT_LLM_CALLS}"
+            f"{settings.MAX_CONCURRENT_LLM_CALLS}"
         )
 
         # Milvus vector database semaphore
         self.milvus_semaphore = asyncio.Semaphore(
-            settings.features.MAX_CONCURRENT_MILVUS_QUERIES
+            settings.MAX_CONCURRENT_MILVUS_QUERIES
         )
         logger.info(
             f"Milvus semaphore initialized with limit: "
-            f"{settings.features.MAX_CONCURRENT_MILVUS_QUERIES}"
+            f"{settings.MAX_CONCURRENT_MILVUS_QUERIES}"
         )
 
         # External API semaphores
         self.translation_semaphore = asyncio.Semaphore(
-            settings.features.MAX_CONCURRENT_TRANSLATION_CALLS
+            settings.MAX_CONCURRENT_TRANSLATION_CALLS
         )
         logger.info(
             f"Translation semaphore initialized with limit: "
-            f"{settings.features.MAX_CONCURRENT_TRANSLATION_CALLS}"
+            f"{settings.MAX_CONCURRENT_TRANSLATION_CALLS}"
         )
 
         self.graphrag_semaphore = asyncio.Semaphore(
-            settings.features.MAX_CONCURRENT_GRAPHRAG_CALLS
+            settings.MAX_CONCURRENT_GRAPHRAG_CALLS
         )
         logger.info(
             f"GraphRAG semaphore initialized with limit: "
-            f"{settings.features.MAX_CONCURRENT_GRAPHRAG_CALLS}"
+            f"{settings.MAX_CONCURRENT_GRAPHRAG_CALLS}"
         )
 
         self.stp_semaphore = asyncio.Semaphore(
-            settings.features.MAX_CONCURRENT_STP_CALLS
+            settings.MAX_CONCURRENT_STP_CALLS
         )
         logger.info(
             f"STP semaphore initialized with limit: "
-            f"{settings.features.MAX_CONCURRENT_STP_CALLS}"
+            f"{settings.MAX_CONCURRENT_STP_CALLS}"
         )
 
         # Timeout for semaphore acquisition
-        self.acquisition_timeout = settings.features.SEMAPHORE_ACQUISITION_TIMEOUT
+        self.acquisition_timeout = settings.SEMAPHORE_ACQUISITION_TIMEOUT
 
         SemaphoreManager._initialized = True
         logger.info("SemaphoreManager initialization complete")
