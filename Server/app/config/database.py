@@ -127,7 +127,7 @@ class RedisConfig(BaseSettings):
     
     # Session Configuration (from .env)
     SESSION_TIMEOUT_MINUTES: int = Field(default=10)  # From .env (REDIS_SESSION_TIMEOUT_MINUTES)
-    SESSION_WARNING_MINUTES: int = Field(default=9)  # From .env (REDIS_SESSION_WARNING_MINUTES) - Warning appears when remaining time ≤ this value
+    SESSION_WARNING_MINUTES: int = Field(default=1)  # From .env (REDIS_SESSION_WARNING_MINUTES) - Warning appears when remaining time ≤ this value
     MAX_CONVERSATION_HISTORY: int = 30
     MEMORY_WINDOW_SIZE: int = 6
     

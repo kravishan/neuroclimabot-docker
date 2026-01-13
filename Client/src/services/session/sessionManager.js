@@ -26,6 +26,10 @@ class SessionManager {
     this.isSessionActive = false
     this.messageCount = 0
 
+    // Processing state (timer pauses during processing)
+    this.isProcessing = false
+    this.frozenStatus = null
+
     // WebSocket connection
     this.ws = null
     this.wsReconnectAttempts = 0
@@ -63,6 +67,8 @@ class SessionManager {
     try {
       console.log('[SessionManager] Starting new conversation...')
 
+      // Don't pause timer for initial conversation since session doesn't exist yet
+
       const result = await startConversationSession(query, language, difficulty)
 
       if (result.session_id) {
@@ -72,7 +78,7 @@ class SessionManager {
 
         console.log(`[SessionManager] Session created: ${this.sessionId}`)
 
-        // Connect WebSocket for real-time updates
+        // Connect WebSocket for real-time updates (timer starts when response arrives)
         await this._connectWebSocket()
 
         return {
@@ -112,6 +118,9 @@ class SessionManager {
 
       console.log('[SessionManager] Continuing conversation...')
 
+      // Pause timer during processing
+      this.startProcessing()
+
       const result = await continueConversationSession(
         this.sessionId,
         message,
@@ -121,7 +130,10 @@ class SessionManager {
 
       this.messageCount++
 
-      // Record activity via WebSocket
+      // Resume timer and reset when response arrives
+      this.stopProcessing()
+
+      // Record activity via WebSocket (resets timer on backend)
       this._sendActivityPing()
 
       return {
@@ -143,6 +155,8 @@ class SessionManager {
 
     } catch (error) {
       console.error('[SessionManager] Error continuing conversation:', error)
+      // Resume timer even on error
+      this.stopProcessing()
       throw error
     }
   }
@@ -192,6 +206,33 @@ class SessionManager {
   }
 
   /**
+   * Start processing (pause timer in UI)
+   */
+  startProcessing() {
+    if (!this.isSessionActive) return
+
+    console.log('[SessionManager] Processing started - timer frozen')
+    this.isProcessing = true
+
+    // Freeze current countdown state
+    this.frozenStatus = { ...this.sessionStatus }
+  }
+
+  /**
+   * Stop processing (resume timer in UI)
+   */
+  stopProcessing() {
+    if (!this.isSessionActive) return
+
+    console.log('[SessionManager] Processing completed - timer resumed')
+    this.isProcessing = false
+    this.frozenStatus = null
+
+    // Notify subscribers to refresh with current time
+    this._notifyStatusUpdate()
+  }
+
+  /**
    * Get current session status
    */
   getSessionStatus() {
@@ -199,7 +240,9 @@ class SessionManager {
       sessionId: this.sessionId,
       isSessionActive: this.isSessionActive,
       messageCount: this.messageCount,
-      ...this.sessionStatus
+      isProcessing: this.isProcessing,
+      // Use frozen status during processing, otherwise use current status
+      ...(this.isProcessing && this.frozenStatus ? this.frozenStatus : this.sessionStatus)
     }
   }
 
@@ -229,6 +272,8 @@ class SessionManager {
     this.sessionId = null
     this.isSessionActive = false
     this.messageCount = 0
+    this.isProcessing = false
+    this.frozenStatus = null
     this.sessionStatus = {
       remainingSeconds: 0,
       minutes: 0,
@@ -340,8 +385,10 @@ class SessionManager {
           lastActivity: data.last_activity
         }
 
-        // Notify subscribers
-        this._notifyStatusUpdate()
+        // Only notify subscribers if not processing (timer frozen during processing)
+        if (!this.isProcessing) {
+          this._notifyStatusUpdate()
+        }
         break
 
       case 'session_expired':
