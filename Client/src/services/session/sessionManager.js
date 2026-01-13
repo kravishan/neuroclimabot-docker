@@ -1,54 +1,80 @@
-import { 
-  startConversationSession, 
-  continueConversationSession, 
-  endConversationSession 
+/**
+ * Session Manager with WebSocket Support
+ *
+ * Clean, event-driven session management with real-time countdown from server.
+ * No client-side timers - server is source of truth for all session state.
+ *
+ * Features:
+ * - WebSocket connection for real-time status updates
+ * - Server-side timeout management
+ * - Activity tracking via WebSocket
+ * - Automatic session cleanup on timeout
+ * - Session deletion on page refresh/unload
+ */
+
+import { API_CONFIG } from '@/constants/config'
+import {
+  startConversationSession,
+  continueConversationSession,
+  endConversationSession
 } from '@/services/api/endpoints'
-import { SESSION_CONFIG } from '@/constants/config'
 
 class SessionManager {
   constructor() {
+    // Session state
     this.sessionId = null
     this.isSessionActive = false
     this.messageCount = 0
-    this.sessionStartTime = null
-    this.lastActivityTime = null
-    
-    // Use environment variables with proper fallbacks
-    this.inactivityDuration = (parseInt(import.meta.env.VITE_SESSION_TIMEOUT_MINUTES) || SESSION_CONFIG.TIMEOUT_MINUTES) * 60 * 1000
-    this.warningThreshold = (parseInt(import.meta.env.VITE_INACTIVITY_WARNING_MINUTES) || SESSION_CONFIG.WARNING_MINUTES) * 60 * 1000
-    
-    this.countdownTimer = null
-    this.timeoutCallback = null
-    this.isInactive = false
-    this.inactivityMonitor = null
-    
-    console.log('SessionManager initialized with:', {
-      inactivityDuration: this.inactivityDuration,
-      warningThreshold: this.warningThreshold,
-      timeoutMinutes: parseInt(import.meta.env.VITE_SESSION_TIMEOUT_MINUTES) || SESSION_CONFIG.TIMEOUT_MINUTES,
-      warningMinutes: parseInt(import.meta.env.VITE_INACTIVITY_WARNING_MINUTES) || SESSION_CONFIG.WARNING_MINUTES
-    })
+
+    // WebSocket connection
+    this.ws = null
+    this.wsReconnectAttempts = 0
+    this.maxReconnectAttempts = 3
+    this.reconnectDelay = 2000
+
+    // Session status from server
+    this.sessionStatus = {
+      remainingSeconds: 0,
+      minutes: 0,
+      seconds: 0,
+      isWarning: false,
+      isCritical: false,
+      lastActivity: null
+    }
+
+    // Callbacks
+    this.statusUpdateCallbacks = []
+    this.sessionExpiredCallback = null
+
+    // Activity debouncing
+    this.activityDebounceTimer = null
+    this.activityDebounceDelay = 1000 // 1 second
+
+    // Setup cleanup on page unload/refresh
+    this._setupUnloadHandler()
+
+    console.log('[SessionManager] Initialized with WebSocket support')
   }
 
+  /**
+   * Start a new conversation session
+   */
   async startConversation(query, language = 'en', difficulty = 'low') {
     try {
-      this.resetSession()
-      
-      console.log('Starting new conversation via /api/v1/chat/start')
+      console.log('[SessionManager] Starting new conversation...')
+
       const result = await startConversationSession(query, language, difficulty)
-      
-      if (result.success && result.session_id && result.response) {
+
+      if (result.session_id) {
         this.sessionId = result.session_id
-        this.activateSession()
-        this.saveSessionToMemory()
-        
-        console.log('New conversation started successfully:', {
-          sessionId: this.sessionId,
-          messageCount: this.messageCount,
-          sourceType: result.sourceType,
-          isWebSearch: result.isWebSearch
-        })
-        
+        this.isSessionActive = true
+        this.messageCount = 1
+
+        console.log(`[SessionManager] Session created: ${this.sessionId}`)
+
+        // Connect WebSocket for real-time updates
+        await this._connectWebSocket()
+
         return {
           success: true,
           sessionId: this.sessionId,
@@ -65,308 +91,366 @@ class SessionManager {
           processingTime: result.processingTime || 0,
           searchResultsSummary: result.searchResultsSummary || {}
         }
-      } else {
-        throw new Error(result.error || 'Failed to start conversation or receive response')
       }
+
+      throw new Error('No session ID received from server')
+
     } catch (error) {
-      console.error('Error starting conversation:', error)
-      this.resetSession()
-      throw new Error(error.message || 'Failed to start conversation')
-    }
-  }
-
-  activateSession() {
-    this.isSessionActive = true
-    this.messageCount = 1
-    this.sessionStartTime = Date.now()
-    this.lastActivityTime = Date.now()
-    this.isInactive = false
-    
-    this.startInactivityMonitoring()
-    console.log('Session activated after successful LLM response:', this.sessionId)
-    console.log('Session timing:', {
-      inactivityDuration: this.inactivityDuration,
-      warningThreshold: this.warningThreshold
-    })
-  }
-
-  async continueConversation(message, language, difficulty) {
-    if (!this.sessionId || !this.isSessionActive) {
-      throw new Error('No active session. Please start a new conversation.')
-    }
-
-    try {
-      this.recordActivity()
-
-      console.log('Continuing conversation via /api/v1/chat/continue/' + this.sessionId)
-      const result = await continueConversationSession(
-        this.sessionId, 
-        message, 
-        language, 
-        difficulty
-      )
-
-      if (result.success && result.response) {
-        this.messageCount += 1
-        
-        console.log('Conversation continued successfully:', {
-          sessionId: this.sessionId,
-          messageCount: this.messageCount,
-          sourceType: result.sourceType,
-          isWebSearch: result.isWebSearch
-        })
-        
-        return {
-          success: true,
-          sourceType: result.sourceType,
-          isWebSearch: result.isWebSearch,
-          response: result.response,
-          references: result.references || [],
-          referenceCount: result.referenceCount || 0,
-          totalAvailable: result.totalAvailable || 0,
-          queryPreprocessed: result.queryPreprocessed || false,
-          originalQuery: result.originalQuery || message,
-          processedQuery: result.processedQuery,
-          preprocessingDetails: result.preprocessingDetails || {},
-          processingTime: result.processingTime || 0,
-          searchResultsSummary: result.searchResultsSummary || {},
-          memoryContextUsed: result.memoryContextUsed || false
-        }
-      } else {
-        if (result.error && (
-          result.error.includes('Session not found') || 
-          result.error.includes('expired')
-        )) {
-          this.resetSession()
-          throw new Error('Session expired. Please start a new conversation.')
-        }
-        throw new Error(result.error || 'Failed to continue conversation or receive response')
-      }
-    } catch (error) {
-      console.error('Error continuing conversation:', error)
-      
-      // Handle session not found errors
-      if (error.response?.status === 404 || 
-          error.message.includes('Session expired') || 
-          error.message.includes('Session not found')) {
-        console.warn('Session not found on server, resetting local session')
-        this.resetSession()
-        throw new Error('Session expired. Please start a new conversation.')
-      }
+      console.error('[SessionManager] Error starting conversation:', error)
       throw error
     }
   }
 
-  recordActivity() {
-    this.lastActivityTime = Date.now()
-    
-    if (this.isInactive) {
-      this.isInactive = false
-      this.stopCountdownTimer()
-      console.log('User activity detected - stopping inactivity countdown')
+  /**
+   * Continue existing conversation
+   */
+  async continueConversation(message, language = null, difficulty = null) {
+    try {
+      if (!this.sessionId || !this.isSessionActive) {
+        throw new Error('No active session')
+      }
+
+      console.log('[SessionManager] Continuing conversation...')
+
+      const result = await continueConversationSession(
+        this.sessionId,
+        message,
+        language,
+        difficulty
+      )
+
+      this.messageCount++
+
+      // Record activity via WebSocket
+      this._sendActivityPing()
+
+      return {
+        success: true,
+        sourceType: result.sourceType,
+        isWebSearch: result.isWebSearch,
+        response: result.response,
+        references: result.references || [],
+        referenceCount: result.referenceCount || 0,
+        totalAvailable: result.totalAvailable || 0,
+        queryPreprocessed: result.queryPreprocessed || false,
+        originalQuery: result.originalQuery || message,
+        processedQuery: result.processedQuery,
+        preprocessingDetails: result.preprocessingDetails || {},
+        processingTime: result.processingTime || 0,
+        searchResultsSummary: result.searchResultsSummary || {},
+        memoryContextUsed: result.memoryContextUsed || false
+      }
+
+    } catch (error) {
+      console.error('[SessionManager] Error continuing conversation:', error)
+      throw error
     }
   }
 
-  startInactivityMonitoring() {
-    this.stopInactivityMonitoring()
-
-    this.inactivityMonitor = setInterval(() => {
-      if (!this.isSessionActive) {
-        this.stopInactivityMonitoring()
+  /**
+   * End the current session
+   */
+  async endSession() {
+    try {
+      if (!this.sessionId) {
+        console.warn('[SessionManager] No session to end')
         return
       }
 
-      const timeSinceLastActivity = Date.now() - this.lastActivityTime
-      const timeUntilTimeout = this.inactivityDuration - timeSinceLastActivity
+      console.log(`[SessionManager] Ending session ${this.sessionId}`)
 
-      if (timeUntilTimeout <= 0) {
-        console.log('Session timeout due to inactivity')
-        this.handleSessionTimeout()
-      } else if (timeUntilTimeout <= this.warningThreshold && !this.isInactive) {
-        console.log('Starting inactivity countdown warning')
-        this.isInactive = true
-        this.startCountdownTimer()
-      }
-    }, 5000) // Check every 5 seconds for better responsiveness
-  }
+      // Close WebSocket first
+      this._disconnectWebSocket()
 
-  stopInactivityMonitoring() {
-    if (this.inactivityMonitor) {
-      clearInterval(this.inactivityMonitor)
-      this.inactivityMonitor = null
-    }
-  }
+      // Delete session on server
+      await endConversationSession(this.sessionId)
 
-  startCountdownTimer() {
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer)
-    }
+      // Reset local state
+      this._resetSession()
 
-    console.log('Starting inactivity countdown timer')
-
-    this.countdownTimer = setInterval(() => {
-      const timeSinceLastActivity = Date.now() - this.lastActivityTime
-      const remainingTime = this.inactivityDuration - timeSinceLastActivity
-      
-      if (remainingTime <= 0) {
-        this.handleSessionTimeout()
-      }
-    }, 1000)
-  }
-
-  stopCountdownTimer() {
-    if (this.countdownTimer) {
-      clearInterval(this.countdownTimer)
-      this.countdownTimer = null
-    }
-  }
-
-  async handleSessionTimeout() {
-    console.log('Session timeout reached - ending session')
-    
-    this.stopCountdownTimer()
-    this.stopInactivityMonitoring()
-
-    try {
-      await this.endSession()
     } catch (error) {
-      console.error('Error ending session on timeout:', error)
-    }
-
-    if (this.timeoutCallback) {
-      this.timeoutCallback()
+      console.error('[SessionManager] Error ending session:', error)
+      // Reset anyway
+      this._resetSession()
     }
   }
 
-  setTimeoutCallback(callback) {
-    this.timeoutCallback = callback
-  }
+  /**
+   * Record user activity
+   */
+  onUserActivity() {
+    if (!this.isSessionActive) return
 
-  getRemainingTime() {
-    if (!this.isSessionActive) {
-      return 0
+    // Debounce activity pings (max 1 per second)
+    if (this.activityDebounceTimer) {
+      clearTimeout(this.activityDebounceTimer)
     }
-    
-    const timeSinceLastActivity = Date.now() - this.lastActivityTime
-    const remaining = this.inactivityDuration - timeSinceLastActivity
-    return Math.max(0, remaining)
+
+    this.activityDebounceTimer = setTimeout(() => {
+      this._sendActivityPing()
+    }, this.activityDebounceDelay)
   }
 
-  getRemainingMinutes() {
-    const remainingMs = this.getRemainingTime()
-    return Math.floor(remainingMs / (60 * 1000))
+  /**
+   * Get current session status
+   */
+  getSessionStatus() {
+    return {
+      sessionId: this.sessionId,
+      isSessionActive: this.isSessionActive,
+      messageCount: this.messageCount,
+      ...this.sessionStatus
+    }
   }
 
-  getRemainingSeconds() {
-    const remainingMs = this.getRemainingTime()
-    const totalSeconds = Math.floor(remainingMs / 1000)
-    return totalSeconds % 60
+  /**
+   * Subscribe to status updates
+   */
+  onStatusUpdate(callback) {
+    this.statusUpdateCallbacks.push(callback)
+
+    // Return unsubscribe function
+    return () => {
+      this.statusUpdateCallbacks = this.statusUpdateCallbacks.filter(cb => cb !== callback)
+    }
   }
 
-  async endSession() {
+  /**
+   * Set callback for session expiration
+   */
+  onSessionExpired(callback) {
+    this.sessionExpiredCallback = callback
+  }
+
+  /**
+   * Reset session state
+   */
+  _resetSession() {
+    this.sessionId = null
+    this.isSessionActive = false
+    this.messageCount = 0
+    this.sessionStatus = {
+      remainingSeconds: 0,
+      minutes: 0,
+      seconds: 0,
+      isWarning: false,
+      isCritical: false,
+      lastActivity: null
+    }
+
+    if (this.activityDebounceTimer) {
+      clearTimeout(this.activityDebounceTimer)
+      this.activityDebounceTimer = null
+    }
+
+    console.log('[SessionManager] Session reset')
+  }
+
+  /**
+   * Connect to WebSocket for real-time status updates
+   */
+  async _connectWebSocket() {
     if (!this.sessionId) {
+      console.warn('[SessionManager] Cannot connect WebSocket: No session ID')
       return
     }
 
-    this.stopCountdownTimer()
-    this.stopInactivityMonitoring()
+    // Close existing connection if any
+    this._disconnectWebSocket()
 
     try {
-      console.log('Ending session via /api/v1/chat/sessions/' + this.sessionId)
-      await endConversationSession(this.sessionId)
-      console.log('Session ended successfully')
-    } catch (error) {
-      console.error('Error ending session:', error)
-    } finally {
-      this.resetSession()
-    }
-  }
+      // Get WebSocket URL (replace http with ws, https with wss)
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const baseUrl = API_CONFIG.BASE_URL.replace(/^https?:/, wsProtocol)
+      const wsUrl = `${baseUrl}/api/v1/chat/sessions/${this.sessionId}/ws`
 
-  resetSession() {
-    this.sessionId = null
-    this.messageCount = 0
-    this.isSessionActive = false
-    this.sessionStartTime = null
-    this.lastActivityTime = null
-    this.isInactive = false
-    
-    this.stopCountdownTimer()
-    this.stopInactivityMonitoring()
-    
-    this.clearSessionFromMemory()
-    console.log('Session reset')
-  }
+      console.log(`[SessionManager] Connecting to WebSocket: ${wsUrl}`)
 
-  saveSessionToMemory() {
-    if (this.sessionId) {
-      window.__neuroClima_sessionId = this.sessionId
-    }
-  }
+      this.ws = new WebSocket(wsUrl)
 
-  clearSessionFromMemory() {
-    delete window.__neuroClima_sessionId
-  }
-
-  getSessionUrl() {
-    if (this.sessionId) {
-      return `/response/${this.sessionId}`
-    }
-    return null
-  }
-
-  getSessionStatus() {
-    const remainingMs = this.getRemainingTime()
-    const minutes = Math.floor(remainingMs / (60 * 1000))
-    const seconds = Math.floor((remainingMs % (60 * 1000)) / 1000)
-    
-    // Show countdown when warning threshold is reached OR when inactive
-    const showCountdown = this.isSessionActive && (remainingMs <= this.warningThreshold || this.isInactive)
-    
-    return {
-      hasActiveSession: this.isSessionActive && this.sessionId !== null,
-      sessionId: this.sessionId,
-      messageCount: this.messageCount,
-      isInactive: this.isInactive,
-      remainingMinutes: minutes,
-      remainingSeconds: seconds,
-      remainingMs: remainingMs,
-      showCountdown: showCountdown,
-      timeSinceLastActivity: this.lastActivityTime ? Date.now() - this.lastActivityTime : 0,
-      // Add these for debugging
-      inactivityDuration: this.inactivityDuration,
-      warningThreshold: this.warningThreshold,
-      lastActivityTime: this.lastActivityTime
-    }
-  }
-
-  onUserActivity() {
-    this.recordActivity()
-  }
-
-  async healthCheck() {
-    try {
-      if (this.sessionId) {
-        return true
+      this.ws.onopen = () => {
+        console.log('[SessionManager] WebSocket connected')
+        this.wsReconnectAttempts = 0
       }
-      return true
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          this._handleWebSocketMessage(data)
+        } catch (error) {
+          console.error('[SessionManager] Error parsing WebSocket message:', error)
+        }
+      }
+
+      this.ws.onerror = (error) => {
+        console.error('[SessionManager] WebSocket error:', error)
+      }
+
+      this.ws.onclose = () => {
+        console.log('[SessionManager] WebSocket closed')
+        this.ws = null
+
+        // Try to reconnect if session is still active
+        if (this.isSessionActive && this.wsReconnectAttempts < this.maxReconnectAttempts) {
+          this.wsReconnectAttempts++
+          console.log(`[SessionManager] Reconnecting... (attempt ${this.wsReconnectAttempts}/${this.maxReconnectAttempts})`)
+
+          setTimeout(() => {
+            this._connectWebSocket()
+          }, this.reconnectDelay)
+        }
+      }
+
     } catch (error) {
-      console.error('Session manager health check failed:', error)
-      return false
+      console.error('[SessionManager] Error connecting WebSocket:', error)
     }
   }
 
-  async getStats() {
-    return {
-      hasActiveSession: this.isSessionActive,
-      sessionId: this.sessionId,
-      messageCount: this.messageCount,
-      sessionStartTime: this.sessionStartTime,
-      lastActivityTime: this.lastActivityTime,
-      isInactive: this.isInactive,
-      inactivityDuration: this.inactivityDuration,
-      warningThreshold: this.warningThreshold
+  /**
+   * Disconnect WebSocket
+   */
+  _disconnectWebSocket() {
+    if (this.ws) {
+      try {
+        this.ws.close()
+      } catch (error) {
+        console.error('[SessionManager] Error closing WebSocket:', error)
+      }
+      this.ws = null
     }
+  }
+
+  /**
+   * Handle WebSocket messages from server
+   */
+  _handleWebSocketMessage(data) {
+    switch (data.type) {
+      case 'connected':
+        console.log('[SessionManager] WebSocket connection confirmed')
+        break
+
+      case 'status_update':
+        // Update session status from server
+        this.sessionStatus = {
+          remainingSeconds: data.remaining_seconds,
+          minutes: data.minutes,
+          seconds: data.seconds,
+          isWarning: data.is_warning,
+          isCritical: data.is_critical,
+          lastActivity: data.last_activity
+        }
+
+        // Notify subscribers
+        this._notifyStatusUpdate()
+        break
+
+      case 'session_expired':
+        console.warn('[SessionManager] Session expired:', data.message)
+        this._handleSessionExpired()
+        break
+
+      case 'activity_recorded':
+        console.debug('[SessionManager] Activity recorded by server')
+        break
+
+      case 'error':
+        console.error('[SessionManager] WebSocket error:', data.message)
+        break
+
+      default:
+        console.warn('[SessionManager] Unknown message type:', data.type)
+    }
+  }
+
+  /**
+   * Send activity ping to server via WebSocket
+   */
+  _sendActivityPing() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(JSON.stringify({
+          type: 'activity'
+        }))
+        console.debug('[SessionManager] Activity ping sent')
+      } catch (error) {
+        console.error('[SessionManager] Error sending activity ping:', error)
+      }
+    }
+  }
+
+  /**
+   * Notify all status update subscribers
+   */
+  _notifyStatusUpdate() {
+    const status = this.getSessionStatus()
+    this.statusUpdateCallbacks.forEach(callback => {
+      try {
+        callback(status)
+      } catch (error) {
+        console.error('[SessionManager] Error in status update callback:', error)
+      }
+    })
+  }
+
+  /**
+   * Handle session expiration
+   */
+  _handleSessionExpired() {
+    this._disconnectWebSocket()
+    this._resetSession()
+
+    if (this.sessionExpiredCallback) {
+      try {
+        this.sessionExpiredCallback()
+      } catch (error) {
+        console.error('[SessionManager] Error in session expired callback:', error)
+      }
+    }
+  }
+
+  /**
+   * Setup handler to delete session on page refresh/unload
+   */
+  _setupUnloadHandler() {
+    window.addEventListener('beforeunload', () => {
+      if (this.sessionId && this.isSessionActive) {
+        console.log('[SessionManager] Page unloading, deleting session...')
+
+        // Use sendBeacon for reliable async request during unload
+        // This is more reliable than fetch/axios during page unload
+        const deleteUrl = `${API_CONFIG.BASE_URL}/api/v1/chat/sessions/${this.sessionId}`
+
+        // Try sendBeacon first (most reliable)
+        if (navigator.sendBeacon) {
+          // sendBeacon only supports POST, but we can use it with a delete endpoint
+          // that accepts POST with X-HTTP-Method-Override header
+          const blob = new Blob([JSON.stringify({})], { type: 'application/json' })
+          navigator.sendBeacon(deleteUrl, blob)
+        } else {
+          // Fallback to synchronous XHR (not ideal but works)
+          try {
+            const xhr = new XMLHttpRequest()
+            xhr.open('DELETE', deleteUrl, false) // synchronous
+            xhr.setRequestHeader('Content-Type', 'application/json')
+
+            // Add auth token if available
+            const token = localStorage.getItem('auth_token')
+            if (token) {
+              xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+            }
+
+            xhr.send()
+          } catch (error) {
+            console.error('[SessionManager] Error deleting session on unload:', error)
+          }
+        }
+
+        // Close WebSocket
+        this._disconnectWebSocket()
+      }
+    })
   }
 }
 
+// Export singleton instance
 export const sessionManager = new SessionManager()
