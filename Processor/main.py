@@ -363,9 +363,33 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("🚀 Starting NeuroClima Document Processor v7.0 with GraphRAG and STP...")
-    
+
     try:
         await initialize_services()
+
+        # Pre-load translation models at startup
+        logger.info("🌐 Pre-loading translation models...")
+        try:
+            from api.support import load_translation_model
+
+            # Pre-load all language pairs to avoid cold start delays
+            language_pairs = [
+                ('en', 'it'), ('it', 'en'),
+                ('en', 'pt'), ('pt', 'en'),
+                ('en', 'el'), ('el', 'en')
+            ]
+
+            for source_lang, target_lang in language_pairs:
+                try:
+                    load_translation_model(source_lang, target_lang)
+                    logger.info(f"✅ Loaded translation model: {source_lang} → {target_lang}")
+                except Exception as model_error:
+                    logger.warning(f"⚠️ Failed to load {source_lang} → {target_lang}: {model_error}")
+
+            logger.info("✅ Translation models pre-loaded successfully")
+        except Exception as translation_error:
+            logger.warning(f"⚠️ Translation model pre-loading failed (will load on-demand): {translation_error}")
+
         logger.info("✅ Application startup complete")
         logger.info("🔄 Background task processing ready")
     except Exception as e:
