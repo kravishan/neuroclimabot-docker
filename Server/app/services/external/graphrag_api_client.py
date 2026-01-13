@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from app.config import get_settings
 from app.core.exceptions import RAGException
+from app.core.dependencies import get_semaphore_manager
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -82,32 +83,39 @@ class GraphRAGAPIClient:
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Perform local search using the GraphRAG /graphrag/local-search endpoint
-        Updated for new API format with community_level and response_type
+        Perform local search using the GraphRAG /graphrag/local-search endpoint.
+        Updated for new API format with community_level and response_type.
+        Uses semaphore to limit concurrent GraphRAG API calls.
         """
+        semaphore_manager = get_semaphore_manager()
+
         if not self.is_initialized:
             await self.initialize()
 
-        start_time = time.perf_counter()
-        self.performance_stats["total_requests"] += 1
-        self.performance_stats["local_search_requests"] += 1
+        logger.debug("🔒 Waiting for GraphRAG semaphore...")
+        async with semaphore_manager.graphrag_semaphore:
+            logger.debug("✅ GraphRAG semaphore acquired")
 
-        try:
-            # Build payload for new GraphRAG API format
-            payload = {
-                "question": question,
-                "community_level": kwargs.get("community_level", 2),
-                "response_type": kwargs.get("response_type", "Multiple Paragraphs")
-            }
+            start_time = time.perf_counter()
+            self.performance_stats["total_requests"] += 1
+            self.performance_stats["local_search_requests"] += 1
 
-            logger.info(f"🔍 GraphRAG local search: '{question[:100]}...' (bucket: {bucket or 'all'})")
+            try:
+                # Build payload for new GraphRAG API format
+                payload = {
+                    "question": question,
+                    "community_level": kwargs.get("community_level", 2),
+                    "response_type": kwargs.get("response_type", "Multiple Paragraphs")
+                }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"{self.graphrag_base_url}/graphrag/local-search",
-                    json=payload,
-                    timeout=aiohttp.ClientTimeout(total=self.timeout)
-                ) as response:
+                logger.info(f"🔍 GraphRAG local search: '{question[:100]}...' (bucket: {bucket or 'all'})")
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        f"{self.graphrag_base_url}/graphrag/local-search",
+                        json=payload,
+                        timeout=aiohttp.ClientTimeout(total=self.timeout)
+                    ) as response:
 
                     if response.status != 200:
                         error_text = await response.text()
@@ -138,16 +146,17 @@ class GraphRAGAPIClient:
             sources = context.get("sources", [])
 
             # Update processing stats
-            self.performance_stats["entities_processed"] += len(entities)
-            self.performance_stats["relationships_processed"] += len(relationships)
-            self.performance_stats["communities_processed"] += len(reports)
+                self.performance_stats["entities_processed"] += len(entities)
+                self.performance_stats["relationships_processed"] += len(relationships)
+                self.performance_stats["communities_processed"] += len(reports)
 
-            logger.info(f"✅ GraphRAG local search completed: {len(entities)} entities, {len(relationships)} relationships, {len(reports)} reports, {len(sources)} sources in {response_time:.3f}s")
+                logger.info(f"✅ GraphRAG local search completed: {len(entities)} entities, {len(relationships)} relationships, {len(reports)} reports, {len(sources)} sources in {response_time:.3f}s")
+                logger.debug("🔓 GraphRAG semaphore released")
 
-            return api_response
+                return api_response
 
-        except asyncio.TimeoutError:
-            self.performance_stats["timeout_count"] += 1
+            except asyncio.TimeoutError:
+                self.performance_stats["timeout_count"] += 1
             self.performance_stats["failed_requests"] += 1
             logger.warning(f"GraphRAG local-search API timeout after {self.timeout}s")
             return self._create_empty_local_search_response(question)
