@@ -31,6 +31,42 @@ export default defineConfig({
       'X-Frame-Options': 'DENY',
       'X-XSS-Protection': '1; mode=block',
     },
+    proxy: {
+      // Proxy API requests to the FastAPI backend (Server)
+      '/server': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/server/, ''),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('[Vite Proxy] Error connecting to server:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('[Vite Proxy] Request to server:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('[Vite Proxy] Response from server:', proxyRes.statusCode, req.url);
+          });
+        },
+      },
+      // Proxy processor requests to the Document Processor service
+      '/processor': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/processor/, ''),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('[Vite Proxy] Error connecting to processor:', err.message);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('[Vite Proxy] Request to processor:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('[Vite Proxy] Response from processor:', proxyRes.statusCode, req.url);
+          });
+        },
+      },
+    },
   },
   build: {
     sourcemap: false,
