@@ -109,44 +109,44 @@ class MilvusClient:
             try:
                 # Create parallel search tasks for all collections
                 search_tasks = []
-            for collection_name in self.config.chunks_collections:
-                task = asyncio.create_task(
-                    self._search_chunks_in_collection_async(
-                        collection_name, query_embedding, limit, min_score
+                for collection_name in self.config.chunks_collections:
+                    task = asyncio.create_task(
+                        self._search_chunks_in_collection_async(
+                            collection_name, query_embedding, limit, min_score
+                        )
                     )
-                )
-                search_tasks.append((collection_name, task))
-            
-            # Execute all searches in parallel with timeout
-            try:
-                completed_tasks = await asyncio.wait_for(
-                    asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
-                    timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
-                )
-            except asyncio.TimeoutError:
-                logger.warning(f"Parallel chunk searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
-                # Cancel remaining tasks
-                for _, task in search_tasks:
-                    if not task.done():
-                        task.cancel()
-                completed_tasks = []
-            
-            # Combine results from all collections
-            all_chunks = []
-            for i, (collection_name, task) in enumerate(search_tasks):
-                if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
-                    collection_chunks = completed_tasks[i]
-                    all_chunks.extend(collection_chunks)
-                    if collection_chunks:
-                        logger.debug(f"   ✅ {collection_name}: {len(collection_chunks)} chunks")
-                elif i < len(completed_tasks):
-                    logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
-                else:
-                    logger.warning(f"   ⏱️ {collection_name}: Timed out")
+                    search_tasks.append((collection_name, task))
 
-            # Sort by score and return top results
-            all_chunks.sort(key=lambda x: x.get("score", 0.0), reverse=True)
-            final_chunks = all_chunks[:limit]
+                # Execute all searches in parallel with timeout
+                try:
+                    completed_tasks = await asyncio.wait_for(
+                        asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
+                        timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"Parallel chunk searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
+                    # Cancel remaining tasks
+                    for _, task in search_tasks:
+                        if not task.done():
+                            task.cancel()
+                    completed_tasks = []
+
+                # Combine results from all collections
+                all_chunks = []
+                for i, (collection_name, task) in enumerate(search_tasks):
+                    if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
+                        collection_chunks = completed_tasks[i]
+                        all_chunks.extend(collection_chunks)
+                        if collection_chunks:
+                            logger.debug(f"   ✅ {collection_name}: {len(collection_chunks)} chunks")
+                    elif i < len(completed_tasks):
+                        logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
+                    else:
+                        logger.warning(f"   ⏱️ {collection_name}: Timed out")
+
+                # Sort by score and return top results
+                all_chunks.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+                final_chunks = all_chunks[:limit]
 
                 # Log chunks results
                 total_found = len(all_chunks)
@@ -286,43 +286,43 @@ class MilvusClient:
             try:
                 # Create parallel search tasks for all summary collections
                 search_tasks = []
-            for collection_name in self.config.summaries_collections:
-                task = asyncio.create_task(
-                    self._search_summaries_in_collection_async(
-                        collection_name, query_embedding, limit_per_collection, min_score
+                for collection_name in self.config.summaries_collections:
+                    task = asyncio.create_task(
+                        self._search_summaries_in_collection_async(
+                            collection_name, query_embedding, limit_per_collection, min_score
+                        )
                     )
-                )
-                search_tasks.append((collection_name, task))
-            
-            # Execute all searches in parallel with timeout
-            try:
-                completed_tasks = await asyncio.wait_for(
-                    asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
-                    timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
-                )
-            except asyncio.TimeoutError:
-                logger.warning(f"Parallel summary searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
-                # Cancel remaining tasks
-                for _, task in search_tasks:
-                    if not task.done():
-                        task.cancel()
-                completed_tasks = []
-            
-            # Combine results from all collections
-            all_summaries = []
-            for i, (collection_name, task) in enumerate(search_tasks):
-                if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
-                    collection_summaries = completed_tasks[i]
-                    all_summaries.extend(collection_summaries)
-                    if collection_summaries:
-                        logger.debug(f"   ✅ {collection_name}: {len(collection_summaries)} summaries")
-                elif i < len(completed_tasks):
-                    logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
-                else:
-                    logger.warning(f"   ⏱️ {collection_name}: Timed out")
-            
-            # Sort by score and return results
-            all_summaries.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+                    search_tasks.append((collection_name, task))
+
+                # Execute all searches in parallel with timeout
+                try:
+                    completed_tasks = await asyncio.wait_for(
+                        asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
+                        timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"Parallel summary searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
+                    # Cancel remaining tasks
+                    for _, task in search_tasks:
+                        if not task.done():
+                            task.cancel()
+                    completed_tasks = []
+
+                # Combine results from all collections
+                all_summaries = []
+                for i, (collection_name, task) in enumerate(search_tasks):
+                    if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
+                        collection_summaries = completed_tasks[i]
+                        all_summaries.extend(collection_summaries)
+                        if collection_summaries:
+                            logger.debug(f"   ✅ {collection_name}: {len(collection_summaries)} summaries")
+                    elif i < len(completed_tasks):
+                        logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
+                    else:
+                        logger.warning(f"   ⏱️ {collection_name}: Timed out")
+
+                # Sort by score and return results
+                all_summaries.sort(key=lambda x: x.get("score", 0.0), reverse=True)
 
                 # Log summaries results
                 total_found = len(all_summaries)
