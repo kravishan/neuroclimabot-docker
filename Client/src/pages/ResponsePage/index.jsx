@@ -328,8 +328,8 @@ const ResponsePage = () => {
       }
     } catch (error) {
       console.error('Error fetching initial data:', error)
-      setTitle('We cannot generate response')
-      setAIResponse(error.message || 'We cannot generate response. Please try again.')
+      setTitle('ERROR')
+      setAIResponse(error.message || 'We cannot generate response')
       setIsInitialLoading(false)
       setLoadingTitle(false)
       setLoadingResponse(false)
@@ -483,7 +483,7 @@ const ResponsePage = () => {
           msg.id === placeholderAIMessageId
             ? {
                 ...msg,
-                content: error.message || 'We cannot generate response. Please try again.',
+                content: error.message || 'We cannot generate response',
                 isLoading: false,
                 isError: true
               }
