@@ -3,7 +3,7 @@ import { API_CONFIG, SESSION_CONFIG } from '@/constants/config'
 import { consentService } from '@/services/consent/consentService'
 
 // Session Management
-export const startConversationSession = async (query, language = 'en', difficulty = 'low', retryCount = 0) => {
+export const startConversationSession = async (query, language = 'en', difficulty = 'low') => {
   try {
     // Clear any existing session before starting new one
     sessionStorage.removeItem(SESSION_CONFIG.STORAGE_KEY)
@@ -20,19 +20,19 @@ export const startConversationSession = async (query, language = 'en', difficult
     })
 
     const data = response.data
-    
+
     if (data.session_id) {
       sessionStorage.setItem(SESSION_CONFIG.STORAGE_KEY, data.session_id)
     }
-    
+
     // Determine source type and handle accordingly
     const sourceType = data.source_type || 'rag' // Default to 'rag' if not specified
     const isWebSearch = sourceType === 'web'
-    
+
     // Parse social tipping point - handle both old and new formats
     let socialTippingPoint = ''
     let qualifyingFactors = []
-    
+
     if (data.social_tipping_point) {
       if (typeof data.social_tipping_point === 'string') {
         // Old format - just a string
@@ -45,7 +45,7 @@ export const startConversationSession = async (query, language = 'en', difficult
     } else {
       socialTippingPoint = isWebSearch ? '' : 'No specific social tipping point available.'
     }
-    
+
     return {
       success: data.success !== false,
       session_id: data.session_id,
@@ -78,16 +78,12 @@ export const startConversationSession = async (query, language = 'en', difficult
       }
     }
   } catch (error) {
-    if (retryCount < 2 && (!error.response || error.code === 'ECONNABORTED')) {
-      console.log(`Retrying start conversation request (${retryCount + 1}/2)...`)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return startConversationSession(query, language, difficulty, retryCount + 1)
-    }
+    console.error('Error starting conversation:', error)
     throw error
   }
 }
 
-export const continueConversationSession = async (sessionId, message, language = null, difficulty = null, retryCount = 0) => {
+export const continueConversationSession = async (sessionId, message, language = null, difficulty = null) => {
   try {
     if (!sessionId) {
       sessionId = sessionStorage.getItem(SESSION_CONFIG.STORAGE_KEY)
@@ -111,17 +107,17 @@ export const continueConversationSession = async (sessionId, message, language =
 
     // Use the continue endpoint with session_id in URL
     const response = await apiClient.post(`${API_CONFIG.ENDPOINTS.CHAT_CONTINUE}/${sessionId}`, requestBody)
-    
+
     const data = response.data
-    
+
     // Determine source type and handle accordingly
     const sourceType = data.source_type || 'rag' // Default to 'rag' if not specified
     const isWebSearch = sourceType === 'web'
-    
+
     // Parse social tipping point - handle both old and new formats
     let socialTippingPoint = ''
     let qualifyingFactors = []
-    
+
     if (data.social_tipping_point) {
       if (typeof data.social_tipping_point === 'string') {
         // Old format - just a string
@@ -134,7 +130,7 @@ export const continueConversationSession = async (sessionId, message, language =
     } else {
       socialTippingPoint = isWebSearch ? '' : 'No specific social tipping point available.'
     }
-    
+
     return {
       success: data.success !== false,
       session_id: data.session_id || sessionId,
@@ -168,11 +164,7 @@ export const continueConversationSession = async (sessionId, message, language =
       memoryContextUsed: data.specialized_processing?.context_used ? true : false
     }
   } catch (error) {
-    if (retryCount < 2 && (!error.response || error.code === 'ECONNABORTED')) {
-      console.log(`Retrying continue conversation request (${retryCount + 1}/2)...`)
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return continueConversationSession(sessionId, message, language, difficulty, retryCount + 1)
-    }
+    console.error('Error continuing conversation:', error)
     throw error
   }
 }

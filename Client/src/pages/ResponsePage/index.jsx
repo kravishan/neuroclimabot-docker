@@ -328,7 +328,39 @@ const ResponsePage = () => {
       }
     } catch (error) {
       console.error('Error fetching initial data:', error)
+
+      // Determine error message based on error type
+      let errorMessage = 'Sorry, we encountered an error. Please try starting a new conversation.'
+
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'The request took too long to complete. The backend service may be busy or experiencing issues. Please try again later.'
+      } else if (error.response) {
+        const status = error.response.status
+        if (status === 500 || status === 502 || status === 503) {
+          errorMessage = 'The backend service is currently unavailable. Please try again later.'
+        } else if (status === 404) {
+          errorMessage = 'The requested service was not found. Please contact support.'
+        } else if (status >= 400) {
+          errorMessage = 'There was an error processing your request. Please try again.'
+        }
+      } else if (error.message.includes('Network Error') || !error.response) {
+        errorMessage = 'Unable to connect to the backend service. Please check your internet connection and try again.'
+      }
+
       setTitle('Error Loading Response')
+
+      // Display error message in the assistant response
+      const assistantMessageId = 2
+      setMessages(prevMessages => [
+        ...prevMessages,
+        {
+          id: assistantMessageId,
+          type: 'assistant',
+          content: errorMessage,
+          isError: true
+        }
+      ])
+
       setIsInitialLoading(false)
       setLoadingTitle(false)
       setLoadingResponse(false)
@@ -476,16 +508,34 @@ const ResponsePage = () => {
       }
     } catch (error) {
       console.error('Error in continuous chat:', error)
-      
+
+      // Determine error message based on error type
+      let errorMessage = 'Sorry, we encountered an error processing your message. Please try again or start a new conversation.'
+
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'The request took too long to complete. The backend service may be busy or experiencing issues. Please try again later.'
+      } else if (error.response) {
+        const status = error.response.status
+        if (status === 500 || status === 502 || status === 503) {
+          errorMessage = 'The backend service is currently unavailable. Please try again later.'
+        } else if (status === 404) {
+          errorMessage = 'Session not found. Please start a new conversation.'
+        } else if (status >= 400) {
+          errorMessage = 'There was an error processing your message. Please try again.'
+        }
+      } else if (error.message.includes('Network Error') || !error.response) {
+        errorMessage = 'Unable to connect to the backend service. Please check your internet connection and try again.'
+      }
+
       setMessages(prevMessages => {
-        return prevMessages.map(msg => 
-          msg.id === placeholderAIMessageId 
-            ? { 
-                ...msg, 
-                content: 'Sorry, there was an error processing your message. Please try starting a new conversation.', 
+        return prevMessages.map(msg =>
+          msg.id === placeholderAIMessageId
+            ? {
+                ...msg,
+                content: errorMessage,
                 isLoading: false,
                 isError: true
-              } 
+              }
             : msg
         )
       })
