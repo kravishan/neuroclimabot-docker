@@ -32,9 +32,10 @@ from app.config.database import get_redis_config
 router = APIRouter()
 logger = get_logger(__name__)
 
-# Get session timeout configuration
+# Get session timeout configuration from .env
 redis_config = get_redis_config()
 SESSION_TIMEOUT_SECONDS = redis_config.SESSION_TIMEOUT_MINUTES * 60
+SESSION_WARNING_SECONDS = redis_config.SESSION_WARNING_MINUTES * 60
 
 
 @router.post("/start", response_model=ChatResponse)
@@ -337,8 +338,8 @@ async def session_status_websocket(websocket: WebSocket, session_id: str):
                     minutes = int(remaining_seconds // 60)
                     seconds = int(remaining_seconds % 60)
 
-                    # Determine warning level
-                    is_warning = remaining_seconds <= 300  # 5 minutes
+                    # Determine warning level (configurable from .env)
+                    is_warning = remaining_seconds <= SESSION_WARNING_SECONDS
                     is_critical = remaining_seconds <= 60  # 1 minute
 
                     await websocket.send_json({

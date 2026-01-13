@@ -109,6 +109,6 @@ export const useSession = () => {
     hasError: !!error,
     isWarning: sessionStatus.isWarning,
     isCritical: sessionStatus.isCritical,
-    showCountdown: sessionStatus.isWarning || sessionStatus.isCritical
+    showCountdown: sessionStatus.isSessionActive  // Always show countdown when session is active
   }
 }
