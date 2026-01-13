@@ -355,10 +355,26 @@ class ResponseGeneratorService:
         if (cleaned.startswith('"') and cleaned.endswith('"')) or (cleaned.startswith("'") and cleaned.endswith("'")):
             cleaned = cleaned[1:-1].strip()
         
-        # Remove tag artifacts from the very start
-        for pattern in [r'^content\s*:\s*', r'^title\s*:\s*', r'^response\s*:\s*']:
+        # Remove tag artifacts and marker text from the very start
+        for pattern in [r'^content\s*:\s*', r'^title\s*:\s*', r'^response\s*:\s*',
+                        r'^title_start\s*', r'^title_end\s*', r'^content_start\s*', r'^content_end\s*']:
             cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE)
-        
+
+        # Remove any remaining marker text or partial markers that might have leaked through
+        marker_artifacts = [
+            r'===\s*TITLE_START\s*===', r'===\s*TITLE_END\s*===',
+            r'===\s*CONTENT_START\s*===', r'===\s*CONTENT_END\s*===',
+            r'TITLE_START', r'TITLE_END', r'CONTENT_START', r'CONTENT_END',
+            r'<\s*TITLE\s*>', r'<\s*/\s*TITLE\s*>', r'<\s*CONTENT\s*>', r'<\s*/\s*CONTENT\s*>'
+        ]
+        for artifact in marker_artifacts:
+            cleaned = re.sub(artifact, '', cleaned, flags=re.IGNORECASE)
+
+        # For titles (max_length specified), collapse whitespace to single line
+        # For content, preserve paragraph structure (newlines handled earlier)
+        if max_length:
+            cleaned = ' '.join(cleaned.split())
+
         # Limit length if specified
         if max_length and len(cleaned) > max_length:
             cleaned = cleaned[:max_length]
