@@ -83,9 +83,9 @@
 }
 
 .session-timeout-header {
-  color: #666;
+  color: #555;
   font-size: 11px;
-  background-color: rgba(251, 146, 60, 0.15);
+  background-color: rgba(100, 100, 100, 0.1);
   padding: 2px 6px;
   border-radius: 8px;
   display: flex;
