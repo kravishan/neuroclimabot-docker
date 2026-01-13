@@ -117,35 +117,35 @@ class GraphRAGAPIClient:
                         timeout=aiohttp.ClientTimeout(total=self.timeout)
                     ) as response:
 
-                    if response.status != 200:
-                        error_text = await response.text()
-                        raise Exception(f"GraphRAG local-search API error {response.status}: {error_text}")
+                        if response.status != 200:
+                            error_text = await response.text()
+                            raise Exception(f"GraphRAG local-search API error {response.status}: {error_text}")
 
-                    try:
-                        api_response = await response.json()
-                    except Exception as json_err:
-                        logger.error(f"Failed to parse GraphRAG JSON response: {json_err}")
-                        raise Exception(f"Invalid JSON response from GraphRAG service: {json_err}")
+                        try:
+                            api_response = await response.json()
+                        except Exception as json_err:
+                            logger.error(f"Failed to parse GraphRAG JSON response: {json_err}")
+                            raise Exception(f"Invalid JSON response from GraphRAG service: {json_err}")
 
-            # NEW API returns a list, extract first element
-            if isinstance(api_response, list) and len(api_response) > 0:
-                api_response = api_response[0]
-            elif isinstance(api_response, list):
-                logger.warning("GraphRAG API returned empty list")
-                return self._create_empty_local_search_response(question)
+                # NEW API returns a list, extract first element
+                if isinstance(api_response, list) and len(api_response) > 0:
+                    api_response = api_response[0]
+                elif isinstance(api_response, list):
+                    logger.warning("GraphRAG API returned empty list")
+                    return self._create_empty_local_search_response(question)
 
-            response_time = time.perf_counter() - start_time
-            self._update_performance_stats(response_time, success=True)
+                response_time = time.perf_counter() - start_time
+                self._update_performance_stats(response_time, success=True)
 
-            # Process the response from new API format - data is in "context" not "data"
-            context = api_response.get("context", {})
-            entities = context.get("entities", [])
-            relationships = context.get("relationships", [])
-            reports = context.get("reports", [])
-            claims = context.get("claims", [])
-            sources = context.get("sources", [])
+                # Process the response from new API format - data is in "context" not "data"
+                context = api_response.get("context", {})
+                entities = context.get("entities", [])
+                relationships = context.get("relationships", [])
+                reports = context.get("reports", [])
+                claims = context.get("claims", [])
+                sources = context.get("sources", [])
 
-            # Update processing stats
+                # Update processing stats
                 self.performance_stats["entities_processed"] += len(entities)
                 self.performance_stats["relationships_processed"] += len(relationships)
                 self.performance_stats["communities_processed"] += len(reports)
@@ -157,18 +157,18 @@ class GraphRAGAPIClient:
 
             except asyncio.TimeoutError:
                 self.performance_stats["timeout_count"] += 1
-            self.performance_stats["failed_requests"] += 1
-            logger.warning(f"GraphRAG local-search API timeout after {self.timeout}s")
-            return self._create_empty_local_search_response(question)
-        except aiohttp.ClientError as e:
-            self.performance_stats["connection_errors"] += 1
-            self.performance_stats["failed_requests"] += 1
-            logger.error(f"GraphRAG local-search API connection error: {e}")
-            return self._create_empty_local_search_response(question)
-        except Exception as e:
-            self.performance_stats["failed_requests"] += 1
-            logger.error(f"GraphRAG local-search API error: {e}")
-            return self._create_empty_local_search_response(question)
+                self.performance_stats["failed_requests"] += 1
+                logger.warning(f"GraphRAG local-search API timeout after {self.timeout}s")
+                return self._create_empty_local_search_response(question)
+            except aiohttp.ClientError as e:
+                self.performance_stats["connection_errors"] += 1
+                self.performance_stats["failed_requests"] += 1
+                logger.error(f"GraphRAG local-search API connection error: {e}")
+                return self._create_empty_local_search_response(question)
+            except Exception as e:
+                self.performance_stats["failed_requests"] += 1
+                logger.error(f"GraphRAG local-search API error: {e}")
+                return self._create_empty_local_search_response(question)
     
     async def search_graph_data(
         self,
