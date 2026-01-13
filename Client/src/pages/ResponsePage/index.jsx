@@ -598,7 +598,8 @@ const ResponsePage = () => {
 
   // Inactivity Warning Component (WebSocket-based)
   const InactivityWarning = () => {
-    if (!showCountdown || !isSessionActive) return null
+    // Only show warning when isWarning or isCritical is true (1 minute or less remaining)
+    if (!showCountdown || !isSessionActive || (!isWarning && !isCritical)) return null
 
     return (
       <div className={`inactivity-warning ${isCritical ? 'critical' : isWarning ? 'warning' : ''}`}>
