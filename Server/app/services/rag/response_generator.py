@@ -231,10 +231,13 @@ class ResponseGeneratorService:
             
             if title and content:
                 self.performance_stats["parsing_successes"] += 1
-                return (
-                    self._clean_extracted_text(title, max_length=100),
-                    self._clean_extracted_text(content)
-                )
+                cleaned_title = self._clean_extracted_text(title, max_length=100)
+                cleaned_content = self._clean_extracted_text(content)
+
+                # Validate title is not empty or still contains marker text after cleaning
+                cleaned_title = self._validate_title(cleaned_title, default_title)
+
+                return (cleaned_title, cleaned_content)
             
             # Strategy 1.5: Smart detection of ===Title=== format (LLM's common variation)
             if not title and content:
@@ -250,8 +253,10 @@ class ResponseGeneratorService:
                         potential_title = line.strip('=').strip()
                         if potential_title and len(potential_title.split()) <= 12:
                             self.performance_stats["parsing_successes"] += 1
+                            # Validate title
+                            validated_title = self._validate_title(potential_title[:100], default_title)
                             return (
-                                potential_title[:100],
+                                validated_title,
                                 self._clean_extracted_text(content)
                             )
             
@@ -261,16 +266,22 @@ class ResponseGeneratorService:
             
             if title_match and content_match:
                 self.performance_stats["parsing_fallbacks"] += 1
-                return (
-                    self._clean_extracted_text(title_match.group(1), max_length=100),
-                    self._clean_extracted_text(content_match.group(1))
-                )
+                cleaned_title = self._clean_extracted_text(title_match.group(1), max_length=100)
+                cleaned_content = self._clean_extracted_text(content_match.group(1))
+
+                # Validate title
+                cleaned_title = self._validate_title(cleaned_title, default_title)
+
+                return (cleaned_title, cleaned_content)
             
             # Strategy 3: Raw extraction (LAST RESORT)
             self.performance_stats["parsing_fallbacks"] += 1
             title = self._extract_title_from_raw(response_text) or default_title
             content = self._extract_content_from_raw(response_text) or default_content
-            
+
+            # Validate extracted title
+            title = self._validate_title(title, default_title)
+
             return title, content
             
         except Exception as e:
@@ -384,7 +395,33 @@ class ResponseGeneratorService:
             cleaned = cleaned.replace('\n\n\n', '\n\n')
         
         return cleaned.strip()
-    
+
+    def _validate_title(self, title: str, default_title: str) -> str:
+        """
+        Validate title and return default if invalid.
+        Checks for empty titles, whitespace-only, and remaining marker text.
+        """
+        if not title or not title.strip():
+            return default_title
+
+        # Check if title still contains marker text (case-insensitive)
+        title_upper = title.upper()
+        marker_keywords = [
+            'TITLE_START', 'TITLE_END', 'CONTENT_START', 'CONTENT_END',
+            'TITLE START', 'TITLE END', 'CONTENT START', 'CONTENT END'
+        ]
+
+        for marker in marker_keywords:
+            if marker in title_upper:
+                logger.warning(f"Title still contains marker text: {title}, using default")
+                return default_title
+
+        # Check if title is suspiciously short (likely a marker fragment)
+        if len(title.strip()) < 3:
+            return default_title
+
+        return title
+
     def _extract_title_from_raw(self, text: str) -> Optional[str]:
         """Extract title from raw text - handles === wrapped titles."""
         lines = text.strip().split('\n')
