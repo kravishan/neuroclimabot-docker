@@ -328,11 +328,44 @@ const ResponsePage = () => {
       }
     } catch (error) {
       console.error('Error fetching initial data:', error)
+
+      // Set title
       setTitle('ERROR')
-      setAIResponse(error.message || 'We cannot generate response')
-      setIsInitialLoading(false)
       setLoadingTitle(false)
+
+      // Add error message as assistant response
+      const assistantMessageId = 2
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { id: assistantMessageId, type: 'assistant', content: error.message || 'We cannot generate response' }
+      ])
+      setLatestResponseId(assistantMessageId)
+      setAIResponse(error.message || 'We cannot generate response')
       setLoadingResponse(false)
+
+      // Set empty message data to prevent loading states
+      setMessageData(prevData => ({
+        ...prevData,
+        [assistantMessageId]: {
+          socialTippingPoint: '',
+          qualifyingFactors: [],
+          references: [],
+          referenceCount: 0,
+          totalAvailable: 0,
+          sourceType: 'rag',
+          isWebSearch: false,
+          usesRag: false,
+          queryPreprocessed: false,
+          originalQuery: queryText || '',
+          processedQuery: null,
+          preprocessingDetails: {},
+          processingTime: 0,
+          searchResultsSummary: {}
+        }
+      }))
+
+      // Stop all loading animations
+      setIsInitialLoading(false)
       setLoadingReferences(false)
       setLoadingPerspectives(false)
     }
@@ -478,19 +511,42 @@ const ResponsePage = () => {
     } catch (error) {
       console.error('Error in continuous chat:', error)
 
+      // Update message content without error flag to display as normal response
       setMessages(prevMessages => {
         return prevMessages.map(msg =>
           msg.id === placeholderAIMessageId
             ? {
                 ...msg,
                 content: error.message || 'We cannot generate response',
-                isLoading: false,
-                isError: true
+                isLoading: false
               }
             : msg
         )
       })
 
+      // Set empty message data to prevent loading states
+      setMessageData(prevData => ({
+        ...prevData,
+        [placeholderAIMessageId]: {
+          socialTippingPoint: '',
+          qualifyingFactors: [],
+          references: [],
+          referenceCount: 0,
+          totalAvailable: 0,
+          sourceType: 'rag',
+          isWebSearch: false,
+          usesRag: false,
+          queryPreprocessed: false,
+          originalQuery: '',
+          processedQuery: null,
+          preprocessingDetails: {},
+          processingTime: 0,
+          searchResultsSummary: {},
+          memoryContextUsed: false
+        }
+      }))
+
+      // Clear all loading states
       setLoadingMessageData(prev => ({
         ...prev,
         [placeholderAIMessageId]: false
