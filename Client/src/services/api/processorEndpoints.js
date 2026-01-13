@@ -4,8 +4,11 @@ const processorRequest = async (endpoint, options = {}) => {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), EXTERNAL_SERVICES.PROCESSOR.TIMEOUT)
 
+  const url = `${EXTERNAL_SERVICES.PROCESSOR.BASE_URL}${endpoint}`
+  console.log(`[ProcessorAPI] Making request to: ${url}`)
+
   try {
-    const response = await fetch(`${EXTERNAL_SERVICES.PROCESSOR.BASE_URL}${endpoint}`, {
+    const response = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -16,19 +19,27 @@ const processorRequest = async (endpoint, options = {}) => {
 
     clearTimeout(timeoutId)
 
+    console.log(`[ProcessorAPI] Response status for ${endpoint}:`, response.status)
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
-      throw new Error(errorData?.detail || errorData?.message || `API Error: ${response.status}`)
+      const errorMsg = errorData?.detail || errorData?.message || `API Error: ${response.status}`
+      console.error(`[ProcessorAPI] Error response for ${endpoint}:`, errorMsg)
+      throw new Error(errorMsg)
     }
 
-    return response.json()
+    const data = await response.json()
+    console.log(`[ProcessorAPI] Success response for ${endpoint}:`, data)
+    return data
   } catch (error) {
     clearTimeout(timeoutId)
 
     if (error.name === 'AbortError') {
+      console.error(`[ProcessorAPI] Request timeout for ${endpoint}`)
       throw new Error('Request timeout')
     }
 
+    console.error(`[ProcessorAPI] Request failed for ${endpoint}:`, error)
     throw error
   }
 }
@@ -36,8 +47,11 @@ const processorRequest = async (endpoint, options = {}) => {
 export const processorApi = {
   // Get services health status
   getServicesHealth: async () => {
+    console.log('[ProcessorAPI] getServicesHealth called')
     try {
       const data = await processorRequest(EXTERNAL_SERVICES.PROCESSOR.ENDPOINTS.SERVICES_HEALTH)
+      console.log('[ProcessorAPI] getServicesHealth response:', data)
+      console.log('[ProcessorAPI] Services in response:', data.services)
       return {
         success: true,
         data: data,
@@ -45,6 +59,7 @@ export const processorApi = {
         timestamp: data.timestamp
       }
     } catch (error) {
+      console.error('[ProcessorAPI] getServicesHealth error:', error.message)
       return {
         success: false,
         error: error.message,
