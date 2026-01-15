@@ -357,9 +357,13 @@ class GraphRAGProcessor:
             else:
                 logger.warning(f"⚠️  Workspace .env file not found at {workspace_env_file}")
 
+            # Convert to absolute path for GraphRAG --root parameter
+            absolute_workspace = workspace_path.resolve()
+            logger.info(f"📂 Running GraphRAG with workspace: {absolute_workspace}")
+
             result = await self._run_command([
                 "graphrag", "index",
-                "--root", str(workspace_path),
+                "--root", str(absolute_workspace),
                 "--method", "standard",
                 "--logger", "rich"
             ], workspace_path)
@@ -407,8 +411,8 @@ class GraphRAGProcessor:
                                 env[key.strip()] = value.strip()
                     logger.info(f"✅ Loaded {len([l for l in open(workspace_env, encoding='utf-8').readlines() if '=' in l and not l.startswith('#')])} env vars from workspace")
 
-            # Set working directory to workspace for proper relative path resolution
-            cwd = str(workspace_path) if workspace_path else None
+            # GraphRAG handles its own working directory via --root parameter
+            # Don't set cwd here to avoid path resolution issues
 
             try:
                 return subprocess.run(
@@ -418,8 +422,7 @@ class GraphRAGProcessor:
                     timeout=7200,  # 2 hours
                     env=env,
                     encoding='utf-8',
-                    errors='replace',
-                    cwd=cwd  # Run from workspace directory
+                    errors='replace'
                 )
             except UnicodeDecodeError as e:
                 # Fallback: Run with errors='ignore' if UTF-8 fails
@@ -431,8 +434,7 @@ class GraphRAGProcessor:
                     timeout=7200,
                     env=env,
                     encoding='utf-8',
-                    errors='ignore',
-                    cwd=cwd
+                    errors='ignore'
                 )
 
         return await loop.run_in_executor(None, run_sync)
