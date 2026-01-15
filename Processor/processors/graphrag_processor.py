@@ -14,6 +14,7 @@ from typing import Dict, Any, List
 from datetime import datetime
 import uuid
 from urllib.parse import urlparse, unquote
+from dotenv import load_dotenv
 
 from config import config
 from storage.master_graphrag import MasterGraphRAGAccumulator
@@ -291,13 +292,27 @@ class GraphRAGProcessor:
         shutil.copy2(self.settings_file, workspace_path / "settings.yaml")
         logger.info(f"✅ Copied settings.yaml to workspace")
 
-        # Copy .env file if exists
-        root_env = Path(".env")
-        if root_env.exists():
+        # Copy .env file if exists (use absolute path to find it reliably)
+        # Try multiple locations: current dir, parent dir, and script's parent dir
+        possible_env_locations = [
+            Path(".env"),  # Current working directory
+            Path(__file__).parent.parent / ".env",  # Processor directory
+            Path.cwd() / ".env"  # Explicitly current working directory
+        ]
+
+        root_env = None
+        for env_path in possible_env_locations:
+            if env_path.exists():
+                root_env = env_path
+                break
+
+        if root_env:
             shutil.copy2(root_env, workspace_path / ".env")
-            logger.info(f"✅ Copied .env to workspace for embedding configuration")
+            logger.info(f"✅ Copied .env from {root_env.absolute()} to workspace")
         else:
-            logger.warning(f"⚠️  No .env file found - GraphRAG may not generate embeddings!")
+            logger.error(f"❌ No .env file found in any expected location!")
+            logger.error(f"   Tried: {[str(p.absolute()) for p in possible_env_locations]}")
+            logger.error(f"   GraphRAG will fail without environment variables!")
 
         # Copy prompts
         workspace_prompts_dir = workspace_path / "prompts"
@@ -334,50 +349,71 @@ class GraphRAGProcessor:
     async def _run_graphrag_indexing(self, workspace_path: Path) -> bool:
         """Run GraphRAG indexing with full logging"""
         try:
+            # Load environment variables from workspace .env file before running
+            workspace_env_file = workspace_path / ".env"
+            if workspace_env_file.exists():
+                load_dotenv(workspace_env_file, override=True)
+                logger.info(f"✅ Loaded environment variables from {workspace_env_file}")
+            else:
+                logger.warning(f"⚠️  Workspace .env file not found at {workspace_env_file}")
+
             result = await self._run_command([
-                "graphrag", "index", 
+                "graphrag", "index",
                 "--root", str(workspace_path),
                 "--method", "standard",
                 "--logger", "rich"
-            ])
-            
+            ], workspace_path)
+
             # Log the full output regardless of success/failure
             if result.stdout:
                 logger.info(f"📋 GraphRAG STDOUT:\n{result.stdout}")
-            
+
             if result.stderr:
                 logger.error(f"📋 GraphRAG STDERR:\n{result.stderr}")
-            
+
             if result.returncode == 0:
                 logger.info("✅ GraphRAG indexing completed successfully")
                 return True
             else:
                 logger.error(f"❌ GraphRAG failed with return code: {result.returncode}")
                 return False
-                
+
         except Exception as e:
             logger.error(f"💥 GraphRAG indexing exception: {e}")
             return False
     
-    async def _run_command(self, cmd: List[str]) -> subprocess.CompletedProcess:
-        """Run command asynchronously"""
+    async def _run_command(self, cmd: List[str], workspace_path: Path = None) -> subprocess.CompletedProcess:
+        """Run command asynchronously with workspace environment"""
         loop = asyncio.get_event_loop()
-        
+
         def run_sync():
             env = os.environ.copy()
             env['PYTHONIOENCODING'] = 'utf-8'
             env['PYTHONUTF8'] = '1'
-            
+
+            # Load workspace .env file into environment if provided
+            if workspace_path:
+                workspace_env = workspace_path / ".env"
+                if workspace_env.exists():
+                    # Parse .env file manually and add to environment
+                    with open(workspace_env, 'r', encoding='utf-8') as f:
+                        for line in f:
+                            line = line.strip()
+                            if line and not line.startswith('#') and '=' in line:
+                                key, value = line.split('=', 1)
+                                env[key.strip()] = value.strip()
+                    logger.info(f"✅ Loaded {len([l for l in open(workspace_env).readlines() if '=' in l and not l.startswith('#')])} env vars from workspace")
+
             return subprocess.run(
-                cmd, 
-                capture_output=True, 
-                text=True, 
+                cmd,
+                capture_output=True,
+                text=True,
                 timeout=7200,  # 2 hours
                 env=env,
                 encoding='utf-8',
                 errors='replace'
             )
-        
+
         return await loop.run_in_executor(None, run_sync)
     
     async def _cleanup_workspace_async(self, workspace_path: Path):
