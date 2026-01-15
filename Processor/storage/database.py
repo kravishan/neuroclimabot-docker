@@ -15,6 +15,30 @@ from storage.base import DocumentTrackerBackend
 logger = logging.getLogger(__name__)
 
 
+def get_expected_processes_for_bucket(bucket: str) -> Dict[str, bool]:
+    """
+    Determine which processes are expected for each bucket type.
+    Returns dict with keys: chunks, summary, graphrag, stp
+    """
+    # Default: all processes enabled
+    expected = {
+        'chunks': True,
+        'summary': True,
+        'graphrag': True,
+        'stp': True
+    }
+
+    # Scientific data: only chunks and summary
+    if bucket == "scientificdata":
+        expected['graphrag'] = False
+        expected['stp'] = False
+
+    # Add more bucket-specific rules here as needed
+    # Example: if bucket == "otherbucket": expected['graphrag'] = False
+
+    return expected
+
+
 class DocumentTracker(DocumentTrackerBackend):
     """
     SQLite-based document processing tracker
@@ -242,8 +266,20 @@ class DocumentTracker(DocumentTrackerBackend):
                       'created_at', 'updated_at']
 
             status = dict(zip(columns, row))
-            status['is_complete'] = (status['chunks_done'] and status['summary_done'] and
-                                    status['graphrag_done'] and status['stp_done'])
+
+            # Determine completeness based on expected processes for this bucket
+            expected = get_expected_processes_for_bucket(bucket)
+            is_complete = True
+            if expected['chunks'] and not status['chunks_done']:
+                is_complete = False
+            if expected['summary'] and not status['summary_done']:
+                is_complete = False
+            if expected['graphrag'] and not status['graphrag_done']:
+                is_complete = False
+            if expected['stp'] and not status['stp_done']:
+                is_complete = False
+
+            status['is_complete'] = is_complete
 
             # For news bucket, include article-level status
             if bucket == "news":
@@ -301,8 +337,20 @@ class DocumentTracker(DocumentTrackerBackend):
             documents = []
             for row in rows:
                 doc = dict(zip(columns, row))
-                doc['is_complete'] = (doc['chunks_done'] and doc['summary_done'] and
-                                     doc['graphrag_done'] and doc['stp_done'])
+
+                # Determine completeness based on expected processes for this bucket
+                expected = get_expected_processes_for_bucket(doc['bucket_source'])
+                is_complete = True
+                if expected['chunks'] and not doc['chunks_done']:
+                    is_complete = False
+                if expected['summary'] and not doc['summary_done']:
+                    is_complete = False
+                if expected['graphrag'] and not doc['graphrag_done']:
+                    is_complete = False
+                if expected['stp'] and not doc['stp_done']:
+                    is_complete = False
+
+                doc['is_complete'] = is_complete
 
                 # For news documents, add article count
                 if doc['bucket_source'] == "news":
