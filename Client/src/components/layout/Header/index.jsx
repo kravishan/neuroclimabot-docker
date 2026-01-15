@@ -153,7 +153,7 @@ const Header = ({
         {/* Show Admin button when on dashboard page, otherwise show Dashboard button */}
         {isDashboardPage ? (
           <button className="dashboard-button" onClick={handleAdminClick}>
-            <Shield size={18} />
+            <BarChart3 size={18} />
             <span className="button-text">Admin</span>
           </button>
         ) : (
