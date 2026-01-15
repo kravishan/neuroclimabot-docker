@@ -388,8 +388,11 @@ class GraphRAGProcessor:
 
         def run_sync():
             env = os.environ.copy()
+            # Force UTF-8 encoding for all Python operations
             env['PYTHONIOENCODING'] = 'utf-8'
             env['PYTHONUTF8'] = '1'
+            # Windows-specific: Force UTF-8 for console output
+            env['PYTHONLEGACYWINDOWSSTDIO'] = '0'
 
             # Load workspace .env file into environment if provided
             if workspace_path:
@@ -402,17 +405,35 @@ class GraphRAGProcessor:
                             if line and not line.startswith('#') and '=' in line:
                                 key, value = line.split('=', 1)
                                 env[key.strip()] = value.strip()
-                    logger.info(f"✅ Loaded {len([l for l in open(workspace_env).readlines() if '=' in l and not l.startswith('#')])} env vars from workspace")
+                    logger.info(f"✅ Loaded {len([l for l in open(workspace_env, encoding='utf-8').readlines() if '=' in l and not l.startswith('#')])} env vars from workspace")
 
-            return subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=7200,  # 2 hours
-                env=env,
-                encoding='utf-8',
-                errors='replace'
-            )
+            # Set working directory to workspace for proper relative path resolution
+            cwd = str(workspace_path) if workspace_path else None
+
+            try:
+                return subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=7200,  # 2 hours
+                    env=env,
+                    encoding='utf-8',
+                    errors='replace',
+                    cwd=cwd  # Run from workspace directory
+                )
+            except UnicodeDecodeError as e:
+                # Fallback: Run with errors='ignore' if UTF-8 fails
+                logger.warning(f"⚠️  UTF-8 decode failed, retrying with errors='ignore': {e}")
+                return subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=7200,
+                    env=env,
+                    encoding='utf-8',
+                    errors='ignore',
+                    cwd=cwd
+                )
 
         return await loop.run_in_executor(None, run_sync)
     
