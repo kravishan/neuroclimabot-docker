@@ -103,6 +103,29 @@ const DocumentsTab = ({ refreshData }) => {
     }
   }
 
+  /**
+   * Determine which processes are expected for each bucket type
+   */
+  const getExpectedProcesses = (bucket) => {
+    // Default: all processes enabled
+    const expected = {
+      chunks: true,
+      summary: true,
+      graphrag: true,
+      stp: true
+    }
+
+    // Scientific data: only chunks and summary
+    if (bucket === 'scientificdata') {
+      expected.graphrag = false
+      expected.stp = false
+    }
+
+    // Add more bucket-specific rules here as needed
+
+    return expected
+  }
+
   const calculateStats = (docs) => {
     const stats = {
       total: docs.length,
@@ -117,7 +140,14 @@ const DocumentsTab = ({ refreshData }) => {
       const hasGraphRAG = doc.graphrag_done === 1 || doc.graphrag_done === true
       const hasStp = doc.stp_done === 1 || doc.stp_done === true
 
-      const isComplete = hasChunks && hasSummary && hasGraphRAG && hasStp
+      // Determine completeness based on expected processes for this bucket
+      const expected = getExpectedProcesses(doc.bucket_source)
+      let isComplete = true
+      if (expected.chunks && !hasChunks) isComplete = false
+      if (expected.summary && !hasSummary) isComplete = false
+      if (expected.graphrag && !hasGraphRAG) isComplete = false
+      if (expected.stp && !hasStp) isComplete = false
+
       const hasAnyProcessing = hasChunks || hasSummary || hasGraphRAG || hasStp
 
       if (isComplete) {
@@ -205,10 +235,17 @@ const DocumentsTab = ({ refreshData }) => {
     const hasSummary = doc.summary_done === 1 || doc.summary_done === true
     const hasGraphRAG = doc.graphrag_done === 1 || doc.graphrag_done === true
     const hasStp = doc.stp_done === 1 || doc.stp_done === true
-    
-    const isComplete = hasChunks && hasSummary && hasGraphRAG && hasStp
+
+    // Determine completeness based on expected processes for this bucket
+    const expected = getExpectedProcesses(doc.bucket_source)
+    let isComplete = true
+    if (expected.chunks && !hasChunks) isComplete = false
+    if (expected.summary && !hasSummary) isComplete = false
+    if (expected.graphrag && !hasGraphRAG) isComplete = false
+    if (expected.stp && !hasStp) isComplete = false
+
     const hasAnyProcessing = hasChunks || hasSummary || hasGraphRAG || hasStp
-    
+
     if (isComplete) {
       return <span className="adm-status-badge adm-complete">Complete</span>
     } else if (hasAnyProcessing) {
