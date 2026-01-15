@@ -1,6 +1,7 @@
 """
-Social Tipping Point (STP) service client with confidence and similarity threshold checking
-Clean version - parses 5 numbered qualifying factors and validates both confidence score and similarity
+Social Tipping Point (STP) service client with confidence and similarity threshold checking.
+Clean version - parses 5 numbered qualifying factors and validates both confidence score and similarity.
+Includes async semaphore control to limit concurrent STP API requests.
 """
 
 import aiohttp
@@ -9,6 +10,7 @@ from typing import Dict, Any, List
 
 from app.config import get_settings
 from app.services.tracing import get_langfuse_client, is_langfuse_enabled
+from app.core.dependencies import get_semaphore_manager
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -170,37 +172,46 @@ class STPClient:
             return self.fallback_message
     
     async def _make_stp_request(
-        self, 
-        query: str, 
-        top_k: int, 
+        self,
+        query: str,
+        top_k: int,
         include_metadata: bool,
         min_similarity: float
     ) -> STPStructuredResponse:
-        """Make STP request and return structured data with confidence and similarity validation."""
-        
-        payload = {
-            "text": query,
-            "top_k": top_k,
-            "include_metadata": include_metadata,
-            "min_similarity": min_similarity
-        }
-        
-        url = f"{self.base_url}{self.stp_endpoint}"
-        
-        logger.debug(f"🔍 STP request: {url} with min_similarity={min_similarity}")
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url, 
-                json=payload, 
-                timeout=aiohttp.ClientTimeout(total=self.timeout)
-            ) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return self._extract_stp_from_response(result, min_similarity)
-                else:
-                    logger.error(f"STP search failed with status {response.status}")
-                    return self._get_fallback_response()
+        """
+        Make STP request and return structured data with confidence and similarity validation.
+        Uses semaphore to limit concurrent STP API calls.
+        """
+        semaphore_manager = get_semaphore_manager()
+
+        logger.debug("🔒 Waiting for STP semaphore...")
+        async with semaphore_manager.stp_semaphore:
+            logger.debug("✅ STP semaphore acquired")
+
+            payload = {
+                "text": query,
+                "top_k": top_k,
+                "include_metadata": include_metadata,
+                "min_similarity": min_similarity
+            }
+
+            url = f"{self.base_url}{self.stp_endpoint}"
+
+            logger.debug(f"🔍 STP request: {url} with min_similarity={min_similarity}")
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=self.timeout)
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        logger.debug("🔓 STP semaphore released")
+                        return self._extract_stp_from_response(result, min_similarity)
+                    else:
+                        logger.error(f"STP search failed with status {response.status}")
+                        return self._get_fallback_response()
     
     def _extract_stp_from_response(
         self, 

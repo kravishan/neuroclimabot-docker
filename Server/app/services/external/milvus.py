@@ -1,5 +1,6 @@
 """
 Updated Milvus client for new database structure with parallel collection searches.
+Includes async semaphore control to limit concurrent queries.
 """
 
 import asyncio
@@ -15,6 +16,7 @@ from pymilvus import (
 from app.config.database import get_milvus_config
 from app.config import get_settings
 from app.core.exceptions import VectorStoreError
+from app.core.dependencies import get_semaphore_manager
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -90,64 +92,74 @@ class MilvusClient:
         limit: int = 10,
         min_score: float = None
     ) -> List[Dict[str, Any]]:
-        """Search for document chunks across all collections IN PARALLEL."""
-        
-        if min_score is None:
-            min_score = settings.SIMILARITY_THRESHOLD
-        
-        try:
-            # Create parallel search tasks for all collections
-            search_tasks = []
-            for collection_name in self.config.chunks_collections:
-                task = asyncio.create_task(
-                    self._search_chunks_in_collection_async(
-                        collection_name, query_embedding, limit, min_score
-                    )
-                )
-                search_tasks.append((collection_name, task))
-            
-            # Execute all searches in parallel with timeout
+        """
+        Search for document chunks across all collections IN PARALLEL.
+
+        Uses semaphore to limit concurrent Milvus queries and prevent database overload.
+        """
+        semaphore_manager = get_semaphore_manager()
+
+        logger.debug("🔒 Waiting for Milvus semaphore (chunks search)...")
+        async with semaphore_manager.milvus_semaphore:
+            logger.debug("✅ Milvus semaphore acquired (chunks search)")
+
+            if min_score is None:
+                min_score = settings.SIMILARITY_THRESHOLD
+
             try:
-                completed_tasks = await asyncio.wait_for(
-                    asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
-                    timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
-                )
-            except asyncio.TimeoutError:
-                logger.warning(f"Parallel chunk searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
-                # Cancel remaining tasks
-                for _, task in search_tasks:
-                    if not task.done():
-                        task.cancel()
-                completed_tasks = []
-            
-            # Combine results from all collections
-            all_chunks = []
-            for i, (collection_name, task) in enumerate(search_tasks):
-                if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
-                    collection_chunks = completed_tasks[i]
-                    all_chunks.extend(collection_chunks)
-                    if collection_chunks:
-                        logger.debug(f"   ✅ {collection_name}: {len(collection_chunks)} chunks")
-                elif i < len(completed_tasks):
-                    logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
-                else:
-                    logger.warning(f"   ⏱️ {collection_name}: Timed out")
+                # Create parallel search tasks for all collections
+                search_tasks = []
+                for collection_name in self.config.chunks_collections:
+                    task = asyncio.create_task(
+                        self._search_chunks_in_collection_async(
+                            collection_name, query_embedding, limit, min_score
+                        )
+                    )
+                    search_tasks.append((collection_name, task))
 
-            # Sort by score and return top results
-            all_chunks.sort(key=lambda x: x.get("score", 0.0), reverse=True)
-            final_chunks = all_chunks[:limit]
+                # Execute all searches in parallel with timeout
+                try:
+                    completed_tasks = await asyncio.wait_for(
+                        asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
+                        timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"Parallel chunk searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
+                    # Cancel remaining tasks
+                    for _, task in search_tasks:
+                        if not task.done():
+                            task.cancel()
+                    completed_tasks = []
 
-            # Log chunks results
-            total_found = len(all_chunks)
-            logger.info(f"🔍 CHUNKS DATABASE RESULTS (PARALLEL): Total found: {total_found}, Returned: {len(final_chunks)} (limit: {limit})")
-            
-            logger.debug(f"Retrieved {len(final_chunks)} chunks from {len(self.config.chunks_collections)} collections in parallel")
-            
-            return final_chunks
-            
-        except Exception as e:
-            logger.error(f"Error in parallel chunk search: {e}")
-            return []
+                # Combine results from all collections
+                all_chunks = []
+                for i, (collection_name, task) in enumerate(search_tasks):
+                    if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
+                        collection_chunks = completed_tasks[i]
+                        all_chunks.extend(collection_chunks)
+                        if collection_chunks:
+                            logger.debug(f"   ✅ {collection_name}: {len(collection_chunks)} chunks")
+                    elif i < len(completed_tasks):
+                        logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
+                    else:
+                        logger.warning(f"   ⏱️ {collection_name}: Timed out")
+
+                # Sort by score and return top results
+                all_chunks.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+                final_chunks = all_chunks[:limit]
+
+                # Log chunks results
+                total_found = len(all_chunks)
+                logger.info(f"🔍 CHUNKS DATABASE RESULTS (PARALLEL): Total found: {total_found}, Returned: {len(final_chunks)} (limit: {limit})")
+
+                logger.debug(f"Retrieved {len(final_chunks)} chunks from {len(self.config.chunks_collections)} collections in parallel")
+                logger.debug("🔓 Milvus semaphore released (chunks search)")
+
+                return final_chunks
+
+            except Exception as e:
+                logger.error(f"Error in parallel chunk search: {e}")
+                return []
     
     async def _search_chunks_in_collection_async(
         self,
@@ -257,63 +269,73 @@ class MilvusClient:
         limit_per_collection: int = 5,
         min_score: float = None
     ) -> List[Dict[str, Any]]:
-        """Search across all summary collections IN PARALLEL."""
-        
-        if min_score is None:
-            min_score = settings.SIMILARITY_THRESHOLD
-        
-        try:
-            # Create parallel search tasks for all summary collections
-            search_tasks = []
-            for collection_name in self.config.summaries_collections:
-                task = asyncio.create_task(
-                    self._search_summaries_in_collection_async(
-                        collection_name, query_embedding, limit_per_collection, min_score
-                    )
-                )
-                search_tasks.append((collection_name, task))
-            
-            # Execute all searches in parallel with timeout
-            try:
-                completed_tasks = await asyncio.wait_for(
-                    asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
-                    timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
-                )
-            except asyncio.TimeoutError:
-                logger.warning(f"Parallel summary searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
-                # Cancel remaining tasks
-                for _, task in search_tasks:
-                    if not task.done():
-                        task.cancel()
-                completed_tasks = []
-            
-            # Combine results from all collections
-            all_summaries = []
-            for i, (collection_name, task) in enumerate(search_tasks):
-                if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
-                    collection_summaries = completed_tasks[i]
-                    all_summaries.extend(collection_summaries)
-                    if collection_summaries:
-                        logger.debug(f"   ✅ {collection_name}: {len(collection_summaries)} summaries")
-                elif i < len(completed_tasks):
-                    logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
-                else:
-                    logger.warning(f"   ⏱️ {collection_name}: Timed out")
-            
-            # Sort by score and return results
-            all_summaries.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+        """
+        Search across all summary collections IN PARALLEL.
 
-            # Log summaries results
-            total_found = len(all_summaries)
-            logger.info(f"🔍 SUMMARIES DATABASE RESULTS (PARALLEL): Total found: {total_found}")
-            
-            logger.debug(f"Retrieved {len(all_summaries)} summaries from {len(self.config.summaries_collections)} collections in parallel")
-            
-            return all_summaries
-            
-        except Exception as e:
-            logger.error(f"Error in parallel summary search: {e}")
-            return []
+        Uses semaphore to limit concurrent Milvus queries and prevent database overload.
+        """
+        semaphore_manager = get_semaphore_manager()
+
+        logger.debug("🔒 Waiting for Milvus semaphore (summaries search)...")
+        async with semaphore_manager.milvus_semaphore:
+            logger.debug("✅ Milvus semaphore acquired (summaries search)")
+
+            if min_score is None:
+                min_score = settings.SIMILARITY_THRESHOLD
+
+            try:
+                # Create parallel search tasks for all summary collections
+                search_tasks = []
+                for collection_name in self.config.summaries_collections:
+                    task = asyncio.create_task(
+                        self._search_summaries_in_collection_async(
+                            collection_name, query_embedding, limit_per_collection, min_score
+                        )
+                    )
+                    search_tasks.append((collection_name, task))
+
+                # Execute all searches in parallel with timeout
+                try:
+                    completed_tasks = await asyncio.wait_for(
+                        asyncio.gather(*[task for _, task in search_tasks], return_exceptions=True),
+                        timeout=settings.RETRIEVAL_MILVUS_TIMEOUT
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning(f"Parallel summary searches timed out after {settings.RETRIEVAL_MILVUS_TIMEOUT}s")
+                    # Cancel remaining tasks
+                    for _, task in search_tasks:
+                        if not task.done():
+                            task.cancel()
+                    completed_tasks = []
+
+                # Combine results from all collections
+                all_summaries = []
+                for i, (collection_name, task) in enumerate(search_tasks):
+                    if i < len(completed_tasks) and not isinstance(completed_tasks[i], Exception):
+                        collection_summaries = completed_tasks[i]
+                        all_summaries.extend(collection_summaries)
+                        if collection_summaries:
+                            logger.debug(f"   ✅ {collection_name}: {len(collection_summaries)} summaries")
+                    elif i < len(completed_tasks):
+                        logger.warning(f"   ❌ {collection_name}: Error - {str(completed_tasks[i])[:50]}")
+                    else:
+                        logger.warning(f"   ⏱️ {collection_name}: Timed out")
+
+                # Sort by score and return results
+                all_summaries.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+
+                # Log summaries results
+                total_found = len(all_summaries)
+                logger.info(f"🔍 SUMMARIES DATABASE RESULTS (PARALLEL): Total found: {total_found}")
+
+                logger.debug(f"Retrieved {len(all_summaries)} summaries from {len(self.config.summaries_collections)} collections in parallel")
+                logger.debug("🔓 Milvus semaphore released (summaries search)")
+
+                return all_summaries
+
+            except Exception as e:
+                logger.error(f"Error in parallel summary search: {e}")
+                return []
     
     async def _search_summaries_in_collection_async(
         self,

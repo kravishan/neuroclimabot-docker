@@ -1,4 +1,4 @@
-"""Mixtral LLM implementation via hosted endpoint."""
+"""Mixtral LLM implementation via hosted endpoint with async semaphore control."""
 
 import asyncio
 import json
@@ -10,6 +10,7 @@ from langchain.llms.base import LLM
 from pydantic import Field
 
 from app.core.exceptions import LLMError
+from app.core.dependencies import get_semaphore_manager
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -54,44 +55,55 @@ class MixtralLLM(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call the Mixtral model asynchronously."""
-        
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": self.temperature,
-                "num_predict": self.max_tokens,
-                "stop": stop or [],
-            }
-        }
+        """
+        Call the Mixtral model asynchronously with semaphore control.
 
-        try:
-            headers = {
-                "Content-Type": "application/json"
+        Limits concurrent Mixtral API calls to prevent overload and
+        manage resource usage across the application.
+        """
+        semaphore_manager = get_semaphore_manager()
+
+        logger.debug("🔒 Waiting for LLM semaphore (Mixtral)...")
+        async with semaphore_manager.llm_semaphore:
+            logger.debug("✅ LLM semaphore acquired (Mixtral)")
+
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": self.temperature,
+                    "num_predict": self.max_tokens,
+                    "stop": stop or [],
+                }
             }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"{self.base_url}/api/generate",
-                    json=payload,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=self.timeout)
-                ) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        raise LLMError(f"Mixtral API error {response.status}: {error_text}")
-                    
-                    result = await response.json()
-                    return result.get("response", "").strip()
-                    
-        except aiohttp.ClientError as e:
-            raise LLMError(f"Mixtral connection error: {str(e)}")
-        except asyncio.TimeoutError:
-            raise LLMError("Mixtral request timed out")
-        except Exception as e:
-            raise LLMError(f"Mixtral error: {str(e)}")
+            try:
+                headers = {
+                    "Content-Type": "application/json"
+                }
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        f"{self.base_url}/api/generate",
+                        json=payload,
+                        headers=headers,
+                        timeout=aiohttp.ClientTimeout(total=self.timeout)
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            raise LLMError(f"Mixtral API error {response.status}: {error_text}")
+
+                        result = await response.json()
+                        logger.debug("🔓 LLM semaphore released (Mixtral)")
+                        return result.get("response", "").strip()
+
+            except aiohttp.ClientError as e:
+                raise LLMError(f"Mixtral connection error: {str(e)}")
+            except asyncio.TimeoutError:
+                raise LLMError("Mixtral request timed out")
+            except Exception as e:
+                raise LLMError(f"Mixtral error: {str(e)}")
     
     async def test_connection(self) -> bool:
         """Test connection to hosted Mixtral endpoint."""

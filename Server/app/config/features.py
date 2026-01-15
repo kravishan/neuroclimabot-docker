@@ -35,6 +35,31 @@ class FeaturesConfig(BaseSettings):
     HTTP_CONNECTION_TIMEOUT: int = 5
     HTTP_READ_TIMEOUT: int = 10
 
+    # =============================================================================
+    # Async Semaphore Limits (Concurrency Control)
+    # =============================================================================
+
+    # Chat processing: Limit concurrent chat conversations to prevent overload
+    # Higher values = more concurrent users, but more resource usage
+    MAX_CONCURRENT_CHAT_REQUESTS: int = 10
+
+    # LLM calls: Limit concurrent LLM API calls to control costs and rate limits
+    # Keep this low to avoid OpenAI rate limits and manage costs
+    MAX_CONCURRENT_LLM_CALLS: int = 5
+
+    # Vector DB: Limit concurrent Milvus queries to prevent database overload
+    # Higher values allow more parallel searches but increase DB load
+    MAX_CONCURRENT_MILVUS_QUERIES: int = 10
+
+    # External API limits: Control concurrent calls to external services
+    MAX_CONCURRENT_TRANSLATION_CALLS: int = 10
+    MAX_CONCURRENT_GRAPHRAG_CALLS: int = 8
+    MAX_CONCURRENT_STP_CALLS: int = 8
+
+    # Semaphore timeout: Maximum time (seconds) to wait for semaphore acquisition
+    # Prevents indefinite queuing of requests
+    SEMAPHORE_ACQUISITION_TIMEOUT: float = 30.0
+
     # Enhanced Caching Configuration
     ENABLE_RESPONSE_CACHING: bool = True
     ENABLE_RESULT_CACHING: bool = True

@@ -1,6 +1,7 @@
 """
 Translation service client for the local translation server at http://127.0.0.1:1151
-Handles automatic language detection and batch translation with XML markers
+Handles automatic language detection and batch translation with XML markers.
+Includes async semaphore control to limit concurrent translation requests.
 """
 
 import asyncio
@@ -11,6 +12,7 @@ from typing import Optional, Dict
 from app.config import get_settings
 from app.config.integrations import IntegrationsConfig
 from app.services.tracing import get_langfuse_client, is_langfuse_enabled
+from app.core.dependencies import get_semaphore_manager
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -197,36 +199,44 @@ class TranslationClient:
     async def _translate_in_request(self, content: str) -> tuple[str, str]:
         """
         Make translation IN request to local server (auto-detect → English).
-        
+        Uses semaphore to limit concurrent translation API calls.
+
         Returns:
             tuple: (translated_text, detected_language)
         """
-        payload = {
-            "text": content
-        }
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{self.base_url}{self.translate_in_endpoint}",
-                json=payload,
-                timeout=aiohttp.ClientTimeout(total=self.timeout)
-            ) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    translated_text = result.get("translated_text", content)
-                    detected_language = result.get("detected_language", "en")
-                    is_english = result.get("is_english", False)
-                    
-                    if is_english:
-                        logger.info("Text is already in English - no translation needed")
+        semaphore_manager = get_semaphore_manager()
+
+        logger.debug("🔒 Waiting for translation semaphore (IN)...")
+        async with semaphore_manager.translation_semaphore:
+            logger.debug("✅ Translation semaphore acquired (IN)")
+
+            payload = {
+                "text": content
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.base_url}{self.translate_in_endpoint}",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=self.timeout)
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        translated_text = result.get("translated_text", content)
+                        detected_language = result.get("detected_language", "en")
+                        is_english = result.get("is_english", False)
+
+                        if is_english:
+                            logger.info("Text is already in English - no translation needed")
+                        else:
+                            logger.info(f"Translated from {detected_language} to English")
+
+                        logger.debug("🔓 Translation semaphore released (IN)")
+                        return translated_text.strip() if translated_text else content, detected_language
                     else:
-                        logger.info(f"Translated from {detected_language} to English")
-                    
-                    return translated_text.strip() if translated_text else content, detected_language
-                else:
-                    error_text = await response.text()
-                    logger.warning(f"Translation IN failed with status {response.status}: {error_text}")
-                    return content, "en"
+                        error_text = await response.text()
+                        logger.warning(f"Translation IN failed with status {response.status}: {error_text}")
+                        return content, "en"
     
     async def _translate_out_request(
         self,
@@ -237,39 +247,47 @@ class TranslationClient:
     ) -> Dict[str, any]:
         """
         Make translation OUT request to local server (English → target language).
-        
+        Uses semaphore to limit concurrent translation API calls.
+
         Returns:
             Dict with translated 'title', 'response', and 'social_tipping_point'
         """
-        payload = {
-            "target_lang": target_language,
-            "title": title,
-            "response": response
-        }
-        
-        # Add social tipping point if provided
-        if social_tipping_point:
-            payload["social_tipping_point"] = social_tipping_point
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                f"{self.base_url}{self.translate_out_endpoint}",
-                json=payload,
-                timeout=aiohttp.ClientTimeout(total=self.timeout)
-            ) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    logger.info(f"Successfully translated to {target_language}")
-                    return result
-                else:
-                    error_text = await response.text()
-                    logger.warning(f"Translation OUT failed with status {response.status}: {error_text}")
-                    # Return originals on failure
-                    return {
-                        "title": title,
-                        "response": response,
-                        "social_tipping_point": social_tipping_point
-                    }
+        semaphore_manager = get_semaphore_manager()
+
+        logger.debug("🔒 Waiting for translation semaphore (OUT)...")
+        async with semaphore_manager.translation_semaphore:
+            logger.debug("✅ Translation semaphore acquired (OUT)")
+
+            payload = {
+                "target_lang": target_language,
+                "title": title,
+                "response": response
+            }
+
+            # Add social tipping point if provided
+            if social_tipping_point:
+                payload["social_tipping_point"] = social_tipping_point
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{self.base_url}{self.translate_out_endpoint}",
+                    json=payload,
+                    timeout=aiohttp.ClientTimeout(total=self.timeout)
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        logger.info(f"Successfully translated to {target_language}")
+                        logger.debug("🔓 Translation semaphore released (OUT)")
+                        return result
+                    else:
+                        error_text = await response.text()
+                        logger.warning(f"Translation OUT failed with status {response.status}: {error_text}")
+                        # Return originals on failure
+                        return {
+                            "title": title,
+                            "response": response,
+                            "social_tipping_point": social_tipping_point
+                        }
     
     async def health_check(self) -> bool:
         """Check if translation service is healthy."""
