@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import admin, chat, health, feedback, graph, analytics, auth, external
+from app.api.v1 import admin, chat, health, feedback, graph, analytics, auth, external, questionnaire
 
 api_router = APIRouter()
 
@@ -29,6 +29,12 @@ api_router.include_router(
     feedback.router,
     prefix="/feedback",
     tags=["Feedback"]
+)
+
+api_router.include_router(
+    questionnaire.router,
+    prefix="/questionnaire",
+    tags=["Research Questionnaire"]
 )
 
 api_router.include_router(

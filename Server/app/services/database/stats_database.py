@@ -85,6 +85,54 @@ class StatsDatabase:
                 )
             """)
 
+            # Research questionnaire responses table
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS research_questionnaires (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                    -- Participant Information
+                    first_name TEXT NOT NULL,
+                    last_name TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    submission_date TEXT NOT NULL,
+
+                    -- Informed Consent (all required - stored as 1/0)
+                    consent_study_info INTEGER NOT NULL,
+                    consent_age_18 INTEGER NOT NULL,
+                    consent_voluntary INTEGER NOT NULL,
+                    consent_data_collection INTEGER NOT NULL,
+                    consent_privacy_notice INTEGER NOT NULL,
+                    consent_data_processing INTEGER NOT NULL,
+                    consent_publications INTEGER NOT NULL,
+                    consent_anonymity INTEGER NOT NULL,
+                    consent_open_science INTEGER NOT NULL,
+
+                    -- User Experience (ratings & agreement scales)
+                    overall_experience_rating INTEGER,
+                    information_accuracy TEXT,
+                    understanding_improvement TEXT,
+                    response_clarity TEXT,
+                    response_time_satisfaction TEXT,
+
+                    -- Content & Usability
+                    topics_discussed TEXT,
+                    used_voice_feature INTEGER,
+                    voice_experience_rating INTEGER,
+                    most_useful_features TEXT,
+                    suggested_improvements TEXT,
+
+                    -- Demographics (optional fields)
+                    age_range TEXT,
+                    education_level TEXT,
+                    field_of_study TEXT,
+                    prior_climate_knowledge TEXT,
+
+                    -- Metadata
+                    session_id TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             self.connection.commit()
 
             # Initialize with default values if empty (ensure only ONE record with id=1)
@@ -384,6 +432,99 @@ class StatsDatabase:
 
             self.connection.commit()
             logger.info("✅ Feedback statistics cleared")
+
+    async def save_research_questionnaire(self, questionnaire_data: Dict[str, Any]) -> int:
+        """Save a research questionnaire response."""
+        async with self._lock:
+            cursor = self.connection.cursor()
+
+            cursor.execute("""
+                INSERT INTO research_questionnaires (
+                    first_name, last_name, email, submission_date,
+                    consent_study_info, consent_age_18, consent_voluntary,
+                    consent_data_collection, consent_privacy_notice,
+                    consent_data_processing, consent_publications,
+                    consent_anonymity, consent_open_science,
+                    overall_experience_rating, information_accuracy,
+                    understanding_improvement, response_clarity,
+                    response_time_satisfaction, topics_discussed,
+                    used_voice_feature, voice_experience_rating,
+                    most_useful_features, suggested_improvements,
+                    age_range, education_level, field_of_study,
+                    prior_climate_knowledge, session_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                questionnaire_data.get('first_name'),
+                questionnaire_data.get('last_name'),
+                questionnaire_data.get('email'),
+                questionnaire_data.get('submission_date'),
+                questionnaire_data.get('consent_study_info', 0),
+                questionnaire_data.get('consent_age_18', 0),
+                questionnaire_data.get('consent_voluntary', 0),
+                questionnaire_data.get('consent_data_collection', 0),
+                questionnaire_data.get('consent_privacy_notice', 0),
+                questionnaire_data.get('consent_data_processing', 0),
+                questionnaire_data.get('consent_publications', 0),
+                questionnaire_data.get('consent_anonymity', 0),
+                questionnaire_data.get('consent_open_science', 0),
+                questionnaire_data.get('overall_experience_rating'),
+                questionnaire_data.get('information_accuracy'),
+                questionnaire_data.get('understanding_improvement'),
+                questionnaire_data.get('response_clarity'),
+                questionnaire_data.get('response_time_satisfaction'),
+                json.dumps(questionnaire_data.get('topics_discussed', [])),
+                questionnaire_data.get('used_voice_feature', 0),
+                questionnaire_data.get('voice_experience_rating'),
+                questionnaire_data.get('most_useful_features'),
+                questionnaire_data.get('suggested_improvements'),
+                questionnaire_data.get('age_range'),
+                questionnaire_data.get('education_level'),
+                questionnaire_data.get('field_of_study'),
+                questionnaire_data.get('prior_climate_knowledge'),
+                questionnaire_data.get('session_id')
+            ))
+
+            self.connection.commit()
+            questionnaire_id = cursor.lastrowid
+            logger.info(f"✅ Research questionnaire saved with ID: {questionnaire_id}")
+            return questionnaire_id
+
+    async def get_research_questionnaires(self, limit: int = 100) -> list:
+        """Get all research questionnaire responses."""
+        async with self._lock:
+            cursor = self.connection.cursor()
+            cursor.execute("""
+                SELECT * FROM research_questionnaires
+                ORDER BY created_at DESC
+                LIMIT ?
+            """, (limit,))
+
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+
+    async def get_questionnaire_stats(self) -> Dict[str, Any]:
+        """Get statistics about questionnaire responses."""
+        async with self._lock:
+            cursor = self.connection.cursor()
+
+            # Total responses
+            cursor.execute("SELECT COUNT(*) as total FROM research_questionnaires")
+            total = cursor.fetchone()['total']
+
+            # Average experience rating
+            cursor.execute("SELECT AVG(overall_experience_rating) as avg_rating FROM research_questionnaires WHERE overall_experience_rating IS NOT NULL")
+            avg_rating = cursor.fetchone()['avg_rating'] or 0
+
+            # Voice feature usage
+            cursor.execute("SELECT COUNT(*) as voice_users FROM research_questionnaires WHERE used_voice_feature = 1")
+            voice_users = cursor.fetchone()['voice_users']
+
+            return {
+                "total_responses": total,
+                "average_experience_rating": round(avg_rating, 2),
+                "voice_feature_users": voice_users,
+                "voice_usage_percentage": round((voice_users / total * 100) if total > 0 else 0, 2)
+            }
 
     async def close(self):
         """Close database connection."""

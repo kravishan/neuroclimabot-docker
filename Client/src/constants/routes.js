@@ -3,6 +3,7 @@ export const ROUTES = {
   RESPONSE: '/response/:sessionId',
   VOICE_MODEL: '/voice-model',
   EXPLORE: '/explore-tipping-points',
+  QUESTIONNAIRE: '/research-questionnaire',
   DASHBOARD: '/dashboard',
   ADMIN: '/admin',
   AUTH: '/auth',
