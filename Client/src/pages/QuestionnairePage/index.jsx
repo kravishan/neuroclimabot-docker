@@ -1,10 +1,23 @@
+/**
+ * CHI 2027 Research Questionnaire Page
+ * Exports the scientifically validated research questionnaire
+ */
+import ResearchQuestionnaire from './ResearchQuestionnaire'
+
+const QuestionnairePage = () => {
+  return <ResearchQuestionnaire />
+}
+
+export default QuestionnairePage
+
+/* OLD IMPLEMENTATION BELOW - KEPT FOR REFERENCE
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle, AlertCircle, FileText } from 'lucide-react'
 import { API_CONFIG } from '@/constants/config'
 import './QuestionnairePage.css'
 
-const QuestionnairePage = () => {
+const OldQuestionnairePage = () => {
   const navigate = useNavigate()
   const [currentSection, setCurrentSection] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -501,5 +514,4 @@ const QuestionnairePage = () => {
     </div>
   )
 }
-
-export default QuestionnairePage
+*/
