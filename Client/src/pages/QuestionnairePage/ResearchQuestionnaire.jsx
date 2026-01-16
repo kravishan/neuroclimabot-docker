@@ -957,45 +957,8 @@ const ResearchQuestionnaire = () => {
             </div>
           )}
 
-          {/* SECTION 8: Feature-Specific Evaluations (now includes STP as always-present) */}
+          {/* SECTION 8: Feature-Specific Evaluations (STP always present) */}
           {currentSection === 8 && (
-              <p className="section-description">
-                Please rate your agreement with these statements about the chatbot's sources and transparency.
-              </p>
-
-              <div className="likert-items">
-                {RAG_TRANSPARENCY_ITEMS.map((item, index) => (
-                  <div key={item.id} className="likert-item">
-                    <div className="item-number">{index + 1}</div>
-                    <div className="item-statement">{item.statement}</div>
-                    <div className="likert-scale">
-                      {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                        <label key={value} className="likert-option">
-                          <input
-                            type="radio"
-                            name={item.id}
-                            value={value}
-                            checked={formData.rag_transparency[item.id] === value}
-                            onChange={() => handleNestedChange('rag_transparency', item.id, value)}
-                          />
-                          <span className="likert-value">{value}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="scale-labels">
-                      <span className="label-left">{item.min_label}</span>
-                      <span className="label-right">{item.max_label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="progress-indicator">
-                Completed: {Object.keys(formData.rag_transparency).length} / 5 items
-              </div>
-            </div>
-          )}
-
             <div className="form-section">
               <div className="section-icon">
                 <SectionIcon size={32} />
