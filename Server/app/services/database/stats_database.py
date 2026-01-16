@@ -85,50 +85,143 @@ class StatsDatabase:
                 )
             """)
 
-            # Research questionnaire responses table
+            # Research questionnaire responses table - CHI 2027 validated instruments
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS research_questionnaires (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
 
                     -- Participant Information
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    email TEXT NOT NULL,
+                    participant_id TEXT,
+                    email TEXT,
                     submission_date TEXT NOT NULL,
+                    native_language TEXT,
+                    country TEXT,
 
-                    -- Informed Consent (all required - stored as 1/0)
-                    consent_study_info INTEGER NOT NULL,
-                    consent_age_18 INTEGER NOT NULL,
-                    consent_voluntary INTEGER NOT NULL,
-                    consent_data_collection INTEGER NOT NULL,
-                    consent_privacy_notice INTEGER NOT NULL,
-                    consent_data_processing INTEGER NOT NULL,
-                    consent_publications INTEGER NOT NULL,
-                    consent_anonymity INTEGER NOT NULL,
-                    consent_open_science INTEGER NOT NULL,
-
-                    -- User Experience (ratings & agreement scales)
-                    overall_experience_rating INTEGER,
-                    information_accuracy TEXT,
-                    understanding_improvement TEXT,
-                    response_clarity TEXT,
-                    response_time_satisfaction TEXT,
-
-                    -- Content & Usability
-                    topics_discussed TEXT,
-                    used_voice_feature INTEGER,
-                    voice_experience_rating INTEGER,
-                    most_useful_features TEXT,
-                    suggested_improvements TEXT,
-
-                    -- Demographics (optional fields)
+                    -- Demographics (Optional)
                     age_range TEXT,
                     education_level TEXT,
                     field_of_study TEXT,
-                    prior_climate_knowledge TEXT,
+                    prior_climate_knowledge_self_rated INTEGER,
+
+                    -- Simplified Consent (Single checkbox)
+                    consent_agreed INTEGER NOT NULL,
+
+                    -- MACK-12 Climate Knowledge Pre-Test (1-5 scale)
+                    mack_pre_1 INTEGER,
+                    mack_pre_2 INTEGER,
+                    mack_pre_3 INTEGER,
+                    mack_pre_4 INTEGER,
+                    mack_pre_5 INTEGER,
+                    mack_pre_6 INTEGER,
+                    mack_pre_7 INTEGER,
+                    mack_pre_8 INTEGER,
+                    mack_pre_9 INTEGER,
+                    mack_pre_10 INTEGER,
+                    mack_pre_11 INTEGER,
+                    mack_pre_12 INTEGER,
+
+                    -- Prior AI Experience (1-7 Likert)
+                    prior_chatbot_usage INTEGER,
+                    prior_ai_familiarity INTEGER,
+                    prior_ai_trust_general INTEGER,
+
+                    -- Task Completion Tracking
+                    tasks_completed TEXT,
+                    task_1_query TEXT,
+                    task_2_query TEXT,
+                    task_3_query TEXT,
+                    task_4_query TEXT,
+                    task_5_query TEXT,
+
+                    -- UEQ-S User Experience (8 items, 1-7 scale)
+                    ueq_1_obstructive_supportive INTEGER,
+                    ueq_2_complicated_easy INTEGER,
+                    ueq_3_inefficient_efficient INTEGER,
+                    ueq_4_confusing_clear INTEGER,
+                    ueq_5_boring_exciting INTEGER,
+                    ueq_6_not_interesting_interesting INTEGER,
+                    ueq_7_conventional_inventive INTEGER,
+                    ueq_8_usual_leading_edge INTEGER,
+
+                    -- Human-AI Trust Scale (12 items, 1-7 Likert)
+                    trust_1_reliable_information INTEGER,
+                    trust_2_accurate_responses INTEGER,
+                    trust_3_trustworthy_system INTEGER,
+                    trust_4_confident_using INTEGER,
+                    trust_5_dependable INTEGER,
+                    trust_6_consistent_quality INTEGER,
+                    trust_7_comfortable_relying INTEGER,
+                    trust_8_positive_feelings INTEGER,
+                    trust_9_emotionally_trustworthy INTEGER,
+                    trust_10_sources_increase_trust INTEGER,
+                    trust_11_transparency_helpful INTEGER,
+                    trust_12_would_recommend INTEGER,
+
+                    -- NASA-TLX Cognitive Load (6 subscales, 0-100 scale)
+                    nasa_mental_demand INTEGER,
+                    nasa_physical_demand INTEGER,
+                    nasa_temporal_demand INTEGER,
+                    nasa_performance INTEGER,
+                    nasa_effort INTEGER,
+                    nasa_frustration INTEGER,
+
+                    -- RAG Transparency & Quality (5 items, 1-7 Likert)
+                    rag_source_relevance INTEGER,
+                    rag_citation_quality INTEGER,
+                    rag_verifiability INTEGER,
+                    rag_response_accuracy INTEGER,
+                    rag_limitation_clarity INTEGER,
+
+                    -- Social Tipping Points Evaluation (if applicable, 1-7 Likert)
+                    stp_shown INTEGER,
+                    stp_understanding INTEGER,
+                    stp_clarity INTEGER,
+                    stp_influence INTEGER,
+
+                    -- Knowledge Graph Evaluation (if applicable, 1-7 Likert)
+                    kg_used INTEGER,
+                    kg_understanding INTEGER,
+                    kg_navigation INTEGER,
+                    kg_task_success INTEGER,
+
+                    -- Multilingual Experience (if non-English, 1-7 Likert)
+                    used_non_english INTEGER,
+                    ml_accuracy INTEGER,
+                    ml_preference INTEGER,
+
+                    -- MACK-12 Climate Knowledge Post-Test (1-5 scale)
+                    mack_post_1 INTEGER,
+                    mack_post_2 INTEGER,
+                    mack_post_3 INTEGER,
+                    mack_post_4 INTEGER,
+                    mack_post_5 INTEGER,
+                    mack_post_6 INTEGER,
+                    mack_post_7 INTEGER,
+                    mack_post_8 INTEGER,
+                    mack_post_9 INTEGER,
+                    mack_post_10 INTEGER,
+                    mack_post_11 INTEGER,
+                    mack_post_12 INTEGER,
+
+                    -- Behavioral Intentions (5 items, 1-7 Likert)
+                    behavior_1_change_behavior INTEGER,
+                    behavior_2_discuss_others INTEGER,
+                    behavior_3_seek_information INTEGER,
+                    behavior_4_support_policies INTEGER,
+                    behavior_5_take_action INTEGER,
+
+                    -- Perceived Understanding (1-7 Likert)
+                    perceived_understanding INTEGER,
+
+                    -- Open-Ended Feedback
+                    most_useful_features TEXT,
+                    suggested_improvements TEXT,
+                    additional_comments TEXT,
 
                     -- Metadata
                     session_id TEXT,
+                    time_spent_seconds INTEGER,
+                    device_type TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -434,55 +527,77 @@ class StatsDatabase:
             logger.info("✅ Feedback statistics cleared")
 
     async def save_research_questionnaire(self, questionnaire_data: Dict[str, Any]) -> int:
-        """Save a research questionnaire response."""
+        """Save a research questionnaire response with validated instruments."""
         async with self._lock:
             cursor = self.connection.cursor()
 
-            cursor.execute("""
-                INSERT INTO research_questionnaires (
-                    first_name, last_name, email, submission_date,
-                    consent_study_info, consent_age_18, consent_voluntary,
-                    consent_data_collection, consent_privacy_notice,
-                    consent_data_processing, consent_publications,
-                    consent_anonymity, consent_open_science,
-                    overall_experience_rating, information_accuracy,
-                    understanding_improvement, response_clarity,
-                    response_time_satisfaction, topics_discussed,
-                    used_voice_feature, voice_experience_rating,
-                    most_useful_features, suggested_improvements,
-                    age_range, education_level, field_of_study,
-                    prior_climate_knowledge, session_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                questionnaire_data.get('first_name'),
-                questionnaire_data.get('last_name'),
-                questionnaire_data.get('email'),
-                questionnaire_data.get('submission_date'),
-                questionnaire_data.get('consent_study_info', 0),
-                questionnaire_data.get('consent_age_18', 0),
-                questionnaire_data.get('consent_voluntary', 0),
-                questionnaire_data.get('consent_data_collection', 0),
-                questionnaire_data.get('consent_privacy_notice', 0),
-                questionnaire_data.get('consent_data_processing', 0),
-                questionnaire_data.get('consent_publications', 0),
-                questionnaire_data.get('consent_anonymity', 0),
-                questionnaire_data.get('consent_open_science', 0),
-                questionnaire_data.get('overall_experience_rating'),
-                questionnaire_data.get('information_accuracy'),
-                questionnaire_data.get('understanding_improvement'),
-                questionnaire_data.get('response_clarity'),
-                questionnaire_data.get('response_time_satisfaction'),
-                json.dumps(questionnaire_data.get('topics_discussed', [])),
-                questionnaire_data.get('used_voice_feature', 0),
-                questionnaire_data.get('voice_experience_rating'),
-                questionnaire_data.get('most_useful_features'),
-                questionnaire_data.get('suggested_improvements'),
-                questionnaire_data.get('age_range'),
-                questionnaire_data.get('education_level'),
-                questionnaire_data.get('field_of_study'),
-                questionnaire_data.get('prior_climate_knowledge'),
-                questionnaire_data.get('session_id')
-            ))
+            # Prepare fields for all validated instruments
+            fields = [
+                'participant_id', 'email', 'submission_date', 'native_language', 'country',
+                'age_range', 'education_level', 'field_of_study', 'prior_climate_knowledge_self_rated',
+                'consent_agreed',
+                # MACK-12 Pre
+                'mack_pre_1', 'mack_pre_2', 'mack_pre_3', 'mack_pre_4', 'mack_pre_5', 'mack_pre_6',
+                'mack_pre_7', 'mack_pre_8', 'mack_pre_9', 'mack_pre_10', 'mack_pre_11', 'mack_pre_12',
+                # Prior AI Experience
+                'prior_chatbot_usage', 'prior_ai_familiarity', 'prior_ai_trust_general',
+                # Task Tracking
+                'tasks_completed', 'task_1_query', 'task_2_query', 'task_3_query', 'task_4_query', 'task_5_query',
+                # UEQ-S
+                'ueq_1_obstructive_supportive', 'ueq_2_complicated_easy', 'ueq_3_inefficient_efficient',
+                'ueq_4_confusing_clear', 'ueq_5_boring_exciting', 'ueq_6_not_interesting_interesting',
+                'ueq_7_conventional_inventive', 'ueq_8_usual_leading_edge',
+                # Trust Scale
+                'trust_1_reliable_information', 'trust_2_accurate_responses', 'trust_3_trustworthy_system',
+                'trust_4_confident_using', 'trust_5_dependable', 'trust_6_consistent_quality',
+                'trust_7_comfortable_relying', 'trust_8_positive_feelings', 'trust_9_emotionally_trustworthy',
+                'trust_10_sources_increase_trust', 'trust_11_transparency_helpful', 'trust_12_would_recommend',
+                # NASA-TLX
+                'nasa_mental_demand', 'nasa_physical_demand', 'nasa_temporal_demand',
+                'nasa_performance', 'nasa_effort', 'nasa_frustration',
+                # RAG Transparency
+                'rag_source_relevance', 'rag_citation_quality', 'rag_verifiability',
+                'rag_response_accuracy', 'rag_limitation_clarity',
+                # STP Evaluation
+                'stp_shown', 'stp_understanding', 'stp_clarity', 'stp_influence',
+                # KG Evaluation
+                'kg_used', 'kg_understanding', 'kg_navigation', 'kg_task_success',
+                # Multilingual
+                'used_non_english', 'ml_accuracy', 'ml_preference',
+                # MACK-12 Post
+                'mack_post_1', 'mack_post_2', 'mack_post_3', 'mack_post_4', 'mack_post_5', 'mack_post_6',
+                'mack_post_7', 'mack_post_8', 'mack_post_9', 'mack_post_10', 'mack_post_11', 'mack_post_12',
+                # Behavioral Intentions
+                'behavior_1_change_behavior', 'behavior_2_discuss_others', 'behavior_3_seek_information',
+                'behavior_4_support_policies', 'behavior_5_take_action',
+                # Perceived Understanding
+                'perceived_understanding',
+                # Open-Ended
+                'most_useful_features', 'suggested_improvements', 'additional_comments',
+                # Metadata
+                'session_id', 'time_spent_seconds', 'device_type'
+            ]
+
+            # Build VALUES placeholder
+            placeholders = ', '.join(['?'] * len(fields))
+            field_names = ', '.join(fields)
+
+            # Get values from questionnaire_data
+            values = []
+            for field in fields:
+                value = questionnaire_data.get(field)
+                # Handle JSON serialization for tasks_completed
+                if field == 'tasks_completed' and isinstance(value, (list, dict)):
+                    value = json.dumps(value)
+                # Convert boolean to int for consent_agreed
+                elif field == 'consent_agreed' and isinstance(value, bool):
+                    value = 1 if value else 0
+                values.append(value)
+
+            cursor.execute(f"""
+                INSERT INTO research_questionnaires ({field_names})
+                VALUES ({placeholders})
+            """, tuple(values))
 
             self.connection.commit()
             questionnaire_id = cursor.lastrowid
