@@ -167,7 +167,10 @@ const ResearchQuestionnaire = () => {
                (formData.primary_purpose !== 'other' || formData.other_purpose) &&
                formData.task_type.length > 0
       case 2: // Task Success & Completion
-        return Object.keys(formData.task_success).length === TASK_SUCCESS_ITEMS.length &&
+        // task_accomplished and goal_satisfaction are required, specific_goal is optional
+        const requiredTaskFields = ['task_accomplished', 'goal_satisfaction']
+        const hasRequiredTaskFields = requiredTaskFields.every(field => formData.task_success[field] !== undefined)
+        return hasRequiredTaskFields &&
                Object.keys(formData.info_finding).length === INFORMATION_FINDING_ITEMS.length
       case 3: // Document & Source Quality
         return Object.keys(formData.doc_quality).length === DOCUMENT_QUALITY_ITEMS.length &&
@@ -639,7 +642,7 @@ const ResearchQuestionnaire = () => {
                         ))}
                       </div>
                     )}
-                    {item.type === 'likert' && (
+                    {item.type === 'likert_7' && (
                       <>
                         <div className="likert-scale">
                           {[1, 2, 3, 4, 5, 6, 7].map(value => (
@@ -660,6 +663,14 @@ const ResearchQuestionnaire = () => {
                           <span className="label-right">{item.max_label}</span>
                         </div>
                       </>
+                    )}
+                    {item.type === 'open_text' && (
+                      <textarea
+                        rows="3"
+                        value={formData.task_success[item.id] || ''}
+                        onChange={(e) => handleNestedChange('task_success', item.id, e.target.value)}
+                        placeholder={item.placeholder}
+                      />
                     )}
                   </div>
                 ))}
@@ -696,7 +707,7 @@ const ResearchQuestionnaire = () => {
               </div>
 
               <div className="progress-indicator">
-                Task Success: {Object.keys(formData.task_success).length} / {TASK_SUCCESS_ITEMS.length} |
+                Task Success: {['task_accomplished', 'goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length} / 2 required |
                 Information Finding: {Object.keys(formData.info_finding).length} / {INFORMATION_FINDING_ITEMS.length}
               </div>
             </div>
