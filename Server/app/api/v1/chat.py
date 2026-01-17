@@ -401,6 +401,13 @@ async def session_status_websocket(websocket: WebSocket, session_id: str):
             pass
 
     finally:
+        # Delete session on disconnect (user closed tab/refreshed page)
+        try:
+            await session_manager.delete_session(session_uuid)
+            logger.info(f"Session {session_id} deleted on WebSocket disconnect")
+        except Exception as e:
+            logger.error(f"Error deleting session {session_id} on disconnect: {e}")
+
         try:
             await websocket.close()
         except:
