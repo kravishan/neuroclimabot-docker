@@ -932,6 +932,14 @@
   font-weight: 600;
 }
 
+.feature-section .likert-item {
+  margin-bottom: 20px;
+}
+
+.feature-section .likert-item:last-child {
+  margin-bottom: 0;
+}
+
 .yes-no-selector {
   margin-bottom: 20px;
 }
@@ -981,6 +989,14 @@
 .feature-evaluation {
   margin-top: 20px;
   animation: fadeIn 0.3s ease;
+}
+
+.feature-evaluation .likert-item {
+  margin-bottom: 20px;
+}
+
+.feature-evaluation .likert-item:last-child {
+  margin-bottom: 0;
 }
 
 /* Info Boxes */
