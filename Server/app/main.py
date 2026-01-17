@@ -42,7 +42,6 @@ logger = setup_logging(settings)
 
 # Global background task handles
 cleanup_task = None
-session_cleanup_task = None
 
 
 @asynccontextmanager
@@ -69,7 +68,7 @@ async def lifespan(app: FastAPI):
 
 async def startup_event():
     """Application startup event with Langfuse, authentication, and parallel processing setup."""
-    global cleanup_task, session_cleanup_task
+    global cleanup_task
 
     tasks = []
     
@@ -120,13 +119,10 @@ async def startup_event():
     # Start weekly cleanup task for auth tokens
     cleanup_task = asyncio.create_task(weekly_token_cleanup())
 
-    # Start hourly cleanup task for inactive sessions
-    session_cleanup_task = asyncio.create_task(hourly_session_cleanup())
-
 
 async def shutdown_event():
     """Application shutdown event with Langfuse cleanup and auth cleanup."""
-    global cleanup_task, session_cleanup_task
+    global cleanup_task
 
     logger.info("Shutting down services...")
 
@@ -135,13 +131,6 @@ async def shutdown_event():
         cleanup_task.cancel()
         try:
             await cleanup_task
-        except asyncio.CancelledError:
-            pass
-
-    if session_cleanup_task and not session_cleanup_task.done():
-        session_cleanup_task.cancel()
-        try:
-            await session_cleanup_task
         except asyncio.CancelledError:
             pass
     
@@ -183,28 +172,6 @@ async def weekly_token_cleanup():
             break
         except Exception as e:
             logger.error(f"Error in weekly token cleanup: {e}")
-            # Continue the loop even if cleanup fails
-
-
-async def hourly_session_cleanup():
-    """Background task to cleanup inactive sessions hourly."""
-    while True:
-        try:
-            # Wait 1 hour (3600 seconds)
-            await asyncio.sleep(60 * 60)
-
-            # Cleanup inactive sessions
-            cleaned_count = await session_manager.cleanup_expired_sessions()
-            if cleaned_count > 0:
-                logger.info(f"Hourly session cleanup: removed {cleaned_count} inactive sessions")
-            else:
-                logger.debug("Hourly session cleanup: no inactive sessions found")
-
-        except asyncio.CancelledError:
-            logger.info("Session cleanup task cancelled")
-            break
-        except Exception as e:
-            logger.error(f"Error in hourly session cleanup: {e}")
             # Continue the loop even if cleanup fails
 
 
