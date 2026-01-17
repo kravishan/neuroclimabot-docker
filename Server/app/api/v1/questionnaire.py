@@ -24,8 +24,8 @@ class QuestionnaireRequestNew(BaseModel):
     education_level: Optional[str] = None
     country: Optional[str] = None
     native_language: Optional[str] = None
-    prior_climate_knowledge: Optional[str] = None
-    prior_ai_experience: Optional[str] = None
+    prior_climate_knowledge: Optional[int] = None
+    prior_ai_experience: Optional[int] = None
 
     # Consent (single checkbox)
     consent_all: bool = Field(..., description="Single consent checkbox")

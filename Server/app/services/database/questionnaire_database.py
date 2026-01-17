@@ -60,8 +60,8 @@ class QuestionnaireDatabase:
                     education_level TEXT,
                     country TEXT,
                     native_language TEXT,
-                    prior_climate_knowledge TEXT,
-                    prior_ai_experience TEXT,
+                    prior_climate_knowledge INTEGER,
+                    prior_ai_experience INTEGER,
 
                     -- Consent
                     consent_all INTEGER NOT NULL,
