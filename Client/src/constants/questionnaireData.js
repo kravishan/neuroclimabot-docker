@@ -736,7 +736,7 @@ Benefits: You will contribute to research improving climate information access a
 - Skip any questions you prefer not to answer
 - Request deletion of your data within 30 days`,
   contact: `For questions contact: University of Oulu Research Team
-For ethics concerns contact: [Ethics Board Contact]`,
+For ethics concerns contact: kavindu.ravishan@oulu.fi or prasasthy.balasubramanian@oulu.fi`,
   gdpr_rights: `Under EU GDPR, you have the right to:
 - Access your data
 - Request correction or deletion
