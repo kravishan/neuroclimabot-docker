@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 
-from app.services.database.stats_database import get_stats_database
+from app.services.database.questionnaire_database import get_questionnaire_database
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -243,14 +243,14 @@ async def submit_questionnaire(request: QuestionnaireRequestNew):
                 detail="Consent must be agreed to participate in the study"
             )
 
-        # Get stats database
-        stats_db = await get_stats_database()
+        # Get questionnaire database
+        questionnaire_db = await get_questionnaire_database()
 
         # Prepare questionnaire data (convert Pydantic model to dict)
         questionnaire_data = request.dict()
 
         # Save to database
-        questionnaire_id = await stats_db.save_research_questionnaire(questionnaire_data)
+        questionnaire_id = await questionnaire_db.save_questionnaire(questionnaire_data)
 
         return QuestionnaireResponse(
             success=True,
@@ -273,8 +273,8 @@ async def get_questionnaire_statistics():
     """Get statistics about questionnaire responses (admin endpoint)."""
 
     try:
-        stats_db = await get_stats_database()
-        responses = await stats_db.get_research_questionnaires(limit=1000)
+        questionnaire_db = await get_questionnaire_database()
+        responses = await questionnaire_db.get_questionnaires(limit=1000)
 
         if not responses:
             return QuestionnaireStats(
@@ -391,8 +391,8 @@ async def get_questionnaire_responses(limit: int = 100):
     """Get all questionnaire responses (admin endpoint)."""
 
     try:
-        stats_db = await get_stats_database()
-        responses = await stats_db.get_research_questionnaires(limit)
+        questionnaire_db = await get_questionnaire_database()
+        responses = await questionnaire_db.get_questionnaires(limit)
 
         return {
             "success": True,
