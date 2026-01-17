@@ -385,15 +385,15 @@
 /* Scale Selector */
 .scale-selector {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 12px;
-  overflow-x: auto;
+  width: 100%;
 }
 
 .scale-option {
-  flex: 0 0 auto;
-  min-width: 90px;
+  flex: 1 1 auto;
+  min-width: 100px;
   padding: 14px 12px;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
@@ -1264,7 +1264,7 @@
 .radio-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   padding: 14px 18px;
   background: white;
   border: 2px solid #e0e0e0;
@@ -1284,6 +1284,7 @@
   cursor: pointer;
   accent-color: #3a7d45;
   flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .radio-item span {

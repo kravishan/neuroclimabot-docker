@@ -400,7 +400,7 @@ export const NASA_TLX_SUBSCALES = [
     scale_max: 20,
     min_label: 'Perfect',
     max_label: 'Failure',
-    description: 'Your satisfaction with your performance (note: scale is reversed)'
+    description: 'Your satisfaction with your performance'
   },
   {
     id: 'tlx_effort',
