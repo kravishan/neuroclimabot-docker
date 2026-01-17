@@ -8,6 +8,7 @@ import HomePage from '@/pages/HomePage'
 import ResponsePage from '@/pages/ResponsePage'
 import VoiceModelPage from '@/pages/VoiceModelPage'
 import ExplorePage from '@/pages/ExplorePage'
+import QuestionnairePage from '@/pages/QuestionnairePage'
 import DashboardPage from '@/pages/DashboardPage'
 import AdminDashboard from '@/pages/AdminDashboard'
 import { PrivacyPolicy, Disclaimer, TermsOfUse, LearnMore } from '@/pages/LegalPages'
@@ -41,6 +42,7 @@ const AppRoutes = ({ selectedLanguage, difficultyLevel, isVoiceSettingsOpen, upd
       />
       
       <Route path={ROUTES.EXPLORE} element={<ExplorePage />} />
+      <Route path={ROUTES.QUESTIONNAIRE} element={<QuestionnairePage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path={ROUTES.PRIVACY} element={<PrivacyPolicy />} />

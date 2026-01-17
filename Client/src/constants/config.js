@@ -9,6 +9,8 @@ export const API_CONFIG = {
     CHAT_CONTINUE: '/api/v1/chat/continue',
     SESSIONS: '/api/v1/chat/sessions',
     FEEDBACK: '/api/v1/feedback/submit',
+    QUESTIONNAIRE_SUBMIT: '/api/v1/questionnaire/submit',
+    QUESTIONNAIRE_STATS: '/api/v1/questionnaire/stats',
     HEALTH: '/api/v1/health/',
     GRAPH: '/api/v1/graph-viz/force-graph-visualization',
     // Admin endpoints (Server 1)

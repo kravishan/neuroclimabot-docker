@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { FileText, BookOpen, Settings as SettingsIcon, CheckCircle, Coffee, BarChart3, Shield } from 'lucide-react'
 import { SUPPORTED_LANGUAGES, DIFFICULTY_LEVELS } from '@/constants/languages'
 import { EXTERNAL_URLS } from '@/constants/config'
+import { ROUTES } from '@/constants/routes'
 import './Header.css'
 
 const Header = ({
@@ -59,7 +60,7 @@ const Header = ({
   }
 
   const handleOpenForm = () => {
-    window.open(EXTERNAL_URLS.FEEDBACK_FORM, '_blank')
+    navigate(ROUTES.QUESTIONNAIRE)
   }
 
   const handleDashboardClick = () => {
