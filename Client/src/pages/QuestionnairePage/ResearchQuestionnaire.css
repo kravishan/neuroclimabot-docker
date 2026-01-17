@@ -386,19 +386,23 @@
 .scale-selector {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .scale-option {
   flex: 1;
-  min-width: 70px;
-  padding: 12px;
+  min-width: 80px;
+  padding: 14px 12px;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
   background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .scale-option:hover {
@@ -414,6 +418,8 @@
   background: #3a7d45;
   border-color: #3a7d45;
   color: white;
+  font-weight: 600;
+  transform: scale(1.02);
 }
 
 .scale-label {
@@ -447,8 +453,9 @@
 .item-number {
   width: 36px;
   height: 36px;
-  background: #3a7d45;
-  color: white;
+  background: white;
+  color: #2c3e50;
+  border: 2px solid #e0e0e0;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1256,7 +1263,7 @@
 .radio-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 14px 18px;
   background: white;
   border: 2px solid #e0e0e0;

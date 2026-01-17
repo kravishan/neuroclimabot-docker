@@ -300,9 +300,7 @@ const ResearchQuestionnaire = () => {
       <div className="questionnaire-container">
         {/* Header */}
         <div className="questionnaire-header">
-          <FileText size={40} />
           <h1>NeuroClima Research Study</h1>
-          <p className="subtitle">Evaluating Climate Information Chatbot Experience</p>
           <p className="institution">University of Oulu Research Team | Estimated Time: 25 minutes</p>
         </div>
 
@@ -337,9 +335,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 0: Consent & Demographics */}
           {currentSection === 0 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 1: Informed Consent & Demographics</h2>
               <p className="section-description">
                 Please review the study information and provide your consent and basic demographic information.
@@ -549,9 +544,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 1: Your Recent Experience */}
           {currentSection === 1 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 2: Your Recent Experience</h2>
               <p className="section-description">
                 Tell us about how you used the NeuroClima chatbot.
@@ -613,9 +605,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 2: Task Success & Completion */}
           {currentSection === 2 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 3: Task Success & Completion</h2>
               <p className="section-description">
                 Please evaluate how well the chatbot helped you accomplish your goals.
@@ -716,9 +705,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 3: Document & Source Quality */}
           {currentSection === 3 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 4: Document & Source Quality</h2>
               <p className="section-description">
                 Please evaluate the quality and usefulness of the documents and sources provided by the chatbot.
@@ -757,27 +743,24 @@ const ResearchQuestionnaire = () => {
               <h3>Information Adequacy</h3>
               <div className="likert-items">
                 {INFORMATION_ADEQUACY_ITEMS.map((item, index) => (
-                  <div key={item.id} className="likert-item">
-                    <div className="item-number">{index + 1}</div>
-                    <div className="item-statement">{item.statement}</div>
-                    <div className="likert-scale">
-                      {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                        <label key={value} className="likert-option">
-                          <input
-                            type="radio"
-                            name={item.id}
-                            value={value}
-                            checked={formData.info_adequacy[item.id] === value}
-                            onChange={() => handleNestedChange('info_adequacy', item.id, value)}
-                          />
-                          <span className="likert-value">{value}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="scale-labels">
-                      <span className="label-left">{item.min_label}</span>
-                      <span className="label-right">{item.max_label}</span>
-                    </div>
+                  <div key={item.id} className="form-group">
+                    <label>{item.question}</label>
+                    {item.type === 'single_choice' && (
+                      <div className="radio-group">
+                        {item.options.map(option => (
+                          <label key={option.value} className="radio-item">
+                            <input
+                              type="radio"
+                              name={item.id}
+                              value={option.value}
+                              checked={formData.info_adequacy[item.id] === option.value}
+                              onChange={() => handleNestedChange('info_adequacy', item.id, option.value)}
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -792,9 +775,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 4: UEQ-S (User Experience) */}
           {currentSection === 4 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 5: User Experience Questionnaire (UEQ-S)</h2>
               <p className="section-description">
                 Please rate your experience with the NeuroClima chatbot using the scales below.
@@ -823,7 +803,6 @@ const ResearchQuestionnaire = () => {
                       </div>
                       <span className="right-anchor">{item.right_anchor}</span>
                     </div>
-                    <div className="dimension-label">{item.dimension}</div>
                   </div>
                 ))}
               </div>
@@ -837,9 +816,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 5: Trust Scale */}
           {currentSection === 5 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 6: Trust in AI Evaluation</h2>
               <p className="section-description">
                 Please rate your agreement with the following statements about the NeuroClima chatbot.
@@ -882,9 +858,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 6: NASA-TLX */}
           {currentSection === 6 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 7: Cognitive Load Assessment (NASA-TLX)</h2>
               <p className="section-description">
                 Please rate the mental and physical demands of using the chatbot on a scale from 0 to 20.
@@ -927,9 +900,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 7: Conversational Quality */}
           {currentSection === 7 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 8: Conversational Quality</h2>
               <p className="section-description">
                 Please evaluate the quality of your conversational interactions with the chatbot.
@@ -971,9 +941,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 8: Feature-Specific Evaluations (STP always present) */}
           {currentSection === 8 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 9: Feature-Specific Evaluation</h2>
               <p className="section-description">
                 Please evaluate specific features of the chatbot.
@@ -1135,9 +1102,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 9: Source Transparency & Behavioral Intentions */}
           {currentSection === 9 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 10: Source Transparency & Future Intentions</h2>
 
               <h3>Source Transparency & Trust</h3>
@@ -1216,9 +1180,6 @@ const ResearchQuestionnaire = () => {
           {/* SECTION 10: Open-Ended Feedback */}
           {currentSection === 10 && (
             <div className="form-section">
-              <div className="section-icon">
-                <SectionIcon size={32} />
-              </div>
               <h2>Section 11: Open Feedback</h2>
               <p className="section-description">
                 Finally, please share any additional thoughts or feedback (optional).
