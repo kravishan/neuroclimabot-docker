@@ -632,9 +632,9 @@ class SessionManager:
         try:
             cleanup_start = time.perf_counter()
             cleaned_count = 0
-            
+
             # Get all session keys
-            pattern = self._get_session_key("*").replace(str(uuid4()), "*")
+            pattern = "session:*"
             session_keys = await self.redis_client.keys(pattern)
             
             logger.info(f"Starting cleanup of {len(session_keys)} session keys")
