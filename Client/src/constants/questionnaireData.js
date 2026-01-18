@@ -708,7 +708,7 @@ export const DEMOGRAPHICS = {
 
 // Consent Information (EU GDPR Compliant)
 export const CONSENT_INFORMATION = {
-  study_title: 'NeuroClima: Climate Information Chatbot Evaluation',
+  study_title: 'NeuroClima Chatbot Evaluation',
   institution: 'University of Oulu Research Team',
   purpose: `This research evaluates how people interact with an AI-powered climate information chatbot. Your feedback will help us improve the system and contribute to research on climate communication and information retrieval.`,
   procedures: `You will:
