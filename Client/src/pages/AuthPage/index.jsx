@@ -226,14 +226,8 @@ const AuthPage = ({ onAuthenticated }) => {
             </form>
 
             <div className="auth-info">
-              <div className="info-item">
-                <Shield size={16} />
-                <span>Enter the token you received via email</span>
-              </div>
-              <div className="info-item">
-                <CheckCircle size={16} />
-                <span>Your token will be saved in your browser</span>
-              </div>
+              <p className="auth-text-info">Enter the token you received via email</p>
+              <p className="auth-text-info">Your token will be saved in your browser</p>
               <div className="info-item">
                 <Lock size={16} />
                 <span>We only keep the token and never store your email</span>
