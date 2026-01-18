@@ -172,15 +172,15 @@ const AuthPage = ({ onAuthenticated }) => {
             </form>
 
             <div className="auth-info">
-              <div className="info-item">
+              <div className="auth-info-item">
                 <Shield size={16} />
                 <span>We'll send a secure access token to your email</span>
               </div>
-              <div className="info-item">
+              <div className="auth-info-item">
                 <CheckCircle size={16} />
                 <span>Token is valid for 7 days</span>
               </div>
-              <div className="info-item">
+              <div className="auth-info-item">
                 <Lock size={16} />
                 <span>We only keep the token and never store your email</span>
               </div>
@@ -226,15 +226,15 @@ const AuthPage = ({ onAuthenticated }) => {
             </form>
 
             <div className="auth-info">
-              <div className="info-item">
+              <div className="auth-info-item">
                 <Shield size={16} />
                 <span>Enter the token you received via email</span>
               </div>
-              <div className="info-item">
+              <div className="auth-info-item">
                 <CheckCircle size={16} />
                 <span>Your token will be saved in your browser</span>
               </div>
-              <div className="info-item">
+              <div className="auth-info-item">
                 <Lock size={16} />
                 <span>We only keep the token and never store your email</span>
               </div>
