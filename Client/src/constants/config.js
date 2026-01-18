@@ -120,7 +120,7 @@ export const EXTERNAL_SERVICES = {
   },
   PROCESSOR: {
     // Use relative path through Nginx Gateway
-    BASE_URL: import.meta.env.VITE_PROCESSOR_URL || '/processor',
+    BASE_URL: import.meta.env.VITE_PROCESSOR_URL || '',
     TIMEOUT: 10000,
     ENDPOINTS: {
       SERVICES_HEALTH: '/services/health',
