@@ -179,7 +179,7 @@ class AuthService {
     }
   }
 
-  // Enhanced method to handle API call authentication errors
+  // Method to handle API call authentication errors
   handleApiAuthError(error) {
     if (error.response && error.response.status === 401) {
       const data = error.response.data

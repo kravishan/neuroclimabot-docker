@@ -110,7 +110,7 @@ export const dashboardApi = {
   }
 }
 
-// Legacy compatibility - you can remove this if you update the config
+// Legacy compatibility
 export const DASHBOARD_CONFIG = {
   ENDPOINTS: {
     DASHBOARD: '/api/v1/analytics/dashboard',

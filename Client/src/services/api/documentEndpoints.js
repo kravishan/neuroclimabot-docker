@@ -1,7 +1,7 @@
 import { API_CONFIG } from '@/constants/config'
 
 /**
- * Enhanced API request wrapper with proper error handling
+ * API request wrapper with proper error handling
  */
 const documentApiRequest = async (endpoint, options = {}) => {
   const controller = new AbortController()
@@ -245,12 +245,12 @@ export const documentApi = {
     return documentApiRequest('/health')
   },
   
-  // NEW: STP Health Check
+  // STP Health Check
   getStpHealth: async () => {
     return documentApiRequest('/stp/health')
   },
   
-  // NEW: STP Statistics
+  // STP Statistics
   getStpStats: async () => {
     return documentApiRequest('/stp/stats')
   },

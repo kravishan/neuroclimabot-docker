@@ -250,7 +250,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_1',
     dimension: 'cognitive',
-    statement: 'The chatbot provides reliable climate information.',
+    statement: 'The chatbot provides reliable climate information',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -259,7 +259,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_2',
     dimension: 'cognitive',
-    statement: 'I can depend on the chatbot to give accurate answers.',
+    statement: 'I can depend on the chatbot to give accurate answers',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -268,7 +268,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_3',
     dimension: 'cognitive',
-    statement: 'The sources provided by the chatbot are credible.',
+    statement: 'The sources provided by the chatbot are credible',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -277,7 +277,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_4',
     dimension: 'cognitive',
-    statement: 'The chatbot demonstrates competence in climate topics.',
+    statement: 'The chatbot demonstrates competence in climate topics',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -286,7 +286,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_5',
     dimension: 'cognitive',
-    statement: 'The responses are consistent with scientific consensus.',
+    statement: 'The responses are consistent with scientific consensus',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -295,7 +295,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_6',
     dimension: 'cognitive',
-    statement: 'I trust the chatbot to handle complex climate questions.',
+    statement: 'I trust the chatbot to handle complex climate questions',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -305,7 +305,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_7',
     dimension: 'affective',
-    statement: 'I feel confident using this chatbot for climate questions.',
+    statement: 'I feel confident using this chatbot for climate questions',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -314,7 +314,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_8',
     dimension: 'affective',
-    statement: 'I feel comfortable relying on the chatbot for climate information.',
+    statement: 'I feel comfortable relying on the chatbot for climate information',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -323,7 +323,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_9',
     dimension: 'affective',
-    statement: 'The chatbot seems to understand my information needs.',
+    statement: 'The chatbot seems to understand my information needs',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -332,7 +332,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_10',
     dimension: 'affective',
-    statement: 'I would recommend this chatbot to others seeking climate information.',
+    statement: 'I would recommend this chatbot to others seeking climate information',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -341,7 +341,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_11',
     dimension: 'affective',
-    statement: 'Using this chatbot makes me feel more informed about climate change.',
+    statement: 'Using this chatbot makes me feel more informed about climate change',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -350,7 +350,7 @@ export const TRUST_SCALE_ITEMS = [
   {
     id: 'trust_12',
     dimension: 'affective',
-    statement: 'I feel the chatbot is transparent about its limitations.',
+    statement: 'I feel the chatbot is transparent about its limitations',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -472,7 +472,7 @@ export const CONVERSATIONAL_QUALITY_ITEMS = [
 export const RAG_TRANSPARENCY_ITEMS = [
   {
     id: 'rag_trust_1',
-    statement: 'The sources cited are relevant to the chatbot\'s responses.',
+    statement: 'The sources cited are relevant to the chatbot\'s responses',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -480,7 +480,7 @@ export const RAG_TRANSPARENCY_ITEMS = [
   },
   {
     id: 'rag_trust_2',
-    statement: 'I can verify the information using the provided sources.',
+    statement: 'I can verify the information using the provided sources',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -488,7 +488,7 @@ export const RAG_TRANSPARENCY_ITEMS = [
   },
   {
     id: 'rag_trust_3',
-    statement: 'The chatbot clearly indicates when it is uncertain or has limitations.',
+    statement: 'The chatbot clearly indicates when it is uncertain or has limitations',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -496,7 +496,7 @@ export const RAG_TRANSPARENCY_ITEMS = [
   },
   {
     id: 'rag_trust_4',
-    statement: 'The quality of sources increases my trust in the responses.',
+    statement: 'The quality of sources increases my trust in the responses',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -504,7 +504,7 @@ export const RAG_TRANSPARENCY_ITEMS = [
   },
   {
     id: 'rag_trust_5',
-    statement: 'Having access to multiple sources helps me evaluate response accuracy.',
+    statement: 'Having access to multiple sources helps me evaluate response accuracy',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -516,7 +516,7 @@ export const RAG_TRANSPARENCY_ITEMS = [
 export const BEHAVIORAL_INTENTIONS_ITEMS = [
   {
     id: 'behavior_1',
-    statement: 'I intend to use this chatbot again for climate information.',
+    statement: 'I intend to use this chatbot again for climate information',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -524,7 +524,7 @@ export const BEHAVIORAL_INTENTIONS_ITEMS = [
   },
   {
     id: 'behavior_2',
-    statement: 'I am more likely to discuss climate change with others after using this chatbot.',
+    statement: 'I am more likely to discuss climate change with others after using this chatbot',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -532,7 +532,7 @@ export const BEHAVIORAL_INTENTIONS_ITEMS = [
   },
   {
     id: 'behavior_3',
-    statement: 'I plan to seek more information about climate topics.',
+    statement: 'I plan to seek more information about climate topics',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -540,7 +540,7 @@ export const BEHAVIORAL_INTENTIONS_ITEMS = [
   },
   {
     id: 'behavior_4',
-    statement: 'I would recommend this chatbot to others.',
+    statement: 'I would recommend this chatbot to others',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -548,7 +548,7 @@ export const BEHAVIORAL_INTENTIONS_ITEMS = [
   },
   {
     id: 'behavior_5',
-    statement: 'This chatbot helped me find information more effectively than other methods.',
+    statement: 'This chatbot helped me find information more effectively than other methods',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -561,7 +561,7 @@ export const BEHAVIORAL_INTENTIONS_ITEMS = [
 export const STP_EVALUATION_ITEMS = [
   {
     id: 'stp_1',
-    statement: 'The Social Tipping Points information in responses was helpful.',
+    statement: 'The Social Tipping Points information in responses was helpful',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -569,7 +569,7 @@ export const STP_EVALUATION_ITEMS = [
   },
   {
     id: 'stp_2',
-    statement: 'The 5 qualifying factors were clear and understandable.',
+    statement: 'The 5 qualifying factors were clear and understandable',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -577,7 +577,7 @@ export const STP_EVALUATION_ITEMS = [
   },
   {
     id: 'stp_3',
-    statement: 'The STP analysis helped me understand social aspects of climate topics.',
+    statement: 'The STP analysis helped me understand social aspects of climate topics',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -585,7 +585,7 @@ export const STP_EVALUATION_ITEMS = [
   },
   {
     id: 'stp_4',
-    statement: 'I found the STP information valuable.',
+    statement: 'I found the STP information valuable',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -597,7 +597,7 @@ export const STP_EVALUATION_ITEMS = [
 export const KG_VISUALIZATION_ITEMS = [
   {
     id: 'kg_viz_1',
-    statement: 'The knowledge graph visualization helped me understand connections between climate concepts.',
+    statement: 'The knowledge graph visualization helped me understand connections between climate concepts',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -605,7 +605,7 @@ export const KG_VISUALIZATION_ITEMS = [
   },
   {
     id: 'kg_viz_2',
-    statement: 'The graph was easy to navigate and explore.',
+    statement: 'The graph was easy to navigate and explore',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -613,7 +613,7 @@ export const KG_VISUALIZATION_ITEMS = [
   },
   {
     id: 'kg_viz_3',
-    statement: 'The visualization increased my trust in the chatbot\'s responses.',
+    statement: 'The visualization increased my trust in the chatbot\'s responses',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -621,7 +621,7 @@ export const KG_VISUALIZATION_ITEMS = [
   },
   {
     id: 'kg_viz_4',
-    statement: 'I successfully found the information I was looking for using the graph.',
+    statement: 'I successfully found the information I was looking for using the graph',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -629,7 +629,7 @@ export const KG_VISUALIZATION_ITEMS = [
   },
   {
     id: 'kg_viz_5',
-    statement: 'I prefer having the visualization available versus text-only responses.',
+    statement: 'I prefer having the visualization available versus text-only responses',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -641,7 +641,7 @@ export const KG_VISUALIZATION_ITEMS = [
 export const MULTILINGUAL_EVALUATION_ITEMS = [
   {
     id: 'multi_1',
-    statement: 'The responses in my language were natural and accurate.',
+    statement: 'The responses in my language were natural and accurate',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -649,7 +649,7 @@ export const MULTILINGUAL_EVALUATION_ITEMS = [
   },
   {
     id: 'multi_2',
-    statement: 'I prefer using the chatbot in my native language versus English.',
+    statement: 'I prefer using the chatbot in my native language versus English',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -657,7 +657,7 @@ export const MULTILINGUAL_EVALUATION_ITEMS = [
   },
   {
     id: 'multi_3',
-    statement: 'The translation quality met my expectations.',
+    statement: 'The translation quality met my expectations',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',

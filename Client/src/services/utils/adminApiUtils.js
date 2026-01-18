@@ -11,7 +11,7 @@ export class AdminApiError extends Error {
 
 export const apiUtils = {
   /**
-   * Enhanced API request with retry logic and better error handling
+   * API request with retry logic and better error handling
    */
   async request(url, options = {}, useDocumentApi = false) {
     const baseUrl = useDocumentApi ? API_CONFIG.DOCUMENT_URL : API_CONFIG.BASE_URL

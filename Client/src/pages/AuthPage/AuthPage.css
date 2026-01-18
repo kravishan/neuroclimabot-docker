@@ -139,11 +139,11 @@
   margin-bottom: 30px;
 }
 
-.form-group {
+.form-group-auth {
   margin-bottom: 24px;
 }
 
-.form-label {
+.form-label-auth {
   display: flex;
   align-items: center;
   gap: 8px;

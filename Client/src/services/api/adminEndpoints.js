@@ -150,7 +150,7 @@ export const adminApi = {
   getDocumentDetails: (docName, bucket) => 
     apiRequest(`/api/v1/admin/documents/details?name=${encodeURIComponent(docName)}&bucket=${encodeURIComponent(bucket)}`),
 
-  // Enhanced methods for better error handling and data formatting
+  // Methods for better error handling and data formatting
   getSystemHealth: async () => {
     try {
       const mainHealthData = await apiRequest('/api/v1/health/')

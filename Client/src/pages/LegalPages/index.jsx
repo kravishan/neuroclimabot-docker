@@ -34,7 +34,7 @@ export function PrivacyPolicy() {
           <h2>2. Data Controller</h2>
           <p>
             <strong>NeuroClimaBot</strong><br/>
-            Email: info@neuroclimabot.com<br/>
+            Email: info@bot.neuroclima.eu<br/>
           </p>
 
           <h2>3. Your Consent and Data Collection</h2>
@@ -231,7 +231,7 @@ export function PrivacyPolicy() {
 
           <h3>7.9 How to Exercise Your Rights</h3>
           <ul>
-            <li><strong>Email:</strong> info@neuroclimabot.com</li>
+            <li><strong>Email:</strong> info@bot.neuroclima.eu</li>
             <li><strong>Response Time:</strong> Within 1 month (extensible to 3 months for complex requests)</li>
             <li><strong>Free of Charge:</strong> First request is free; excessive requests may incur reasonable fees</li>
             <li><strong>Identity Verification:</strong> We may request proof of identity to protect your privacy</li>
@@ -353,7 +353,7 @@ export function PrivacyPolicy() {
           </p>
           <p>
             <strong>Data Controller:</strong> NeuroClimaBot<br/>
-            <strong>Email:</strong> info@neuroclimabot.com<br/>
+            <strong>Email:</strong> info@bot.neuroclima.eu<br/>
             <strong>Privacy Inquiries:</strong> Include "GDPR Request" in subject line
           </p>
           <p>
@@ -478,7 +478,7 @@ export function Disclaimer() {
         <h2>10. Contact Information</h2>
         <p>
           For questions about this disclaimer:<br/>
-          <strong>Email:</strong> info@neuroclimabot.com<br/>
+          <strong>Email:</strong> info@bot.neuroclima.eu<br/>
         </p>
       </div>
     </div>
@@ -665,7 +665,7 @@ export function TermsOfUse() {
 
         <h2>15. Contact Information</h2>
         <p>
-          <strong>General Inquiries:</strong> info@neuroclimabot.com<br/>
+          <strong>General Inquiries:</strong> info@bot.neuroclima.eu<br/>
         </p>
 
         <p><em>These Terms constitute the complete agreement between you and NeuroClima Bot regarding the Service.</em></p>
@@ -835,7 +835,7 @@ export function LearnMore() {
 
         <h2>8. Contact and Support</h2>
         <p>
-          <strong>General Questions:</strong> info@neuroclimabot.com<br/>
+          <strong>General Questions:</strong> info@bot.neuroclima.eu<br/>
         </p>
 
         <p>

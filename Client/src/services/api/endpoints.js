@@ -219,7 +219,7 @@ export const sendResponseFeedback = async (responseId, feedbackType, userId = 'a
   }
 }
 
-// Enhanced Graph Visualization with new backend integration
+// Graph Visualization with new backend integration
 export const fetchTippingPointsGraphByDocName = async (docName, options = {}) => {
   try {
     console.log('🔍 Sending GraphRAG API request for doc_name:', docName)
@@ -236,7 +236,7 @@ export const fetchTippingPointsGraphByDocName = async (docName, options = {}) =>
     console.log('📤 API request body:', apiRequestBody)
 
     const response = await apiClient.post(API_CONFIG.ENDPOINTS.GRAPH, apiRequestBody, {
-      timeout: 45000, // Increased timeout for enhanced processing
+      timeout: 45000, // Increased timeout for processing
       headers: {
         'Content-Type': 'application/json'
       }
@@ -325,7 +325,7 @@ export const fetchTippingPointsGraphByDocName = async (docName, options = {}) =>
   } catch (error) {
     console.error('Error fetching GraphRAG data:', error)
     
-    // Enhanced error handling
+    // Error handling
     let errorMessage = 'Failed to connect to GraphRAG service'
     
     if (error.response) {

@@ -39,8 +39,6 @@ This guide explains how to run the complete NeuroClima Bot stack using Docker Co
 ### Required
 - Docker (version 20.10+)
 - Docker Compose (version 2.0+)
-- At least 8GB RAM
-- At least 10GB free disk space
 
 ### External Services (Already Deployed)
 - **MinIO** - Object storage (port 9000)
@@ -430,9 +428,3 @@ For issues:
 3. Check resource usage: `docker stats`
 4. Review environment variables in `.env` files
 5. Ensure all required ports are available
-
-## Additional Resources
-
-- [Processor Documentation](./Processor/README.Docker.md)
-- [Server Documentation](./Server/README.md) (if exists)
-- [Client Documentation](./Client/README.md) (if exists)

@@ -138,8 +138,8 @@ const AuthPage = ({ onAuthenticated }) => {
         {activeTab === 'request' && (
           <div className="auth-form-container">
             <form onSubmit={handleRequestToken} className="auth-form">
-              <div className="form-group">
-                <label htmlFor="email" className="form-label">
+              <div className="form-group-auth">
+                <label htmlFor="email" className="form-label-auth">
                   <Mail size={16} />
                   Email Address
                 </label>
@@ -192,8 +192,8 @@ const AuthPage = ({ onAuthenticated }) => {
         {activeTab === 'enter' && (
           <div className="auth-form-container">
             <form onSubmit={handleValidateToken} className="auth-form">
-              <div className="form-group">
-                <label htmlFor="token" className="form-label">
+              <div className="form-group-auth">
+                <label htmlFor="token" className="form-label-auth">
                   <Key size={16} />
                   Access Token
                 </label>
@@ -246,8 +246,8 @@ const AuthPage = ({ onAuthenticated }) => {
         <div className="auth-footer">
           <p className="auth-footer-text">
             Need help? Contact us at{' '}
-            <a href="mailto:info@neuroclimabot.com" className="auth-footer-link">
-              info@neuroclimabot.com
+            <a href="mailto:info@bot.neuroclima.eu" className="auth-footer-link">
+              info@bot.neuroclima.eu
             </a>
           </p>
         </div>
