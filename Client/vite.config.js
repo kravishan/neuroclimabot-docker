@@ -34,12 +34,13 @@ export default defineConfig({
     proxy: {
       // Proxy API requests to the FastAPI backend (Server)
       '/server': {
-        target: 'http://localhost:8000',
+        target: process.env.VITE_SERVER_PROXY_TARGET || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/server/, ''),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
             console.log('[Vite Proxy] Error connecting to server:', err.message);
+            console.log('[Vite Proxy] Server proxy target:', options.target);
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.log('[Vite Proxy] Request to server:', req.method, req.url);
@@ -51,12 +52,13 @@ export default defineConfig({
       },
       // Proxy processor requests to the Document Processor service
       '/processor': {
-        target: 'http://localhost:5000',
+        target: process.env.VITE_PROCESSOR_PROXY_TARGET || 'http://localhost:5000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/processor/, ''),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
             console.log('[Vite Proxy] Error connecting to processor:', err.message);
+            console.log('[Vite Proxy] Processor proxy target:', options.target);
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
             console.log('[Vite Proxy] Request to processor:', req.method, req.url);
