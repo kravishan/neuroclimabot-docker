@@ -21,6 +21,16 @@ const processorRequest = async (endpoint, options = {}) => {
 
     console.log(`[ProcessorAPI] Response status for ${endpoint}:`, response.status)
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type')
+    const isJson = contentType && contentType.includes('application/json')
+
+    if (!isJson) {
+      const text = await response.text()
+      console.error(`[ProcessorAPI] Non-JSON response for ${endpoint}:`, text.substring(0, 200))
+      throw new Error(`Service returned HTML instead of JSON. The processor service may not be properly configured or accessible at ${url}`)
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => null)
       const errorMsg = errorData?.detail || errorData?.message || `API Error: ${response.status}`
