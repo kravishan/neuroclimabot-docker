@@ -344,15 +344,15 @@ const ResearchQuestionnaire = () => {
               <div className="consent-box">
                 <h3>Study Information</h3>
                 <div className="info-grid">
-                  <div className="info-item">
+                  <div className="research-info-item">
                     <strong>Study Title:</strong>
                     <p>{CONSENT_INFORMATION.study_title}</p>
                   </div>
-                  <div className="info-item">
+                  <div className="research-info-item">
                     <strong>Institution:</strong>
                     <p>{CONSENT_INFORMATION.institution}</p>
                   </div>
-                  <div className="info-item">
+                  <div className="research-info-item">
                     <strong>Purpose:</strong>
                     <p>{CONSENT_INFORMATION.purpose}</p>
                   </div>

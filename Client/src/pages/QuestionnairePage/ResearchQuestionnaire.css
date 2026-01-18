@@ -215,14 +215,21 @@
   margin-bottom: 16px;
 }
 
-.info-item strong {
+.research-info-item {
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.research-info-item strong {
   display: block;
   color: #2c3e50;
   margin-bottom: 4px;
   font-size: 14px;
 }
 
-.info-item p {
+.research-info-item p {
   margin: 0;
   color: #666;
   font-size: 14px;
