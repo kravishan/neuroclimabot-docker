@@ -128,27 +128,40 @@ class GraphRAGAPIClient:
 
                         try:
                             api_response = await response.json()
+                            logger.debug(f"📥 GraphRAG raw response type: {type(api_response).__name__}")
+                            if isinstance(api_response, list):
+                                logger.debug(f"📥 GraphRAG response is array with {len(api_response)} elements")
+                            elif isinstance(api_response, dict):
+                                logger.debug(f"📥 GraphRAG response is dict with keys: {list(api_response.keys())}")
                         except Exception as json_err:
                             logger.error(f"Failed to parse GraphRAG JSON response: {json_err}")
                             raise Exception(f"Invalid JSON response from GraphRAG service: {json_err}")
 
                 # NEW API returns a list, extract first element
                 if isinstance(api_response, list) and len(api_response) > 0:
+                    logger.debug(f"🔓 Unwrapping array: taking first element of {len(api_response)} items")
                     api_response = api_response[0]
+                    logger.debug(f"✅ After unwrapping, response type: {type(api_response).__name__}, keys: {list(api_response.keys()) if isinstance(api_response, dict) else 'N/A'}")
                 elif isinstance(api_response, list):
-                    logger.warning("GraphRAG API returned empty list")
+                    logger.warning("⚠️ GraphRAG API returned empty list")
                     return self._create_empty_local_search_response(question)
 
                 response_time = time.perf_counter() - start_time
                 self._update_performance_stats(response_time, success=True)
 
                 # Process the response from new API format - data is in "context" not "data"
+                logger.debug(f"📦 Extracting context from response...")
                 context = api_response.get("context", {})
+                if not context:
+                    logger.warning(f"⚠️ No 'context' field in response. Available keys: {list(api_response.keys())}")
+
                 entities = context.get("entities", [])
                 relationships = context.get("relationships", [])
                 reports = context.get("reports", [])
                 claims = context.get("claims", [])
                 sources = context.get("sources", [])
+
+                logger.debug(f"📊 Extracted from context: {len(entities)} entities, {len(relationships)} relationships, {len(reports)} reports, {len(sources)} sources")
 
                 # Update processing stats
                 self.performance_stats["entities_processed"] += len(entities)
@@ -660,11 +673,17 @@ class GraphRAGAPIClient:
         Updated for new GraphRAG API format with context structure and new field names.
         Now includes semantic similarity calculation using embeddings.
         """
+        logger.debug(f"🔄 _convert_local_search_to_graph_items called with response type: {type(local_search_response).__name__}")
+
         graph_items = []
 
         try:
             # New API format: data is in "context" not "data"
             context = local_search_response.get("context", {})
+            if not context:
+                logger.error(f"❌ No context found in response! Response keys: {list(local_search_response.keys())}")
+                return []
+
             entities = context.get("entities", [])
             relationships = context.get("relationships", [])
             reports = context.get("reports", [])
@@ -675,13 +694,20 @@ class GraphRAGAPIClient:
             titles = local_search_response.get("titles", [])
 
             logger.debug(f"📊 Processing: {len(entities)} entities, {len(relationships)} relationships, {len(reports)} reports, {len(sources)} sources")
+            logger.debug(f"🎯 Similarity threshold: {self.min_relevance_threshold}")
 
             # Generate query embedding if not provided
             if query_embedding is None:
-                logger.debug("Generating query embedding for semantic similarity...")
+                logger.debug("🔢 Generating query embedding for semantic similarity...")
                 query_embedding = await self._get_text_embedding(original_query)
+                if query_embedding:
+                    logger.debug(f"✅ Query embedding generated: dimension={len(query_embedding)}")
+                else:
+                    logger.warning("⚠️ Failed to generate query embedding, falling back to heuristic scoring")
 
             # Process entities - NEW FIELD NAMES: entity (not name), id (not entity_id)
+            entities_passed = 0
+            entities_filtered = 0
             for i, entity in enumerate(entities):
                 entity_name = entity.get("entity", "Unknown")
                 entity_id = entity.get("id", str(i))
@@ -699,6 +725,7 @@ class GraphRAGAPIClient:
                     entity_embedding = await self._get_text_embedding(entity_content)
                     if entity_embedding is not None:
                         relevance_score = self._calculate_cosine_similarity(query_embedding, entity_embedding)
+                        logger.debug(f"🔢 Entity '{entity_name[:30]}': semantic_sim={relevance_score:.3f}")
                     else:
                         # Fallback to heuristic scoring
                         try:
@@ -706,6 +733,7 @@ class GraphRAGAPIClient:
                             relevance_score = min(rel_count / 20.0, 1.0) if rel_count > 0 else 0.5
                         except:
                             relevance_score = 0.5
+                        logger.debug(f"🔢 Entity '{entity_name[:30]}': heuristic={relevance_score:.3f} (embedding failed)")
                 else:
                     # Fallback to heuristic scoring
                     try:
@@ -713,12 +741,18 @@ class GraphRAGAPIClient:
                         relevance_score = min(rel_count / 20.0, 1.0) if rel_count > 0 else 0.5
                     except:
                         relevance_score = 0.5
+                    logger.debug(f"🔢 Entity '{entity_name[:30]}': heuristic={relevance_score:.3f} (no query embedding)")
 
                 # Small boost if in_context (but don't override semantic similarity completely)
+                original_score = relevance_score
                 if in_context:
                     relevance_score = min(relevance_score * 1.1, 1.0)
+                    if original_score != relevance_score:
+                        logger.debug(f"  ↗️ Boosted by 10% (in_context): {original_score:.3f} → {relevance_score:.3f}")
 
                 if relevance_score >= self.min_relevance_threshold:
+                    entities_passed += 1
+                    logger.debug(f"  ✅ PASSED (score={relevance_score:.3f} >= {self.min_relevance_threshold})")
                     graph_item = {
                         "doc_name": f"Graph Entity: {entity_name}",
                         "content": entity_content,
@@ -741,9 +775,14 @@ class GraphRAGAPIClient:
                     }
                     graph_items.append(graph_item)
                 else:
+                    entities_filtered += 1
+                    logger.debug(f"  ❌ FILTERED (score={relevance_score:.3f} < {self.min_relevance_threshold})")
                     self.performance_stats["relevance_filtered"] += 1
 
             # Process relationships - NEW FIELD NAMES: source (not source_entity), target (not target_entity), id (not relationship_id)
+            logger.debug(f"🔗 Processing {len(relationships)} relationships...")
+            relationships_passed = 0
+            relationships_filtered = 0
             for i, relationship in enumerate(relationships):
                 source_entity = relationship.get("source", "Unknown")
                 target_entity = relationship.get("target", "Unknown")
@@ -782,6 +821,7 @@ class GraphRAGAPIClient:
                     relevance_score = min(relevance_score * 1.1, 1.0)
 
                 if relevance_score >= self.min_relevance_threshold:
+                    relationships_passed += 1
                     graph_item = {
                         "doc_name": f"Graph Relationship: {source_entity} - {target_entity}",
                         "content": relationship_content,
@@ -804,9 +844,13 @@ class GraphRAGAPIClient:
                     }
                     graph_items.append(graph_item)
                 else:
+                    relationships_filtered += 1
                     self.performance_stats["relevance_filtered"] += 1
 
             # Process reports (replaces communities) - NEW STRUCTURE
+            logger.debug(f"📋 Processing {len(reports)} reports...")
+            reports_passed = 0
+            reports_filtered = 0
             for i, report in enumerate(reports):
                 report_id = report.get("id", str(i))
                 report_title = report.get("title", "Unknown Report")
@@ -823,14 +867,19 @@ class GraphRAGAPIClient:
                     report_embedding = await self._get_text_embedding(report_content_for_embedding)
                     if report_embedding is not None:
                         relevance_score = self._calculate_cosine_similarity(query_embedding, report_embedding)
+                        logger.debug(f"📄 Report '{report_title[:40]}': semantic_sim={relevance_score:.3f}")
                     else:
                         # Fallback to default score
                         relevance_score = 0.5
+                        logger.debug(f"📄 Report '{report_title[:40]}': fallback={relevance_score:.3f} (embedding failed)")
                 else:
                     # Fallback to default score
                     relevance_score = 0.5
+                    logger.debug(f"📄 Report '{report_title[:40]}': fallback={relevance_score:.3f} (no query embedding)")
 
                 if relevance_score >= self.min_relevance_threshold:
+                    reports_passed += 1
+                    logger.debug(f"  ✅ PASSED (score={relevance_score:.3f} >= {self.min_relevance_threshold})")
                     graph_item = {
                         "doc_name": f"Graph Report: {report_title}",
                         "content": report_content_for_embedding,
@@ -850,6 +899,8 @@ class GraphRAGAPIClient:
                     }
                     graph_items.append(graph_item)
                 else:
+                    reports_filtered += 1
+                    logger.debug(f"  ❌ FILTERED (score={relevance_score:.3f} < {self.min_relevance_threshold})")
                     self.performance_stats["relevance_filtered"] += 1
 
             # Process sources (new section)
@@ -896,12 +947,28 @@ class GraphRAGAPIClient:
                         }
                         graph_items.append(graph_item)
 
+            # Log summary statistics
+            logger.info(f"📊 GraphRAG Filtering Summary:")
+            logger.info(f"  Entities: {entities_passed} passed, {entities_filtered} filtered (total: {len(entities)})")
+            logger.info(f"  Relationships: {relationships_passed} passed, {relationships_filtered} filtered (total: {len(relationships)})")
+            logger.info(f"  Reports: {reports_passed} passed, {reports_filtered} filtered (total: {len(reports)})")
+            logger.info(f"  Total graph items before limit: {len(graph_items)}")
+
             # Sort by relevance score and limit results
             graph_items.sort(key=lambda x: x.get("score", 0.0), reverse=True)
-            return graph_items[:limit]
+            limited_items = graph_items[:limit]
+
+            if len(graph_items) > limit:
+                logger.info(f"  ✂️ Limited to top {limit} items (cut {len(graph_items) - limit} items)")
+
+            logger.info(f"  ✅ Final result: {len(limited_items)} graph items returned")
+
+            return limited_items
 
         except Exception as e:
-            logger.error(f"Error converting local search response to graph items: {e}")
+            logger.error(f"❌ Error converting local search response to graph items: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return []
 
     def _calculate_cosine_similarity(self, embedding1: List[float], embedding2: List[float]) -> float:
