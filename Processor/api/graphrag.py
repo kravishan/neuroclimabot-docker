@@ -36,7 +36,7 @@ class LocalSearchRequest(BaseModel):
     """Request model for local search"""
     question: str = Field(..., description="Search query")
     community_level: int = Field(default=2, description="Community hierarchy level")
-    response_type: str = Field(default="Multiple Paragraphs", description="Response format")
+    response_type: str = Field(default="One Paragraphs", description="Response format")
     embedding: list[float] = Field(default=None, description="Pre-computed query embedding (768 or 384 dimensions)")
 
 

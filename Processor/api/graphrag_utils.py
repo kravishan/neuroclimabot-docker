@@ -288,7 +288,7 @@ def reload_graphrag_data():
 async def graphrag_local_search_with_response(
     query: str,
     community_level: int = 2,
-    response_type: str = "Multiple Paragraphs",
+    response_type: str = "One Paragraphs",
     query_embedding: List[float] = None
 ) -> Tuple[str, Dict[str, Any], List[str]]:
     """

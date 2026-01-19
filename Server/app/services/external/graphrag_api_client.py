@@ -105,7 +105,7 @@ class GraphRAGAPIClient:
                 payload = {
                     "question": question,
                     "community_level": kwargs.get("community_level", 2),
-                    "response_type": kwargs.get("response_type", "Multiple Paragraphs")
+                    "response_type": kwargs.get("response_type", "One Paragraphs")
                 }
 
                 logger.info(f"🔍 GraphRAG local search: '{question[:100]}...' (bucket: {bucket or 'all'})")
