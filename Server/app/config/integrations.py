@@ -78,7 +78,7 @@ class IntegrationsConfig(BaseSettings):
         description="Context depth for local-search expansion"
     )
     GRAPHRAG_LOCAL_SEARCH_MIN_RELEVANCE_SCORE: float = Field(
-        default=0.1,
+        default=0.6,
         description="Minimum relevance score for local-search results"
     )
     GRAPHRAG_LOCAL_SEARCH_INCLUDE_COMMUNITY_CONTEXT: bool = Field(
@@ -111,7 +111,7 @@ class IntegrationsConfig(BaseSettings):
 
     # GraphRAG Relevance Scoring Configuration
     GRAPH_MIN_RELEVANCE_SCORE: float = Field(
-        default=0.1,
+        default=0.6,
         description="Minimum relevance score threshold for graph data (0.0-1.0)"
     )
     GRAPH_RETRIEVAL_LIMIT: int = Field(
