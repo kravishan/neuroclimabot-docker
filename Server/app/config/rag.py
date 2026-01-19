@@ -15,7 +15,7 @@ class RAGConfig(BaseSettings):
     MAX_RETRIEVED_DOCS: int = 15
     INITIAL_RETRIEVAL_LIMIT: int = 25
     SIMILARITY_THRESHOLD: float = Field(
-        default=0.1,
+        default=0.6,
         description="Minimum similarity score for Milvus results"
     )
 
