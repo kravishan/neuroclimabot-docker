@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
+import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { useNavigate } from 'react-router-dom'
 import {
   CheckCircle, AlertCircle, FileText, ChevronRight, ChevronLeft,
@@ -48,6 +49,8 @@ const ResearchQuestionnaire = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [submitError, setSubmitError] = useState(null)
   const [showConsentDetails, setShowConsentDetails] = useState(false)
+
+  useDocumentTitle('Feedback Questionnaire - NeuroClima Bot')
 
   // Form state
   const [formData, setFormData] = useState({
