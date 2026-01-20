@@ -16,7 +16,9 @@ import { API_CONFIG } from '@/constants/config'
 import {
   startConversationSession,
   continueConversationSession,
-  endConversationSession
+  endConversationSession,
+  startConversationSessionStreaming,
+  continueConversationSessionStreaming
 } from '@/services/api/endpoints'
 
 class SessionManager {
@@ -49,6 +51,7 @@ class SessionManager {
     // Callbacks
     this.statusUpdateCallbacks = []
     this.sessionExpiredCallback = null
+    this.streamingChunkCallbacks = []
 
     // Activity debouncing
     this.activityDebounceTimer = null
@@ -57,19 +60,39 @@ class SessionManager {
     // Setup cleanup on page unload/refresh
     this._setupUnloadHandler()
 
-    console.log('[SessionManager] Initialized with WebSocket support')
+    console.log('[SessionManager] Initialized with WebSocket support and SSE streaming')
   }
 
   /**
-   * Start a new conversation session
+   * Start a new conversation session with streaming
    */
   async startConversation(query, language = 'en', difficulty = 'low') {
     try {
-      console.log('[SessionManager] Starting new conversation...')
+      console.log('[SessionManager] Starting new conversation with streaming...')
 
       // Don't pause timer for initial conversation since session doesn't exist yet
 
-      const result = await startConversationSession(query, language, difficulty)
+      const result = await startConversationSessionStreaming(
+        query,
+        language,
+        difficulty,
+
+        // onChunk callback - notify subscribers of new content chunks
+        (chunk, fullText) => {
+          console.log('[SessionManager] Stream chunk received')
+          this._notifyStreamingChunk(chunk, fullText)
+        },
+
+        // onComplete callback - process final result
+        (result) => {
+          console.log('[SessionManager] Stream completed')
+        },
+
+        // onError callback
+        (error) => {
+          console.error('[SessionManager] Streaming error:', error)
+        }
+      )
 
       if (result.session_id) {
         this.sessionId = result.session_id
@@ -108,7 +131,7 @@ class SessionManager {
   }
 
   /**
-   * Continue existing conversation
+   * Continue existing conversation with streaming
    */
   async continueConversation(message, language = null, difficulty = null) {
     try {
@@ -116,16 +139,32 @@ class SessionManager {
         throw new Error('No active session')
       }
 
-      console.log('[SessionManager] Continuing conversation...')
+      console.log('[SessionManager] Continuing conversation with streaming...')
 
       // Pause timer during processing
       this.startProcessing()
 
-      const result = await continueConversationSession(
+      const result = await continueConversationSessionStreaming(
         this.sessionId,
         message,
         language,
-        difficulty
+        difficulty,
+
+        // onChunk callback - notify subscribers of new content chunks
+        (chunk, fullText) => {
+          console.log('[SessionManager] Stream chunk received')
+          this._notifyStreamingChunk(chunk, fullText)
+        },
+
+        // onComplete callback - process final result
+        (result) => {
+          console.log('[SessionManager] Stream completed')
+        },
+
+        // onError callback
+        (error) => {
+          console.error('[SessionManager] Streaming error:', error)
+        }
       )
 
       this.messageCount++
@@ -263,6 +302,31 @@ class SessionManager {
    */
   onSessionExpired(callback) {
     this.sessionExpiredCallback = callback
+  }
+
+  /**
+   * Subscribe to streaming chunk updates
+   */
+  onStreamingChunk(callback) {
+    this.streamingChunkCallbacks.push(callback)
+
+    // Return unsubscribe function
+    return () => {
+      this.streamingChunkCallbacks = this.streamingChunkCallbacks.filter(cb => cb !== callback)
+    }
+  }
+
+  /**
+   * Notify all streaming chunk subscribers
+   */
+  _notifyStreamingChunk(chunk, fullText) {
+    this.streamingChunkCallbacks.forEach(callback => {
+      try {
+        callback({ chunk, fullText })
+      } catch (error) {
+        console.error('[SessionManager] Error in streaming chunk callback:', error)
+      }
+    })
   }
 
   /**

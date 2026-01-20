@@ -12,6 +12,7 @@ export const useSession = () => {
   const [sessionStatus, setSessionStatus] = useState(sessionManager.getSessionStatus())
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [streamingContent, setStreamingContent] = useState({ chunk: '', fullText: '' })
 
   // Subscribe to WebSocket status updates
   useEffect(() => {
@@ -29,6 +30,23 @@ export const useSession = () => {
     // Cleanup: Unsubscribe on unmount
     return () => {
       console.log('[useSession] Unsubscribing from session status updates')
+      unsubscribe()
+    }
+  }, [])
+
+  // Subscribe to streaming chunk updates
+  useEffect(() => {
+    console.log('[useSession] Subscribing to streaming chunk updates')
+
+    // Subscribe to streaming chunks
+    const unsubscribe = sessionManager.onStreamingChunk((data) => {
+      console.log('[useSession] Streaming chunk received:', data.chunk.length, 'chars')
+      setStreamingContent(data)
+    })
+
+    // Cleanup: Unsubscribe on unmount
+    return () => {
+      console.log('[useSession] Unsubscribing from streaming chunk updates')
       unsubscribe()
     }
   }, [])
@@ -92,6 +110,7 @@ export const useSession = () => {
     sessionStatus,
     isLoading,
     error,
+    streamingContent,
 
     // Methods
     startConversation,

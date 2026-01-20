@@ -41,7 +41,8 @@ const ResponsePage = () => {
     remainingSeconds,
     isWarning,
     isCritical,
-    showCountdown
+    showCountdown,
+    streamingContent
   } = useSession()
 
   const {  
@@ -188,6 +189,22 @@ const ResponsePage = () => {
     }
   }, [messages, scrollToBottom])
 
+  // Handle streaming content updates
+  useEffect(() => {
+    if (streamingContent.fullText && latestResponseId) {
+      console.log('[ResponsePage] Updating streaming content for message:', latestResponseId)
+
+      // Update the message content progressively
+      setMessages(prevMessages => {
+        return prevMessages.map(msg =>
+          msg.id === latestResponseId
+            ? { ...msg, content: streamingContent.fullText, isLoading: false }
+            : msg
+        )
+      })
+    }
+  }, [streamingContent, latestResponseId])
+
   const fetchInitialData = async (queryText) => {
     setIsInitialLoading(true)
     setLoadingTitle(true)
@@ -195,10 +212,18 @@ const ResponsePage = () => {
     setLoadingReferences(true)
     setLoadingPerspectives(true)
     clearError()
-    
+
+    // Create placeholder assistant message for streaming
+    const assistantMessageId = 2
+    setMessages(prevMessages => [
+      ...prevMessages,
+      { id: assistantMessageId, type: 'assistant', content: '', isLoading: true }
+    ])
+    setLatestResponseId(assistantMessageId)
+
     try {
       const result = await startConversation(queryText, selectedLanguage, difficultyLevel)
-      
+
       if (result.success) {
         const { response, references, referenceCount, totalAvailable, sourceType, isWebSearch, usesRag } = result
 
@@ -208,13 +233,14 @@ const ResponsePage = () => {
 
         await new Promise(resolve => setTimeout(resolve, 300))
 
-        // Stage 2: Set response content
-        const assistantMessageId = 2
-        setMessages(prevMessages => [
-          ...prevMessages,
-          { id: assistantMessageId, type: 'assistant', content: response.content }
-        ])
-        setLatestResponseId(assistantMessageId)
+        // Stage 2: Ensure final content is set (streaming should have already updated it)
+        setMessages(prevMessages => {
+          return prevMessages.map(msg =>
+            msg.id === assistantMessageId
+              ? { ...msg, content: response.content, isLoading: false }
+              : msg
+          )
+        })
         setLoadingResponse(false)
 
         await new Promise(resolve => setTimeout(resolve, 400))
