@@ -154,7 +154,7 @@ async def start_conversation_stream(
     async def event_generator():
         try:
             # Step 1: Translate input to English
-            translation_client = await get_translation_client()
+            translation_client = get_translation_client()
             english_message, detected_language = await translation_client.translate_to_english(request.message)
             target_language = detected_language if detected_language != "en" else request.language
 
@@ -249,7 +249,7 @@ async def continue_conversation_stream(
     async def event_generator():
         try:
             # Step 1: Translate input to English
-            translation_client = await get_translation_client()
+            translation_client = get_translation_client()
             english_message, detected_language = await translation_client.translate_to_english(request.message)
             target_language = detected_language if detected_language != "en" else (request.language or "en")
 
