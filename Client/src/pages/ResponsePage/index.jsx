@@ -195,6 +195,7 @@ const ResponsePage = () => {
       console.log('[ResponsePage] Updating streaming content for message:', latestResponseId)
 
       // Update the message content progressively
+      // IMPORTANT: Set isLoading to false on FIRST chunk arrival to hide skeleton
       setMessages(prevMessages => {
         return prevMessages.map(msg =>
           msg.id === latestResponseId
@@ -202,8 +203,21 @@ const ResponsePage = () => {
             : msg
         )
       })
+
+      // Hide response skeleton once first chunk arrives (for initial load)
+      if (loadingResponse && streamingContent.fullText.length > 0) {
+        setLoadingResponse(false)
+      }
+
+      // Hide loading state for follow-up messages once content arrives
+      if (loadingMessageData[latestResponseId] && streamingContent.fullText.length > 0) {
+        setLoadingMessageData(prev => ({
+          ...prev,
+          [latestResponseId]: false
+        }))
+      }
     }
-  }, [streamingContent, latestResponseId])
+  }, [streamingContent, latestResponseId, loadingResponse, loadingMessageData])
 
   const fetchInitialData = async (queryText) => {
     setIsInitialLoading(true)
@@ -227,13 +241,11 @@ const ResponsePage = () => {
       if (result.success) {
         const { response, references, referenceCount, totalAvailable, sourceType, isWebSearch, usesRag } = result
 
-        // Stage 1: Set title
+        // Set title (streaming is complete at this point)
         setTitle(response.title)
         setLoadingTitle(false)
 
-        await new Promise(resolve => setTimeout(resolve, 300))
-
-        // Stage 2: Ensure final content is set (streaming should have already updated it)
+        // Ensure final content is set (streaming should have already updated it progressively)
         setMessages(prevMessages => {
           return prevMessages.map(msg =>
             msg.id === assistantMessageId
@@ -241,11 +253,12 @@ const ResponsePage = () => {
               : msg
           )
         })
-        setLoadingResponse(false)
+        // Note: loadingResponse is already set to false by streaming useEffect on first chunk
 
-        await new Promise(resolve => setTimeout(resolve, 400))
+        // Small delay before showing metadata (for smooth UX)
+        await new Promise(resolve => setTimeout(resolve, 200))
 
-        // Stage 3: Set references data
+        // Set references and perspectives data (metadata arrived)
         setMessageData(prevData => ({
           ...prevData,
           [assistantMessageId]: {
@@ -265,11 +278,9 @@ const ResponsePage = () => {
             searchResultsSummary: result.searchResultsSummary || {}
           }
         }))
+
+        // Hide references and perspectives skeletons now that metadata is available
         setLoadingReferences(false)
-        
-        await new Promise(resolve => setTimeout(resolve, 300))
-        
-        // Stage 4: Set perspectives (only for non-web search)
         setLoadingPerspectives(false)
         setIsInitialLoading(false)
         
@@ -684,8 +695,8 @@ const ResponsePage = () => {
                       <UserMessage content={messages[0].content} />
                     )}
                     
-                    {/* Response content - no title skeleton here */}
-                    {loadingResponse ? (
+                    {/* Response content - show skeleton until first chunk arrives */}
+                    {messages.length > 1 && messages[1].isLoading && !messages[1].content ? (
                       <div className="loading-message skeleton-with-margin">
                         <SkeletonResponseContent />
                       </div>
@@ -694,7 +705,7 @@ const ResponsePage = () => {
                         <ResponseContent
                           content={messages[1].content}
                           isDataLoading={false}
-                          textComplete={true}
+                          textComplete={!messages[1].isLoading}
                           fadeIn={true}
                           heading={getResponseHeading(getMessageData(messages[1].id), true)} // Always true for first response
                           responseId={`response-${messages[1].id}`}
@@ -765,7 +776,7 @@ const ResponsePage = () => {
                         <UserMessage content={pair.userMessage.content} />
                         
                         {pair.assistantMessage && (
-                          pair.assistantMessage.isLoading ? (
+                          pair.assistantMessage.isLoading && !pair.assistantMessage.content ? (
                             <div className="loading-message skeleton-with-margin">
                               <SkeletonResponseContent />
                             </div>
@@ -773,7 +784,7 @@ const ResponsePage = () => {
                             <ResponseContent
                               content={pair.assistantMessage.content}
                               isDataLoading={false}
-                              textComplete={true}
+                              textComplete={!pair.assistantMessage.isLoading}
                               fadeIn={true}
                               heading={getResponseHeading(msgData, isFirstResponse)} // Pass whether this is first response
                               responseId={`response-${pair.assistantMessage.id}`}
