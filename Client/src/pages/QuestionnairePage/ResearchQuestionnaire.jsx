@@ -300,7 +300,7 @@ const ResearchQuestionnaire = () => {
       <div className="questionnaire-container">
         {/* Header */}
         <div className="questionnaire-header">
-          <h1>NeuroClima Research Study</h1>
+          <h1>NeuroClima Bot Research Study</h1>
           <p className="institution">University of Oulu Research Team | Estimated Time: 25 minutes</p>
         </div>
 
