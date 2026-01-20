@@ -585,7 +585,186 @@ class ResponseGeneratorService:
         else:
             loop = asyncio.get_event_loop()
             return await loop.run_in_executor(None, self.llm, prompt)
-    
+
+    async def _stream_llm_response(self, prompt: str):
+        """Stream LLM response token by token."""
+        if hasattr(self.llm, 'astream'):
+            async for chunk in self.llm.astream(prompt):
+                yield chunk
+        else:
+            # Fallback to non-streaming if not supported
+            response = await self._generate_llm_response(prompt)
+            yield response
+
+    async def stream_start_conversation_response(
+        self,
+        original_query: str,
+        processed_query: Optional[str],
+        chunks: List[Dict[str, Any]],
+        summaries: List[Dict[str, Any]],
+        graph_data: List[Dict[str, Any]],
+        language: str = "en",
+        difficulty_level: str = "low",
+        was_processed: bool = False
+    ):
+        """
+        Stream start conversation response chunk by chunk.
+
+        Yields:
+            dict: Chunks with type 'content', 'title', or 'done'
+        """
+        if not self.is_initialized:
+            await self.initialize()
+
+        start_time = time.perf_counter()
+        self.performance_stats["total_generations"] += 1
+        self.performance_stats["start_conversations"] += 1
+
+        try:
+            # Build context using pure score-based method
+            context, context_length = self._build_context_by_score(
+                chunks=chunks[:settings.MAX_CONTEXT_CHUNKS],
+                summaries=summaries[:settings.MAX_CONTEXT_SUMMARIES],
+                graph_data=graph_data[:settings.MAX_CONTEXT_GRAPH_ITEMS]
+            )
+
+            # Generate prompt
+            if context_length > 0:
+                prompt = self.prompt_manager.render_start_conversation_prompt(
+                    original_query=original_query,
+                    processed_query=processed_query,
+                    context=context,
+                    language=language,
+                    difficulty_level=difficulty_level,
+                    was_processed=was_processed
+                )
+            else:
+                prompt = self.prompt_manager.render_fallback_start_prompt(
+                    original_query=original_query,
+                    language=language,
+                    difficulty_level=difficulty_level
+                )
+
+            # Stream LLM response and collect for parsing
+            full_response = ""
+            async for chunk in self._stream_llm_response(prompt):
+                full_response += chunk
+                # Send content chunk to client
+                yield {
+                    "type": "content",
+                    "chunk": chunk
+                }
+
+            # Parse complete response to extract title
+            title, content = self._parse_start_response_robust(full_response)
+            generation_time = time.perf_counter() - start_time
+            self._update_stats(generation_time)
+
+            logger.info(f"✅ Streamed start response in {generation_time:.3f}s")
+
+            # Send final metadata
+            yield {
+                "type": "done",
+                "title": title,
+                "generation_time": generation_time,
+                "context_length": context_length
+            }
+
+        except Exception as e:
+            logger.error(f"Error streaming start response: {e}")
+            fallback = self._create_fallback_response(original_query, time.perf_counter() - start_time, True)
+            yield {
+                "type": "error",
+                "title": fallback.title,
+                "content": fallback.content
+            }
+
+    async def stream_continue_conversation_response(
+        self,
+        original_query: str,
+        processed_query: Optional[str],
+        chunks: List[Dict[str, Any]],
+        summaries: List[Dict[str, Any]],
+        graph_data: List[Dict[str, Any]],
+        conversation_memory: str,
+        language: str = "en",
+        difficulty_level: str = "low",
+        was_processed: bool = False,
+        message_count: int = 1
+    ):
+        """
+        Stream continue conversation response chunk by chunk.
+
+        Yields:
+            dict: Chunks with type 'content' or 'done'
+        """
+        if not self.is_initialized:
+            await self.initialize()
+
+        start_time = time.perf_counter()
+        self.performance_stats["total_generations"] += 1
+        self.performance_stats["continue_conversations"] += 1
+
+        try:
+            # Build context
+            context, context_length = self._build_context_by_score(
+                chunks=chunks[:settings.MAX_CONTEXT_CHUNKS + 2],
+                summaries=summaries[:settings.MAX_CONTEXT_SUMMARIES + 1],
+                graph_data=graph_data[:settings.MAX_CONTEXT_GRAPH_ITEMS + 1]
+            )
+
+            optimized_memory = self._optimize_memory(conversation_memory)
+
+            # Generate prompt
+            if context_length > 0:
+                prompt = self.prompt_manager.render_continue_conversation_prompt(
+                    original_query=original_query,
+                    processed_query=processed_query,
+                    context=context,
+                    conversation_memory=optimized_memory,
+                    language=language,
+                    difficulty_level=difficulty_level,
+                    was_processed=was_processed,
+                    message_count=message_count
+                )
+            else:
+                prompt = self.prompt_manager.render_fallback_continue_prompt(
+                    original_query=original_query,
+                    processed_query=processed_query,
+                    conversation_memory=optimized_memory,
+                    language=language,
+                    difficulty_level=difficulty_level,
+                    message_count=message_count,
+                    was_processed=was_processed
+                )
+
+            # Stream LLM response
+            async for chunk in self._stream_llm_response(prompt):
+                yield {
+                    "type": "content",
+                    "chunk": chunk
+                }
+
+            generation_time = time.perf_counter() - start_time
+            self._update_stats(generation_time)
+
+            logger.info(f"✅ Streamed continue response in {generation_time:.3f}s")
+
+            # Send completion signal
+            yield {
+                "type": "done",
+                "generation_time": generation_time,
+                "context_length": context_length
+            }
+
+        except Exception as e:
+            logger.error(f"Error streaming continue response: {e}")
+            fallback = self._create_fallback_response(original_query, time.perf_counter() - start_time, False)
+            yield {
+                "type": "error",
+                "content": fallback.content
+            }
+
     def _create_fallback_response(self, query: str, generation_time: float, include_title: bool) -> GenerationResult:
         """Create fallback response."""
         return GenerationResult(

@@ -2,6 +2,19 @@ import apiClient from './client'
 import { API_CONFIG, SESSION_CONFIG } from '@/constants/config'
 import { consentService } from '@/services/consent/consentService'
 
+// Helper function to parse SSE data chunks
+const parseSSEChunk = (line) => {
+  if (line.startsWith('data: ')) {
+    try {
+      return JSON.parse(line.slice(6))
+    } catch (e) {
+      console.error('Failed to parse SSE chunk:', e)
+      return null
+    }
+  }
+  return null
+}
+
 // Session Management
 export const startConversationSession = async (query, language = 'en', difficulty = 'low') => {
   try {
@@ -165,6 +178,259 @@ export const continueConversationSession = async (sessionId, message, language =
     }
   } catch (error) {
     console.error('Error continuing conversation:', error)
+    throw error
+  }
+}
+
+// STREAMING API Functions (SSE-based)
+
+export const startConversationSessionStreaming = async (query, language = 'en', difficulty = 'low', onChunk, onComplete, onError) => {
+  try {
+    // Clear any existing session before starting new one
+    sessionStorage.removeItem(SESSION_CONFIG.STORAGE_KEY)
+
+    // Get consent metadata
+    const consentMetadata = consentService.getConsentMetadata()
+
+    const requestBody = {
+      message: query,
+      language,
+      difficulty_level: difficulty,
+      include_sources: true,
+      consent_metadata: consentMetadata
+    }
+
+    // Get auth token from localStorage
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      throw new Error('Authentication required')
+    }
+
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/v1/chat/start/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+
+    let sessionId = null
+    let messageId = null
+    let accumulatedContent = ''
+    let metadata = {}
+
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) break
+
+      const chunk = decoder.decode(value, { stream: true })
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        const data = parseSSEChunk(line)
+        if (!data) continue
+
+        console.log('SSE chunk:', data)
+
+        if (data.type === 'session_start') {
+          sessionId = data.session_id
+          messageId = data.message_id
+          sessionStorage.setItem(SESSION_CONFIG.STORAGE_KEY, sessionId)
+        } else if (data.type === 'content') {
+          accumulatedContent += data.chunk
+          onChunk && onChunk(data.chunk, accumulatedContent)
+        } else if (data.type === 'metadata') {
+          metadata = data
+        } else if (data.type === 'done') {
+          // Parse social tipping point
+          let socialTippingPoint = ''
+          let qualifyingFactors = []
+
+          if (metadata.social_tipping_point) {
+            if (typeof metadata.social_tipping_point === 'string') {
+              socialTippingPoint = metadata.social_tipping_point
+            } else if (typeof metadata.social_tipping_point === 'object') {
+              socialTippingPoint = metadata.social_tipping_point.text || ''
+              qualifyingFactors = metadata.social_tipping_point.qualifying_factors || []
+            }
+          }
+
+          const result = {
+            success: true,
+            session_id: sessionId,
+            sourceType: 'rag',
+            isWebSearch: false,
+            usesRag: true,
+            response: {
+              title: metadata.title || 'Climate Information',
+              content: metadata.translated_response || accumulatedContent,
+              socialTippingPoint,
+              qualifyingFactors
+            },
+            references: (metadata.sources || []).map(source => ({
+              title: source.title || 'Unknown Document',
+              doc_name: source.doc_name || source.title || 'Unknown',
+              url: source.url || '#',
+              similarity_score: source.similarity_score || 0
+            })),
+            referenceCount: metadata.sources ? metadata.sources.length : 0,
+            totalAvailable: metadata.total_references || 0,
+            originalQuery: query,
+            searchResultsSummary: {
+              conversation_type: 'start',
+              message_count: 1,
+              source_type: 'rag'
+            }
+          }
+
+          onComplete && onComplete(result)
+          return result
+        } else if (data.type === 'error') {
+          const error = new Error(data.message || 'Streaming error')
+          onError && onError(error)
+          throw error
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in streaming start conversation:', error)
+    onError && onError(error)
+    throw error
+  }
+}
+
+export const continueConversationSessionStreaming = async (sessionId, message, language = null, difficulty = null, onChunk, onComplete, onError) => {
+  try {
+    if (!sessionId) {
+      sessionId = sessionStorage.getItem(SESSION_CONFIG.STORAGE_KEY)
+    }
+
+    if (!sessionId) {
+      throw new Error('No session ID available. Please start a new conversation.')
+    }
+
+    // Get consent metadata
+    const consentMetadata = consentService.getConsentMetadata()
+
+    const requestBody = {
+      message,
+      include_sources: true,
+      consent_metadata: consentMetadata
+    }
+
+    if (language) requestBody.language = language
+    if (difficulty) requestBody.difficulty_level = difficulty
+
+    // Get auth token
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      throw new Error('Authentication required')
+    }
+
+    const response = await fetch(`${API_CONFIG.BASE_URL}/api/v1/chat/continue/${sessionId}/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+
+    let messageId = null
+    let accumulatedContent = ''
+    let metadata = {}
+
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) break
+
+      const chunk = decoder.decode(value, { stream: true })
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        const data = parseSSEChunk(line)
+        if (!data) continue
+
+        console.log('SSE chunk:', data)
+
+        if (data.type === 'message_start') {
+          messageId = data.message_id
+        } else if (data.type === 'content') {
+          accumulatedContent += data.chunk
+          onChunk && onChunk(data.chunk, accumulatedContent)
+        } else if (data.type === 'metadata') {
+          metadata = data
+        } else if (data.type === 'done') {
+          // Parse social tipping point
+          let socialTippingPoint = ''
+          let qualifyingFactors = []
+
+          if (metadata.social_tipping_point) {
+            if (typeof metadata.social_tipping_point === 'string') {
+              socialTippingPoint = metadata.social_tipping_point
+            } else if (typeof metadata.social_tipping_point === 'object') {
+              socialTippingPoint = metadata.social_tipping_point.text || ''
+              qualifyingFactors = metadata.social_tipping_point.qualifying_factors || []
+            }
+          }
+
+          const result = {
+            success: true,
+            session_id: sessionId,
+            sourceType: 'rag',
+            isWebSearch: false,
+            usesRag: true,
+            response: {
+              title: 'Climate Discussion Continues',
+              content: metadata.translated_response || accumulatedContent,
+              socialTippingPoint,
+              qualifyingFactors
+            },
+            references: (metadata.sources || []).map(source => ({
+              title: source.title || 'Unknown Document',
+              doc_name: source.doc_name || source.title || 'Unknown',
+              url: source.url || '#',
+              similarity_score: source.similarity_score || 0
+            })),
+            referenceCount: metadata.sources ? metadata.sources.length : 0,
+            totalAvailable: metadata.total_references || 0,
+            originalQuery: message,
+            searchResultsSummary: {
+              conversation_type: 'continue',
+              message_count: 1,
+              source_type: 'rag'
+            }
+          }
+
+          onComplete && onComplete(result)
+          return result
+        } else if (data.type === 'error') {
+          const error = new Error(data.message || 'Streaming error')
+          onError && onError(error)
+          throw error
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error in streaming continue conversation:', error)
+    onError && onError(error)
     throw error
   }
 }

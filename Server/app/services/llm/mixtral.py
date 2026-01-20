@@ -104,6 +104,79 @@ class MixtralLLM(LLM):
                 raise LLMError("Mixtral request timed out")
             except Exception as e:
                 raise LLMError(f"Mixtral error: {str(e)}")
+
+    async def astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ):
+        """
+        Stream the Mixtral model response asynchronously (token by token).
+
+        This method implements SSE-style streaming following industry standards.
+        Yields response chunks as they arrive from Ollama.
+        """
+        semaphore_manager = get_semaphore_manager()
+
+        logger.debug("🔒 Waiting for LLM semaphore (Mixtral streaming)...")
+        async with semaphore_manager.llm_semaphore:
+            logger.debug("✅ LLM semaphore acquired (Mixtral streaming)")
+
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": True,  # Enable streaming
+                "options": {
+                    "temperature": self.temperature,
+                    "num_predict": self.max_tokens,
+                    "stop": stop or [],
+                }
+            }
+
+            try:
+                headers = {
+                    "Content-Type": "application/json"
+                }
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        f"{self.base_url}/api/generate",
+                        json=payload,
+                        headers=headers,
+                        timeout=aiohttp.ClientTimeout(total=self.timeout)
+                    ) as response:
+                        if response.status != 200:
+                            error_text = await response.text()
+                            raise LLMError(f"Mixtral API error {response.status}: {error_text}")
+
+                        # Read the response line by line (NDJSON format)
+                        async for line in response.content:
+                            if line:
+                                try:
+                                    chunk_data = json.loads(line.decode('utf-8'))
+
+                                    # Extract the response chunk
+                                    chunk_text = chunk_data.get("response", "")
+                                    is_done = chunk_data.get("done", False)
+
+                                    if chunk_text:
+                                        yield chunk_text
+
+                                    if is_done:
+                                        logger.debug("🔓 LLM semaphore released (Mixtral streaming complete)")
+                                        break
+
+                                except json.JSONDecodeError:
+                                    # Skip malformed JSON lines
+                                    continue
+
+            except aiohttp.ClientError as e:
+                raise LLMError(f"Mixtral streaming connection error: {str(e)}")
+            except asyncio.TimeoutError:
+                raise LLMError("Mixtral streaming request timed out")
+            except Exception as e:
+                raise LLMError(f"Mixtral streaming error: {str(e)}")
     
     async def test_connection(self) -> bool:
         """Test connection to hosted Mixtral endpoint."""
