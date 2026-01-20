@@ -630,6 +630,9 @@ const ResearchQuestionnaire = () => {
               <div className="divider"></div>
 
               <h3>Task Accomplishment</h3>
+              <p className="section-description">
+                Please tell us about your satisfaction with completing your task.
+              </p>
               <div className="likert-items">
                 {TASK_SUCCESS_ITEMS.map((item, index) => (
                   <div key={item.id} className="form-group">
@@ -753,6 +756,9 @@ const ResearchQuestionnaire = () => {
               <div className="divider"></div>
 
               <h3>Information Adequacy</h3>
+              <p className="section-description">
+                Please evaluate whether the amount of information was appropriate.
+              </p>
               <div className="likert-items">
                 {INFORMATION_ADEQUACY_ITEMS.map((item, index) => (
                   <div key={item.id} className="form-group">
@@ -796,6 +802,9 @@ const ResearchQuestionnaire = () => {
               </p>
 
               <h3>Trust in AI</h3>
+              <p className="section-description">
+                Please rate your agreement with the following statements about trust.
+              </p>
               <div className="likert-items">
                 {TRUST_SCALE_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
@@ -860,6 +869,9 @@ const ResearchQuestionnaire = () => {
               <div className="divider"></div>
 
               <h3>Conversational Quality</h3>
+              <p className="section-description">
+                Please evaluate the quality of your conversations with the chatbot.
+              </p>
               <div className="likert-items">
                 {CONVERSATIONAL_QUALITY_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
@@ -890,6 +902,9 @@ const ResearchQuestionnaire = () => {
               <div className="divider"></div>
 
               <h3>Social Tipping Points (STP) Feature</h3>
+              <p className="section-description">
+                Please evaluate the Social Tipping Points information included in responses.
+              </p>
               <div className="likert-items">
                 {STP_EVALUATION_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
