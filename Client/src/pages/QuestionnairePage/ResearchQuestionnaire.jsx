@@ -152,26 +152,20 @@ const ResearchQuestionnaire = () => {
         return formData.primary_purpose &&
                (formData.primary_purpose !== 'other' || formData.other_purpose) &&
                formData.task_type.length > 0
-      case 2: // Task Success & Completion
+      case 2: // Effectiveness & Quality (Task Success + Document Quality)
         // goal_satisfaction is required, specific_goal is optional
         const requiredTaskFields = ['goal_satisfaction']
         const hasRequiredTaskFields = requiredTaskFields.every(field => formData.task_success[field] !== undefined)
         return hasRequiredTaskFields &&
-               Object.keys(formData.info_finding).length === INFORMATION_FINDING_ITEMS.length
-      case 3: // Document & Source Quality
-        return Object.keys(formData.doc_quality).length === DOCUMENT_QUALITY_ITEMS.length &&
+               Object.keys(formData.info_finding).length === INFORMATION_FINDING_ITEMS.length &&
+               Object.keys(formData.doc_quality).length === DOCUMENT_QUALITY_ITEMS.length &&
                Object.keys(formData.info_adequacy).length === INFORMATION_ADEQUACY_ITEMS.length
-      case 4: // UEQ-S
-        return Object.keys(formData.ueq_s).length === 8
-      case 5: // Trust Scale
-        return Object.keys(formData.trust_scale).length === 8
-      case 6: // NASA-TLX
-        return Object.keys(formData.nasa_tlx).length === 5
-      case 7: // Conversational Quality
-        return Object.keys(formData.conversational_quality).length === CONVERSATIONAL_QUALITY_ITEMS.length
-      case 8: // Feature-Specific Evaluations
-        // STP is always present and required
-        return Object.keys(formData.stp_evaluation).length === 4
+      case 3: // Your Overall Experience (UEQ-S + Trust + NASA-TLX + Conversational + STP)
+        return Object.keys(formData.ueq_s).length === 8 &&
+               Object.keys(formData.trust_scale).length === 8 &&
+               Object.keys(formData.nasa_tlx).length === 5 &&
+               Object.keys(formData.conversational_quality).length === CONVERSATIONAL_QUALITY_ITEMS.length &&
+               Object.keys(formData.stp_evaluation).length === 4
       default:
         return false
     }
@@ -256,13 +250,8 @@ const ResearchQuestionnaire = () => {
   const sections = [
     { title: 'Consent & Demographics', icon: Users },
     { title: 'Your Recent Experience', icon: Target },
-    { title: 'Task Success & Completion', icon: ClipboardCheck },
-    { title: 'Document & Source Quality', icon: FileSearch },
-    { title: 'User Experience (UEQ-S)', icon: TrendingUp },
-    { title: 'Trust Evaluation', icon: CheckCircle },
-    { title: 'Cognitive Load (NASA-TLX)', icon: Target },
-    { title: 'Conversational Quality', icon: MessageCircle },
-    { title: 'Feature-Specific Evaluation', icon: Target }
+    { title: 'Effectiveness & Quality', icon: ClipboardCheck },
+    { title: 'Your Overall Experience', icon: TrendingUp }
   ]
 
   const SectionIcon = sections[currentSection].icon
@@ -273,7 +262,7 @@ const ResearchQuestionnaire = () => {
         {/* Header */}
         <div className="questionnaire-header">
           <h1>NeuroClima Bot Research Study</h1>
-          <p className="institution">University of Oulu Research Team | Estimated Time: 25 minutes</p>
+          <p className="institution">University of Oulu Research Team | Estimated Time: 10-15 minutes</p>
         </div>
 
         {/* Progress Indicator */}
@@ -574,12 +563,12 @@ const ResearchQuestionnaire = () => {
             </div>
           )}
 
-          {/* SECTION 2: Task Success & Completion */}
+          {/* SECTION 2: Effectiveness & Quality (Merged: Task Success + Document Quality) */}
           {currentSection === 2 && (
             <div className="form-section">
-              <h2>Section 3: Task Success & Completion</h2>
+              <h2>Section 3: Effectiveness & Quality</h2>
               <p className="section-description">
-                Please evaluate how well the chatbot helped you accomplish your goals.
+                Please evaluate how well the chatbot helped you accomplish your goals and the quality of information provided.
               </p>
 
               <h3>Task Accomplishment</h3>
@@ -667,22 +656,9 @@ const ResearchQuestionnaire = () => {
                 ))}
               </div>
 
-              <div className="progress-indicator">
-                Task Success: {['goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length} / 1 required |
-                Information Finding: {Object.keys(formData.info_finding).length} / {INFORMATION_FINDING_ITEMS.length}
-              </div>
-            </div>
-          )}
+              <div className="divider"></div>
 
-          {/* SECTION 3: Document & Source Quality */}
-          {currentSection === 3 && (
-            <div className="form-section">
-              <h2>Section 4: Document & Source Quality</h2>
-              <p className="section-description">
-                Please evaluate the quality and usefulness of the documents and sources provided by the chatbot.
-              </p>
-
-              <h3>Document Quality</h3>
+              <h3>Document & Source Quality</h3>
               <div className="likert-items">
                 {DOCUMENT_QUALITY_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
@@ -738,21 +714,26 @@ const ResearchQuestionnaire = () => {
               </div>
 
               <div className="progress-indicator">
+                Task Success: {['goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length} / 1 |
+                Information Finding: {Object.keys(formData.info_finding).length} / {INFORMATION_FINDING_ITEMS.length} |
                 Document Quality: {Object.keys(formData.doc_quality).length} / {DOCUMENT_QUALITY_ITEMS.length} |
                 Information Adequacy: {Object.keys(formData.info_adequacy).length} / {INFORMATION_ADEQUACY_ITEMS.length}
               </div>
             </div>
           )}
 
-          {/* SECTION 4: UEQ-S (User Experience) */}
-          {currentSection === 4 && (
+          {/* SECTION 3: Your Overall Experience (Merged: UEQ-S + Trust + NASA-TLX + Conversational + STP) */}
+          {currentSection === 3 && (
             <div className="form-section">
-              <h2>Section 5: User Experience Questionnaire (UEQ-S)</h2>
+              <h2>Section 4: Your Overall Experience</h2>
               <p className="section-description">
-                Please rate your experience with the NeuroClima chatbot using the scales below.
-                For each item, select the circle that best represents your impression.
+                Please evaluate your overall experience with the NeuroClima chatbot.
               </p>
 
+              <h3>User Experience (UEQ-S)</h3>
+              <p className="section-description">
+                For each item, select the circle that best represents your impression.
+              </p>
               <div className="ueq-items">
                 {UEQ_S_ITEMS.map((item, index) => (
                   <div key={item.id} className="ueq-item">
@@ -779,20 +760,9 @@ const ResearchQuestionnaire = () => {
                 ))}
               </div>
 
-              <div className="progress-indicator">
-                Completed: {Object.keys(formData.ueq_s).length} / 8 items
-              </div>
-            </div>
-          )}
+              <div className="divider"></div>
 
-          {/* SECTION 5: Trust Scale */}
-          {currentSection === 5 && (
-            <div className="form-section">
-              <h2>Section 6: Trust in AI Evaluation</h2>
-              <p className="section-description">
-                Please rate your agreement with the following statements about the NeuroClima chatbot.
-              </p>
-
+              <h3>Trust in AI</h3>
               <div className="likert-items">
                 {TRUST_SCALE_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
@@ -816,25 +786,16 @@ const ResearchQuestionnaire = () => {
                       <span className="label-left">{item.min_label}</span>
                       <span className="label-right">{item.max_label}</span>
                     </div>
-                    <div className="dimension-badge">{item.dimension}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="progress-indicator">
-                Completed: {Object.keys(formData.trust_scale).length} / 8 items
-              </div>
-            </div>
-          )}
+              <div className="divider"></div>
 
-          {/* SECTION 6: NASA-TLX */}
-          {currentSection === 6 && (
-            <div className="form-section">
-              <h2>Section 7: Cognitive Load Assessment (NASA-TLX)</h2>
+              <h3>Cognitive Load (NASA-TLX)</h3>
               <p className="section-description">
                 Please rate the mental and physical demands of using the chatbot on a scale from 0 to 20.
               </p>
-
               <div className="tlx-items">
                 {NASA_TLX_SUBSCALES.map((item, index) => (
                   <div key={item.id} className="tlx-item">
@@ -863,20 +824,9 @@ const ResearchQuestionnaire = () => {
                 ))}
               </div>
 
-              <div className="progress-indicator">
-                Completed: {Object.keys(formData.nasa_tlx).length} / 5 subscales
-              </div>
-            </div>
-          )}
+              <div className="divider"></div>
 
-          {/* SECTION 7: Conversational Quality */}
-          {currentSection === 7 && (
-            <div className="form-section">
-              <h2>Section 8: Conversational Quality</h2>
-              <p className="section-description">
-                Please evaluate the quality of your conversational interactions with the chatbot.
-              </p>
-
+              <h3>Conversational Quality</h3>
               <div className="likert-items">
                 {CONVERSATIONAL_QUALITY_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
@@ -904,57 +854,46 @@ const ResearchQuestionnaire = () => {
                 ))}
               </div>
 
-              <div className="progress-indicator">
-                Completed: {Object.keys(formData.conversational_quality).length} / {CONVERSATIONAL_QUALITY_ITEMS.length} items
+              <div className="divider"></div>
+
+              <h3>Social Tipping Points (STP) Feature</h3>
+              <div className="info-box info">
+                <Info size={16} />
+                <p>Social Tipping Points information is automatically included in all chatbot responses.</p>
               </div>
-            </div>
-          )}
-
-          {/* SECTION 8: Feature-Specific Evaluations (STP only) */}
-          {currentSection === 8 && (
-            <div className="form-section">
-              <h2>Section 9: Feature-Specific Evaluation</h2>
-              <p className="section-description">
-                Please evaluate specific features of the chatbot.
-              </p>
-
-              {/* STP Feature - Always present */}
-              <div className="feature-section">
-                <h3>Social Tipping Points (STP) Analysis</h3>
-                <div className="info-box info">
-                  <Info size={16} />
-                  <p>Social Tipping Points information is automatically included in all chatbot responses.</p>
-                </div>
-                <div className="feature-evaluation">
-                  {STP_EVALUATION_ITEMS.map((item, index) => (
-                    <div key={item.id} className="likert-item">
-                      <div className="item-number">{index + 1}</div>
-                      <div className="item-statement">{item.statement}</div>
-                      <div className="likert-scale">
-                        {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                          <label key={value} className="likert-option">
-                            <input
-                              type="radio"
-                              name={item.id}
-                              value={value}
-                              checked={formData.stp_evaluation[item.id] === value}
-                              onChange={() => handleNestedChange('stp_evaluation', item.id, value)}
-                            />
-                            <span className="likert-value">{value}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <div className="scale-labels">
-                        <span className="label-left">{item.min_label}</span>
-                        <span className="label-right">{item.max_label}</span>
-                      </div>
+              <div className="likert-items">
+                {STP_EVALUATION_ITEMS.map((item, index) => (
+                  <div key={item.id} className="likert-item">
+                    <div className="item-number">{index + 1}</div>
+                    <div className="item-statement">{item.statement}</div>
+                    <div className="likert-scale">
+                      {[1, 2, 3, 4, 5, 6, 7].map(value => (
+                        <label key={value} className="likert-option">
+                          <input
+                            type="radio"
+                            name={item.id}
+                            value={value}
+                            checked={formData.stp_evaluation[item.id] === value}
+                            onChange={() => handleNestedChange('stp_evaluation', item.id, value)}
+                          />
+                          <span className="likert-value">{value}</span>
+                        </label>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                    <div className="scale-labels">
+                      <span className="label-left">{item.min_label}</span>
+                      <span className="label-right">{item.max_label}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className="progress-indicator">
-                Completed: {Object.keys(formData.stp_evaluation).length} / 4 items
+                UEQ-S: {Object.keys(formData.ueq_s).length} / 8 |
+                Trust: {Object.keys(formData.trust_scale).length} / 8 |
+                NASA-TLX: {Object.keys(formData.nasa_tlx).length} / 5 |
+                Conversational: {Object.keys(formData.conversational_quality).length} / {CONVERSATIONAL_QUALITY_ITEMS.length} |
+                STP: {Object.keys(formData.stp_evaluation).length} / 4
               </div>
 
               <div className="info-box success">
