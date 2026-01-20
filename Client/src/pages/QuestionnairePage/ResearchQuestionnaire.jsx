@@ -99,6 +99,9 @@ const ResearchQuestionnaire = () => {
     used_kg_viz: null,
     used_non_english: null,
 
+    // Additional feedback
+    additional_comments: '',
+
     // Metadata
     submission_date: new Date().toISOString(),
     time_started: new Date().toISOString(),
@@ -683,7 +686,10 @@ const ResearchQuestionnaire = () => {
 
               <div className="divider"></div>
 
-              <h3>Information Finding Effectiveness</h3>
+              <h3>Information Quality</h3>
+              <p className="section-description">
+                Please rate the quality of information provided by the chatbot.
+              </p>
               <div className="likert-items">
                 {INFORMATION_FINDING_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
@@ -713,7 +719,10 @@ const ResearchQuestionnaire = () => {
 
               <div className="divider"></div>
 
-              <h3>Document & Source Quality</h3>
+              <h3>Source Quality</h3>
+              <p className="section-description">
+                Please evaluate the quality of sources and documents provided.
+              </p>
               <div className="likert-items">
                 {DOCUMENT_QUALITY_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
@@ -769,11 +778,11 @@ const ResearchQuestionnaire = () => {
               </div>
 
               <div className="progress-indicator">
-                UEQ-S: {Object.keys(formData.ueq_s).length} / 8 |
-                Task Success: {['goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length} / 1 |
-                Information Finding: {Object.keys(formData.info_finding).length} / {INFORMATION_FINDING_ITEMS.length} |
-                Document Quality: {Object.keys(formData.doc_quality).length} / {DOCUMENT_QUALITY_ITEMS.length} |
-                Information Adequacy: {Object.keys(formData.info_adequacy).length} / {INFORMATION_ADEQUACY_ITEMS.length}
+                UEQ-S: {Object.keys(formData.ueq_s).length}/8 |
+                Task: {['goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length}/1 |
+                Info Quality: {Object.keys(formData.info_finding).length}/{INFORMATION_FINDING_ITEMS.length} |
+                Sources: {Object.keys(formData.doc_quality).length}/{DOCUMENT_QUALITY_ITEMS.length} |
+                Adequacy: {Object.keys(formData.info_adequacy).length}/{INFORMATION_ADEQUACY_ITEMS.length}
               </div>
             </div>
           )}
@@ -1020,13 +1029,26 @@ const ResearchQuestionnaire = () => {
                 </div>
               )}
 
+              <div className="divider"></div>
+
+              <h3>Additional Feedback</h3>
+              <div className="form-group">
+                <label>Any additional comments? (optional)</label>
+                <textarea
+                  rows="4"
+                  value={formData.additional_comments}
+                  onChange={(e) => handleInputChange('additional_comments', e.target.value)}
+                  placeholder="Share any other thoughts or feedback about your experience..."
+                />
+              </div>
+
               <div className="progress-indicator">
-                Trust: {Object.keys(formData.trust_scale).length} / 8 |
-                NASA-TLX: {Object.keys(formData.nasa_tlx).length} / 5 |
-                Conversational: {Object.keys(formData.conversational_quality).length} / {CONVERSATIONAL_QUALITY_ITEMS.length} |
-                STP: {Object.keys(formData.stp_evaluation).length} / 4 |
+                Trust: {Object.keys(formData.trust_scale).length}/8 |
+                NASA-TLX: {Object.keys(formData.nasa_tlx).length}/5 |
+                Conversational: {Object.keys(formData.conversational_quality).length}/{CONVERSATIONAL_QUALITY_ITEMS.length} |
+                STP: {Object.keys(formData.stp_evaluation).length}/4 |
                 KG: {formData.used_kg_viz !== null ? (formData.used_kg_viz ? `${Object.keys(formData.kg_visualization).length}/${KG_VISUALIZATION_ITEMS.length}` : '✓') : '?'} |
-                Multilingual: {formData.used_non_english !== null ? (formData.used_non_english ? `${Object.keys(formData.multilingual).length}/${MULTILINGUAL_EVALUATION_ITEMS.length}` : '✓') : '?'}
+                Lang: {formData.used_non_english !== null ? (formData.used_non_english ? `${Object.keys(formData.multilingual).length}/${MULTILINGUAL_EVALUATION_ITEMS.length}` : '✓') : '?'}
               </div>
 
               <div className="info-box success">
