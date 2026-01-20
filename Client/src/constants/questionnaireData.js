@@ -405,7 +405,7 @@ export const STP_EVALUATION_ITEMS = [
   }
 ];
 
-// Knowledge Graph Visualization Evaluation (2 items - conditional)
+// Knowledge Graph Visualization Evaluation (3 items - conditional)
 export const KG_VISUALIZATION_ITEMS = [
   {
     id: 'kg_viz_1',
@@ -418,6 +418,14 @@ export const KG_VISUALIZATION_ITEMS = [
   {
     id: 'kg_viz_4',
     statement: 'I successfully found the information I was looking for using the graph',
+    scale_min: 1,
+    scale_max: 7,
+    min_label: 'Strongly Disagree',
+    max_label: 'Strongly Agree'
+  },
+  {
+    id: 'kg_viz_3',
+    statement: 'The visualization increased my trust in the chatbot\'s responses',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',

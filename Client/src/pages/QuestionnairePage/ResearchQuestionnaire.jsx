@@ -94,7 +94,7 @@ const ResearchQuestionnaire = () => {
 
     // Section 8: Feature-Specific Evaluations
     stp_evaluation: {}, // 4 items
-    kg_visualization: {}, // 2 items (conditional)
+    kg_visualization: {}, // 3 items (conditional)
     multilingual: {}, // 3 items (conditional)
     used_kg_viz: null,
     used_non_english: null,
@@ -271,10 +271,10 @@ const ResearchQuestionnaire = () => {
 
   // Section Titles
   const sections = [
-    { title: 'Consent & Demographics', icon: Users },
-    { title: 'Your Recent Experience', icon: Target },
-    { title: 'Effectiveness & Quality', icon: ClipboardCheck },
-    { title: 'Your Overall Experience', icon: TrendingUp }
+    { title: 'Consent & Info', icon: Users },
+    { title: 'Your Experience', icon: Target },
+    { title: 'Effectiveness', icon: ClipboardCheck },
+    { title: 'Overall Rating', icon: TrendingUp }
   ]
 
   const SectionIcon = sections[currentSection].icon
@@ -881,10 +881,6 @@ const ResearchQuestionnaire = () => {
               <div className="divider"></div>
 
               <h3>Social Tipping Points (STP) Feature</h3>
-              <div className="info-box info">
-                <Info size={16} />
-                <p>Social Tipping Points information is automatically included in all chatbot responses.</p>
-              </div>
               <div className="likert-items">
                 {STP_EVALUATION_ITEMS.map((item, index) => (
                   <div key={item.id} className="likert-item">
