@@ -32,11 +32,7 @@ import {
   UEQ_S_ITEMS,
   TRUST_SCALE_ITEMS,
   NASA_TLX_SUBSCALES,
-  RAG_TRANSPARENCY_ITEMS,
-  BEHAVIORAL_INTENTIONS_ITEMS,
   STP_EVALUATION_ITEMS,
-  KG_VISUALIZATION_ITEMS,
-  MULTILINGUAL_EVALUATION_ITEMS,
   DEMOGRAPHICS,
   CONSENT_INFORMATION
 } from '@/constants/questionnaireData.js'
@@ -96,19 +92,6 @@ const ResearchQuestionnaire = () => {
 
     // Section 8: Feature-Specific Evaluations
     stp_evaluation: {}, // 4 items
-    kg_visualization: {}, // 5 items
-    multilingual: {}, // 3 items
-    used_kg_viz: null,
-    used_non_english: null,
-
-    // Section 9: RAG Transparency & Behavioral Intentions
-    rag_transparency: {}, // 5 items, 1-7 scale
-    behavioral_intentions: {}, // 5 items
-
-    // Section 10: Open-Ended Feedback
-    most_useful_features: '',
-    suggested_improvements: '',
-    additional_comments: '',
 
     // Metadata
     submission_date: new Date().toISOString(),
@@ -170,8 +153,8 @@ const ResearchQuestionnaire = () => {
                (formData.primary_purpose !== 'other' || formData.other_purpose) &&
                formData.task_type.length > 0
       case 2: // Task Success & Completion
-        // task_accomplished and goal_satisfaction are required, specific_goal is optional
-        const requiredTaskFields = ['task_accomplished', 'goal_satisfaction']
+        // goal_satisfaction is required, specific_goal is optional
+        const requiredTaskFields = ['goal_satisfaction']
         const hasRequiredTaskFields = requiredTaskFields.every(field => formData.task_success[field] !== undefined)
         return hasRequiredTaskFields &&
                Object.keys(formData.info_finding).length === INFORMATION_FINDING_ITEMS.length
@@ -181,26 +164,14 @@ const ResearchQuestionnaire = () => {
       case 4: // UEQ-S
         return Object.keys(formData.ueq_s).length === 8
       case 5: // Trust Scale
-        return Object.keys(formData.trust_scale).length === 12
+        return Object.keys(formData.trust_scale).length === 8
       case 6: // NASA-TLX
-        return Object.keys(formData.nasa_tlx).length === 6
+        return Object.keys(formData.nasa_tlx).length === 5
       case 7: // Conversational Quality
         return Object.keys(formData.conversational_quality).length === CONVERSATIONAL_QUALITY_ITEMS.length
       case 8: // Feature-Specific Evaluations
-        // Check if user indicated they used features
-        if (formData.used_kg_viz === null || formData.used_non_english === null) {
-          return false
-        }
-        // If they used features, they must complete evaluations (STP is always present)
-        if (Object.keys(formData.stp_evaluation).length < 4) return false
-        if (formData.used_kg_viz && Object.keys(formData.kg_visualization).length < 5) return false
-        if (formData.used_non_english && Object.keys(formData.multilingual).length < 3) return false
-        return true
-      case 9: // RAG Transparency & Behavioral Intentions
-        return Object.keys(formData.rag_transparency).length === 5 &&
-               Object.keys(formData.behavioral_intentions).length === 5
-      case 10: // Open-Ended Feedback
-        return true // Optional
+        // STP is always present and required
+        return Object.keys(formData.stp_evaluation).length === 4
       default:
         return false
     }
@@ -291,9 +262,7 @@ const ResearchQuestionnaire = () => {
     { title: 'Trust Evaluation', icon: CheckCircle },
     { title: 'Cognitive Load (NASA-TLX)', icon: Target },
     { title: 'Conversational Quality', icon: MessageCircle },
-    { title: 'Feature-Specific Evaluation', icon: Target },
-    { title: 'Source Transparency & Intentions', icon: ExternalLink },
-    { title: 'Open Feedback', icon: MessageSquare }
+    { title: 'Feature-Specific Evaluation', icon: Target }
   ]
 
   const SectionIcon = sections[currentSection].icon
@@ -699,7 +668,7 @@ const ResearchQuestionnaire = () => {
               </div>
 
               <div className="progress-indicator">
-                Task Success: {['task_accomplished', 'goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length} / 2 required |
+                Task Success: {['goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length} / 1 required |
                 Information Finding: {Object.keys(formData.info_finding).length} / {INFORMATION_FINDING_ITEMS.length}
               </div>
             </div>
@@ -853,7 +822,7 @@ const ResearchQuestionnaire = () => {
               </div>
 
               <div className="progress-indicator">
-                Completed: {Object.keys(formData.trust_scale).length} / 12 items
+                Completed: {Object.keys(formData.trust_scale).length} / 8 items
               </div>
             </div>
           )}
@@ -895,7 +864,7 @@ const ResearchQuestionnaire = () => {
               </div>
 
               <div className="progress-indicator">
-                Completed: {Object.keys(formData.nasa_tlx).length} / 6 subscales
+                Completed: {Object.keys(formData.nasa_tlx).length} / 5 subscales
               </div>
             </div>
           )}
@@ -941,7 +910,7 @@ const ResearchQuestionnaire = () => {
             </div>
           )}
 
-          {/* SECTION 8: Feature-Specific Evaluations (STP always present) */}
+          {/* SECTION 8: Feature-Specific Evaluations (STP only) */}
           {currentSection === 8 && (
             <div className="form-section">
               <h2>Section 9: Feature-Specific Evaluation</h2>
@@ -984,238 +953,8 @@ const ResearchQuestionnaire = () => {
                 </div>
               </div>
 
-              <div className="divider"></div>
-
-              {/* Knowledge Graph Visualization */}
-              <div className="feature-section">
-                <h3>Knowledge Graph Visualization</h3>
-                <div className="yes-no-selector">
-                  <label>Did you use the Knowledge Graph visualization feature?</label>
-                  <div className="yn-options">
-                    <label className="yn-option">
-                      <input
-                        type="radio"
-                        name="used_kg_viz"
-                        checked={formData.used_kg_viz === true}
-                        onChange={() => handleInputChange('used_kg_viz', true)}
-                      />
-                      <span>Yes</span>
-                    </label>
-                    <label className="yn-option">
-                      <input
-                        type="radio"
-                        name="used_kg_viz"
-                        checked={formData.used_kg_viz === false}
-                        onChange={() => handleInputChange('used_kg_viz', false)}
-                      />
-                      <span>No</span>
-                    </label>
-                  </div>
-                </div>
-
-                {formData.used_kg_viz && (
-                  <div className="feature-evaluation">
-                    {KG_VISUALIZATION_ITEMS.map((item, index) => (
-                      <div key={item.id} className="likert-item">
-                        <div className="item-number">{index + 1}</div>
-                        <div className="item-statement">{item.statement}</div>
-                        <div className="likert-scale">
-                          {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                            <label key={value} className="likert-option">
-                              <input
-                                type="radio"
-                                name={item.id}
-                                value={value}
-                                checked={formData.kg_visualization[item.id] === value}
-                                onChange={() => handleNestedChange('kg_visualization', item.id, value)}
-                              />
-                              <span className="likert-value">{value}</span>
-                            </label>
-                          ))}
-                        </div>
-                        <div className="scale-labels">
-                          <span className="label-left">{item.min_label}</span>
-                          <span className="label-right">{item.max_label}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Multilingual Feature */}
-              <div className="feature-section">
-                <h3>Multilingual Support</h3>
-                <div className="yes-no-selector">
-                  <label>Did you use the chatbot in a language other than English?</label>
-                  <div className="yn-options">
-                    <label className="yn-option">
-                      <input
-                        type="radio"
-                        name="used_non_english"
-                        checked={formData.used_non_english === true}
-                        onChange={() => handleInputChange('used_non_english', true)}
-                      />
-                      <span>Yes</span>
-                    </label>
-                    <label className="yn-option">
-                      <input
-                        type="radio"
-                        name="used_non_english"
-                        checked={formData.used_non_english === false}
-                        onChange={() => handleInputChange('used_non_english', false)}
-                      />
-                      <span>No</span>
-                    </label>
-                  </div>
-                </div>
-
-                {formData.used_non_english && (
-                  <div className="feature-evaluation">
-                    {MULTILINGUAL_EVALUATION_ITEMS.map((item, index) => (
-                      <div key={item.id} className="likert-item">
-                        <div className="item-number">{index + 1}</div>
-                        <div className="item-statement">{item.statement}</div>
-                        <div className="likert-scale">
-                          {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                            <label key={value} className="likert-option">
-                              <input
-                                type="radio"
-                                name={item.id}
-                                value={value}
-                                checked={formData.multilingual[item.id] === value}
-                                onChange={() => handleNestedChange('multilingual', item.id, value)}
-                              />
-                              <span className="likert-value">{value}</span>
-                            </label>
-                          ))}
-                        </div>
-                        <div className="scale-labels">
-                          <span className="label-left">{item.min_label}</span>
-                          <span className="label-right">{item.max_label}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* SECTION 9: Source Transparency & Behavioral Intentions */}
-          {currentSection === 9 && (
-            <div className="form-section">
-              <h2>Section 10: Source Transparency & Future Intentions</h2>
-
-              <h3>Source Transparency & Trust</h3>
-              <p className="section-description">
-                Please rate your agreement with these statements about the chatbot's sources and transparency.
-              </p>
-
-              <div className="likert-items">
-                {RAG_TRANSPARENCY_ITEMS.map((item, index) => (
-                  <div key={item.id} className="likert-item">
-                    <div className="item-number">{index + 1}</div>
-                    <div className="item-statement">{item.statement}</div>
-                    <div className="likert-scale">
-                      {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                        <label key={value} className="likert-option">
-                          <input
-                            type="radio"
-                            name={item.id}
-                            value={value}
-                            checked={formData.rag_transparency[item.id] === value}
-                            onChange={() => handleNestedChange('rag_transparency', item.id, value)}
-                          />
-                          <span className="likert-value">{value}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="scale-labels">
-                      <span className="label-left">{item.min_label}</span>
-                      <span className="label-right">{item.max_label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="divider"></div>
-
-              <h3>Behavioral Intentions</h3>
-              <p className="section-description">
-                Please indicate your agreement with the following statements about your future intentions.
-              </p>
-
-              <div className="likert-items">
-                {BEHAVIORAL_INTENTIONS_ITEMS.map((item, index) => (
-                  <div key={item.id} className="likert-item">
-                    <div className="item-number">{index + 1}</div>
-                    <div className="item-statement">{item.statement}</div>
-                    <div className="likert-scale">
-                      {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                        <label key={value} className="likert-option">
-                          <input
-                            type="radio"
-                            name={item.id}
-                            value={value}
-                            checked={formData.behavioral_intentions[item.id] === value}
-                            onChange={() => handleNestedChange('behavioral_intentions', item.id, value)}
-                          />
-                          <span className="likert-value">{value}</span>
-                        </label>
-                      ))}
-                    </div>
-                    <div className="scale-labels">
-                      <span className="label-left">{item.min_label}</span>
-                      <span className="label-right">{item.max_label}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               <div className="progress-indicator">
-                Source Transparency: {Object.keys(formData.rag_transparency).length} / 5 |
-                Behavioral Intentions: {Object.keys(formData.behavioral_intentions).length} / 5
-              </div>
-            </div>
-          )}
-
-          {/* SECTION 10: Open-Ended Feedback */}
-          {currentSection === 10 && (
-            <div className="form-section">
-              <h2>Section 11: Open Feedback</h2>
-              <p className="section-description">
-                Finally, please share any additional thoughts or feedback (optional).
-              </p>
-
-              <div className="form-group">
-                <label>What features did you find most useful?</label>
-                <textarea
-                  rows="4"
-                  value={formData.most_useful_features}
-                  onChange={(e) => handleInputChange('most_useful_features', e.target.value)}
-                  placeholder="Describe the features you found most helpful..."
-                />
-              </div>
-
-              <div className="form-group">
-                <label>What improvements would you suggest?</label>
-                <textarea
-                  rows="4"
-                  value={formData.suggested_improvements}
-                  onChange={(e) => handleInputChange('suggested_improvements', e.target.value)}
-                  placeholder="Share your ideas for improving the chatbot..."
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Any additional comments?</label>
-                <textarea
-                  rows="4"
-                  value={formData.additional_comments}
-                  onChange={(e) => handleInputChange('additional_comments', e.target.value)}
-                  placeholder="Any other thoughts you'd like to share..."
-                />
+                Completed: {Object.keys(formData.stp_evaluation).length} / 4 items
               </div>
 
               <div className="info-box success">
@@ -1226,6 +965,7 @@ const ResearchQuestionnaire = () => {
               </div>
             </div>
           )}
+
 
           {/* Error Message */}
           {submitError && (

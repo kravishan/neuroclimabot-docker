@@ -41,16 +41,6 @@ export const TASK_TYPES = [
 // Task Success & Completion Items
 export const TASK_SUCCESS_ITEMS = [
   {
-    id: 'task_accomplished',
-    question: 'Did you accomplish what you set out to do?',
-    type: 'single_choice',
-    options: [
-      { value: 'yes', label: 'Yes, completely' },
-      { value: 'partially', label: 'Partially' },
-      { value: 'no', label: 'No' }
-    ]
-  },
-  {
     id: 'goal_satisfaction',
     question: 'How satisfied were you with achieving your goal?',
     type: 'likert_7',
@@ -114,30 +104,6 @@ export const DOCUMENT_QUALITY_ITEMS = [
     max_label: 'Strongly Agree'
   },
   {
-    id: 'doc_credible',
-    statement: 'The sources cited were credible and trustworthy',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'doc_variety',
-    statement: 'The variety of sources (papers, policies, news, data) helped me understand better',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'doc_current',
-    statement: 'The information was up-to-date and current',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
     id: 'doc_verifiable',
     statement: 'I could verify the information using the provided sources',
     scale_min: 1,
@@ -149,16 +115,6 @@ export const DOCUMENT_QUALITY_ITEMS = [
 
 // Information Adequacy
 export const INFORMATION_ADEQUACY_ITEMS = [
-  {
-    id: 'info_depth',
-    question: 'The depth of information provided was:',
-    type: 'single_choice',
-    options: [
-      { value: 'too_shallow', label: 'Too shallow' },
-      { value: 'just_right', label: 'Just right' },
-      { value: 'too_detailed', label: 'Too detailed' }
-    ]
-  },
   {
     id: 'source_quantity',
     question: 'The number of sources provided was:',
@@ -241,52 +197,16 @@ export const UEQ_S_ITEMS = [
   }
 ];
 
-// Human-AI Trust Scale (12 items)
+// Human-AI Trust Scale (8 items)
 // Source: ACM 2025 validation study
 // 7-point Likert scale (1=Strongly Disagree, 7=Strongly Agree)
-// Dimensions: Cognitive trust (6) + Affective trust (6)
+// Dimensions: Cognitive trust (2) + Affective trust (6)
 export const TRUST_SCALE_ITEMS = [
   // Cognitive Trust (Performance-based)
-  {
-    id: 'trust_1',
-    dimension: 'cognitive',
-    statement: 'The chatbot provides reliable climate information',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
   {
     id: 'trust_2',
     dimension: 'cognitive',
     statement: 'I can depend on the chatbot to give accurate answers',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'trust_3',
-    dimension: 'cognitive',
-    statement: 'The sources provided by the chatbot are credible',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'trust_4',
-    dimension: 'cognitive',
-    statement: 'The chatbot demonstrates competence in climate topics',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'trust_5',
-    dimension: 'cognitive',
-    statement: 'The responses are consistent with scientific consensus',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -358,7 +278,7 @@ export const TRUST_SCALE_ITEMS = [
   }
 ];
 
-// NASA-TLX: Task Load Index (6 subscales)
+// NASA-TLX: Task Load Index (5 subscales)
 // Source: NASA official, 4400+ studies validation
 // 21-point scale (0-20) for each dimension
 export const NASA_TLX_SUBSCALES = [
@@ -381,16 +301,6 @@ export const NASA_TLX_SUBSCALES = [
     min_label: 'Very Low',
     max_label: 'Very High',
     description: 'Physical activity required (e.g., typing, clicking, scrolling)'
-  },
-  {
-    id: 'tlx_temporal',
-    dimension: 'temporal_demand',
-    question: 'How hurried or rushed was the pace of using the chatbot?',
-    scale_min: 0,
-    scale_max: 20,
-    min_label: 'Very Low',
-    max_label: 'Very High',
-    description: 'Time pressure felt during interactions'
   },
   {
     id: 'tlx_performance',
@@ -427,24 +337,8 @@ export const NASA_TLX_SUBSCALES = [
 // Conversational Quality Items (NEW)
 export const CONVERSATIONAL_QUALITY_ITEMS = [
   {
-    id: 'conv_flow',
-    statement: 'The bot maintained a natural conversation flow',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
     id: 'conv_followup',
     statement: 'The bot understood my follow-up questions',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'conv_switching',
-    statement: 'I could switch between casual conversation and climate questions easily',
     scale_min: 1,
     scale_max: 7,
     min_label: 'Strongly Disagree',
@@ -468,93 +362,11 @@ export const CONVERSATIONAL_QUALITY_ITEMS = [
   }
 ];
 
-// RAG-Specific Trust & Transparency (5 items)
-export const RAG_TRANSPARENCY_ITEMS = [
-  {
-    id: 'rag_trust_1',
-    statement: 'The sources cited are relevant to the chatbot\'s responses',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'rag_trust_2',
-    statement: 'I can verify the information using the provided sources',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'rag_trust_3',
-    statement: 'The chatbot clearly indicates when it is uncertain or has limitations',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'rag_trust_4',
-    statement: 'The quality of sources increases my trust in the responses',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'rag_trust_5',
-    statement: 'Having access to multiple sources helps me evaluate response accuracy',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  }
-];
+// RAG-Specific Trust & Transparency (Removed - not needed)
+export const RAG_TRANSPARENCY_ITEMS = [];
 
-// Behavioral Intentions Scale (5 items)
-export const BEHAVIORAL_INTENTIONS_ITEMS = [
-  {
-    id: 'behavior_1',
-    statement: 'I intend to use this chatbot again for climate information',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'behavior_2',
-    statement: 'I am more likely to discuss climate change with others after using this chatbot',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'behavior_3',
-    statement: 'I plan to seek more information about climate topics',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'behavior_4',
-    statement: 'I would recommend this chatbot to others',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'behavior_5',
-    statement: 'This chatbot helped me find information more effectively than other methods',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  }
-];
+// Behavioral Intentions Scale (Removed - not needed)
+export const BEHAVIORAL_INTENTIONS_ITEMS = [];
 
 // Social Tipping Points (STP) Evaluation (4 items)
 // Note: STP is automatic in all responses
@@ -593,77 +405,11 @@ export const STP_EVALUATION_ITEMS = [
   }
 ];
 
-// Knowledge Graph Visualization Evaluation (5 items)
-export const KG_VISUALIZATION_ITEMS = [
-  {
-    id: 'kg_viz_1',
-    statement: 'The knowledge graph visualization helped me understand connections between climate concepts',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'kg_viz_2',
-    statement: 'The graph was easy to navigate and explore',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'kg_viz_3',
-    statement: 'The visualization increased my trust in the chatbot\'s responses',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'kg_viz_4',
-    statement: 'I successfully found the information I was looking for using the graph',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'kg_viz_5',
-    statement: 'I prefer having the visualization available versus text-only responses',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  }
-];
+// Knowledge Graph Visualization Evaluation (Removed - not needed)
+export const KG_VISUALIZATION_ITEMS = [];
 
-// Multilingual Experience Evaluation (3 items)
-export const MULTILINGUAL_EVALUATION_ITEMS = [
-  {
-    id: 'multi_1',
-    statement: 'The responses in my language were natural and accurate',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'multi_2',
-    statement: 'I prefer using the chatbot in my native language versus English',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  },
-  {
-    id: 'multi_3',
-    statement: 'The translation quality met my expectations',
-    scale_min: 1,
-    scale_max: 7,
-    min_label: 'Strongly Disagree',
-    max_label: 'Strongly Agree'
-  }
-];
+// Multilingual Experience Evaluation (Removed - not needed)
+export const MULTILINGUAL_EVALUATION_ITEMS = [];
 
 // Demographics Options
 export const DEMOGRAPHICS = {
