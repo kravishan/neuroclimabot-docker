@@ -239,7 +239,7 @@ const ResearchQuestionnaire = () => {
         setSubmitSuccess(true)
         setTimeout(() => {
           navigate('/')
-        }, 5000)
+        }, 20000)
       } else {
         setSubmitError(data.detail || 'Failed to submit questionnaire')
       }
@@ -266,7 +266,7 @@ const ResearchQuestionnaire = () => {
             <p><strong>Participant ID:</strong> {formData.participant_id}</p>
             <p>Please save this ID for your records.</p>
           </div>
-          <p className="redirect-notice">Redirecting to home page in 5 seconds...</p>
+          <p className="redirect-notice">Redirecting to home page in 20 seconds...</p>
         </div>
       </div>
     )
