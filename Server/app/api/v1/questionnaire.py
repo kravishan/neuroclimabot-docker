@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from datetime import datetime
 
 from app.services.database.questionnaire_database import get_questionnaire_database
@@ -18,6 +18,14 @@ class QuestionnaireRequestNew(BaseModel):
     # Participant Information
     participant_id: Optional[str] = None
     email: Optional[EmailStr] = None
+
+    @field_validator('email', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        """Convert empty string to None for optional email field."""
+        if v == '':
+            return None
+        return v
 
     # Demographics
     age_range: Optional[str] = None
