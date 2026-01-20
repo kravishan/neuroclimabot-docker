@@ -15,9 +15,6 @@ from app.config.database import get_redis_config
 from app.core.exceptions import SessionError
 from app.utils.logger import get_logger
 
-# Import Prometheus metrics functions
-from app.core.middleware import update_active_sessions, update_cache_hit_rate
-
 logger = get_logger(__name__)
 
 
@@ -234,7 +231,6 @@ class SessionManager:
             cached_session = self._get_cached_session(session_id)
             if cached_session:
                 self.performance_stats["cache_hits"] += 1
-                await self._update_cache_hit_rate()
                 return cached_session
             
             # Get from Redis
@@ -263,8 +259,7 @@ class SessionManager:
                     self._cache_session(session_id, session)
                     
                     self.performance_stats["cache_misses"] += 1
-                    await self._update_cache_hit_rate()
-                    
+                        
                     return session
                     
                 except Exception as validation_error:
@@ -272,11 +267,9 @@ class SessionManager:
                     # Clean up corrupted session
                     await self.redis_client.delete(session_key)
                     self.performance_stats["cache_misses"] += 1
-                    await self._update_cache_hit_rate()
-                    return None
+                        return None
             else:
                 self.performance_stats["cache_misses"] += 1
-                await self._update_cache_hit_rate()
                 return None
                 
         except Exception as e:
@@ -533,30 +526,6 @@ class SessionManager:
         except Exception as e:
             logger.warning(f"Error updating avg session duration: {e}")
     
-    async def _update_session_metrics(self):
-        """Update session-related Prometheus metrics."""
-        try:
-            # Get current session count
-            stats = await self.get_stats()
-            active_count = stats.get("active_sessions", 0)
-            
-            # Update Prometheus metrics
-            update_active_sessions(active_count)
-            
-        except Exception as e:
-            logger.error(f"Failed to update session metrics: {e}")
-    
-    async def _update_cache_hit_rate(self):
-        """Update cache hit rate metric."""
-        try:
-            total_requests = self.performance_stats["cache_hits"] + self.performance_stats["cache_misses"]
-            if total_requests > 0:
-                hit_rate = self.performance_stats["cache_hits"] / total_requests
-                update_cache_hit_rate(hit_rate)
-                
-        except Exception as e:
-            logger.error(f"Failed to update cache hit rate: {e}")
-    
     async def get_stats(self) -> Dict[str, Any]:
         """Get comprehensive session statistics."""
         if not self.is_connected:
@@ -570,10 +539,7 @@ class SessionManager:
             pattern = self._get_session_key("*").replace(str(uuid4()), "*")
             session_keys = await self.redis_client.keys(pattern)
             active_sessions = len(session_keys)
-            
-            # Update Prometheus metrics
-            update_active_sessions(active_sessions)
-            
+
             # Calculate cache hit rate
             total_requests = self.performance_stats["cache_hits"] + self.performance_stats["cache_misses"]
             cache_hit_rate = (
