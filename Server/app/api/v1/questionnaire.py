@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 class QuestionnaireRequestNew(BaseModel):
-    """Request model for the new post-interaction questionnaire structure."""
+    """Request model for the streamlined post-interaction questionnaire structure."""
 
     # Participant Information
     participant_id: Optional[str] = None
@@ -35,40 +35,34 @@ class QuestionnaireRequestNew(BaseModel):
     other_purpose: Optional[str] = None
     task_type: Optional[List[str]] = None
 
-    # Section 2: Task Success & Completion
+    # Section 2: Effectiveness & Quality - Task Success & Completion
     task_success: Optional[Dict[str, Any]] = None
-    info_finding: Optional[Dict[str, int]] = None
+    info_finding: Optional[Dict[str, int]] = None  # 4 items
 
-    # Section 3: Document & Source Quality
-    doc_quality: Optional[Dict[str, int]] = None
+    # Section 2: Effectiveness & Quality - Document & Source Quality
+    doc_quality: Optional[Dict[str, int]] = None  # 2 items (reduced from 5)
     info_adequacy: Optional[Dict[str, str]] = None
 
-    # Section 4: UEQ-S (8 items, 1-7 scale)
+    # Section 2: Effectiveness & Quality - UEQ-S (8 items, 1-7 scale)
     ueq_s: Optional[Dict[str, int]] = None
 
-    # Section 5: Trust Scale (12 items, 1-7 scale)
+    # Section 3: Overall Rating - Trust Scale (8 items, 1-7 scale) - reduced from 12
     trust_scale: Optional[Dict[str, int]] = None
 
-    # Section 6: NASA-TLX (6 subscales, 0-20 scale)
+    # Section 3: Overall Rating - NASA-TLX (5 subscales, 0-20 scale) - reduced from 6
     nasa_tlx: Optional[Dict[str, int]] = None
 
-    # Section 7: Conversational Quality (5 items, 1-7 scale)
+    # Section 3: Overall Rating - Conversational Quality (3 items, 1-7 scale) - reduced from 5
     conversational_quality: Optional[Dict[str, int]] = None
 
-    # Section 8: Feature-Specific Evaluations
+    # Section 3: Overall Rating - Feature-Specific Evaluations
     stp_evaluation: Optional[Dict[str, int]] = None  # 4 items
-    kg_visualization: Optional[Dict[str, int]] = None  # 5 items
-    multilingual: Optional[Dict[str, int]] = None  # 3 items
+    kg_visualization: Optional[Dict[str, int]] = None  # 3 items (conditional)
+    multilingual: Optional[Dict[str, int]] = None  # 3 items (conditional)
     used_kg_viz: Optional[bool] = None
     used_non_english: Optional[bool] = None
 
-    # Section 9: RAG Transparency & Behavioral Intentions
-    rag_transparency: Optional[Dict[str, int]] = None  # 5 items
-    behavioral_intentions: Optional[Dict[str, int]] = None  # 5 items
-
-    # Section 10: Open-Ended Feedback
-    most_useful_features: Optional[str] = None
-    suggested_improvements: Optional[str] = None
+    # Section 3: Overall Rating - Additional Feedback (optional)
     additional_comments: Optional[str] = None
 
     # Metadata
@@ -233,7 +227,7 @@ class QuestionnaireStats(BaseModel):
 
 @router.post("/submit", response_model=QuestionnaireResponse)
 async def submit_questionnaire(request: QuestionnaireRequestNew):
-    """Submit CHI 2027 research questionnaire with new post-interaction structure."""
+    """Submit streamlined research questionnaire with 4 sections."""
 
     try:
         # Validate consent
@@ -307,7 +301,7 @@ async def get_questionnaire_statistics():
                 if valid_ueq:
                     ueq_scores.append(sum(valid_ueq) / len(valid_ueq))
 
-        # Calculate Trust average (12 items, 1-7 scale)
+        # Calculate Trust average (8 items, 1-7 scale) - streamlined version
         trust_scores = []
         for r in responses:
             # New format (nested)
@@ -316,7 +310,7 @@ async def get_questionnaire_statistics():
                 valid_trust = [score for score in trust_values if isinstance(score, (int, float))]
                 if valid_trust:
                     trust_scores.append(sum(valid_trust) / len(valid_trust))
-            # Old format (flat)
+            # Old format (flat) - for backward compatibility with 12-item version
             else:
                 trust_items = [
                     r.get('trust_1_reliable_information'), r.get('trust_2_accurate_responses'),
@@ -330,7 +324,7 @@ async def get_questionnaire_statistics():
                 if valid_trust:
                     trust_scores.append(sum(valid_trust) / len(valid_trust))
 
-        # Calculate NASA-TLX average (6 subscales, 0-20 scale)
+        # Calculate NASA-TLX average (5 subscales, 0-20 scale) - streamlined version
         nasa_scores = []
         for r in responses:
             # New format (nested)
@@ -339,7 +333,7 @@ async def get_questionnaire_statistics():
                 valid_nasa = [score for score in nasa_values if isinstance(score, (int, float))]
                 if valid_nasa:
                     nasa_scores.append(sum(valid_nasa) / len(valid_nasa))
-            # Old format (flat)
+            # Old format (flat) - for backward compatibility with 6-item version
             else:
                 nasa_items = [
                     r.get('nasa_mental_demand'), r.get('nasa_physical_demand'),
