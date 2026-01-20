@@ -288,7 +288,7 @@ const ResearchQuestionnaire = () => {
         {/* Header */}
         <div className="questionnaire-header">
           <h1>NeuroClima Bot Research Study</h1>
-          <p className="institution">University of Oulu Research Team | Estimated Time: 10-15 minutes</p>
+          <p className="institution">University of Oulu Research Team | Estimated Time: 5 minutes</p>
         </div>
 
         {/* Progress Indicator */}
