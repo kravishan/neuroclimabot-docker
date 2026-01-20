@@ -33,6 +33,8 @@ import {
   TRUST_SCALE_ITEMS,
   NASA_TLX_SUBSCALES,
   STP_EVALUATION_ITEMS,
+  KG_VISUALIZATION_ITEMS,
+  MULTILINGUAL_EVALUATION_ITEMS,
   DEMOGRAPHICS,
   CONSENT_INFORMATION
 } from '@/constants/questionnaireData.js'
@@ -92,6 +94,8 @@ const ResearchQuestionnaire = () => {
 
     // Section 8: Feature-Specific Evaluations
     stp_evaluation: {}, // 4 items
+    kg_visualization: {}, // 2 items (conditional)
+    multilingual: {}, // 3 items (conditional)
     used_kg_viz: null,
     used_non_english: null,
 
@@ -154,22 +158,37 @@ const ResearchQuestionnaire = () => {
         return formData.primary_purpose &&
                (formData.primary_purpose !== 'other' || formData.other_purpose) &&
                formData.task_type.length > 0
-      case 2: // Effectiveness & Quality (Task Success + Document Quality)
+      case 2: // Effectiveness & Quality (UEQ-S + Task Success + Document Quality)
         // goal_satisfaction is required, specific_goal is optional
         const requiredTaskFields = ['goal_satisfaction']
         const hasRequiredTaskFields = requiredTaskFields.every(field => formData.task_success[field] !== undefined)
-        return hasRequiredTaskFields &&
+        return Object.keys(formData.ueq_s).length === 8 &&
+               hasRequiredTaskFields &&
                Object.keys(formData.info_finding).length === INFORMATION_FINDING_ITEMS.length &&
                Object.keys(formData.doc_quality).length === DOCUMENT_QUALITY_ITEMS.length &&
                Object.keys(formData.info_adequacy).length === INFORMATION_ADEQUACY_ITEMS.length
-      case 3: // Your Overall Experience (UEQ-S + Trust + NASA-TLX + Conversational + STP + Feature Usage)
-        return Object.keys(formData.ueq_s).length === 8 &&
-               Object.keys(formData.trust_scale).length === 8 &&
+      case 3: // Your Overall Experience (Trust + NASA-TLX + Conversational + STP + Feature Usage)
+        // Check basic required fields
+        const basicValid = Object.keys(formData.trust_scale).length === 8 &&
                Object.keys(formData.nasa_tlx).length === 5 &&
                Object.keys(formData.conversational_quality).length === CONVERSATIONAL_QUALITY_ITEMS.length &&
                Object.keys(formData.stp_evaluation).length === 4 &&
                formData.used_kg_viz !== null &&
                formData.used_non_english !== null
+
+        if (!basicValid) return false
+
+        // If they used KG, they must complete KG evaluation
+        if (formData.used_kg_viz && Object.keys(formData.kg_visualization).length < KG_VISUALIZATION_ITEMS.length) {
+          return false
+        }
+
+        // If they used multilingual, they must complete multilingual evaluation
+        if (formData.used_non_english && Object.keys(formData.multilingual).length < MULTILINGUAL_EVALUATION_ITEMS.length) {
+          return false
+        }
+
+        return true
       default:
         return false
     }
@@ -567,13 +586,45 @@ const ResearchQuestionnaire = () => {
             </div>
           )}
 
-          {/* SECTION 2: Effectiveness & Quality (Merged: Task Success + Document Quality) */}
+          {/* SECTION 2: Effectiveness & Quality (Merged: Task Success + Document Quality + UEQ-S) */}
           {currentSection === 2 && (
             <div className="form-section">
               <h2>Section 3: Effectiveness & Quality</h2>
               <p className="section-description">
                 Please evaluate how well the chatbot helped you accomplish your goals and the quality of information provided.
               </p>
+
+              <h3>User Experience (UEQ-S)</h3>
+              <p className="section-description">
+                For each item, select the circle that best represents your impression.
+              </p>
+              <div className="ueq-items">
+                {UEQ_S_ITEMS.map((item, index) => (
+                  <div key={item.id} className="ueq-item">
+                    <div className="item-number">{index + 1}</div>
+                    <div className="semantic-differential">
+                      <span className="left-anchor">{item.left_anchor}</span>
+                      <div className="scale-points">
+                        {[1, 2, 3, 4, 5, 6, 7].map(value => (
+                          <label key={value} className="scale-point">
+                            <input
+                              type="radio"
+                              name={item.id}
+                              value={value}
+                              checked={formData.ueq_s[item.id] === value}
+                              onChange={() => handleNestedChange('ueq_s', item.id, value)}
+                            />
+                            <span className="point-marker">{value}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <span className="right-anchor">{item.right_anchor}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="divider"></div>
 
               <h3>Task Accomplishment</h3>
               <div className="likert-items">
@@ -718,6 +769,7 @@ const ResearchQuestionnaire = () => {
               </div>
 
               <div className="progress-indicator">
+                UEQ-S: {Object.keys(formData.ueq_s).length} / 8 |
                 Task Success: {['goal_satisfaction'].filter(f => formData.task_success[f] !== undefined).length} / 1 |
                 Information Finding: {Object.keys(formData.info_finding).length} / {INFORMATION_FINDING_ITEMS.length} |
                 Document Quality: {Object.keys(formData.doc_quality).length} / {DOCUMENT_QUALITY_ITEMS.length} |
@@ -726,45 +778,13 @@ const ResearchQuestionnaire = () => {
             </div>
           )}
 
-          {/* SECTION 3: Your Overall Experience (Merged: UEQ-S + Trust + NASA-TLX + Conversational + STP) */}
+          {/* SECTION 3: Your Overall Experience (Merged: Trust + NASA-TLX + Conversational + STP + Features) */}
           {currentSection === 3 && (
             <div className="form-section">
               <h2>Section 4: Your Overall Experience</h2>
               <p className="section-description">
                 Please evaluate your overall experience with the NeuroClima chatbot.
               </p>
-
-              <h3>User Experience (UEQ-S)</h3>
-              <p className="section-description">
-                For each item, select the circle that best represents your impression.
-              </p>
-              <div className="ueq-items">
-                {UEQ_S_ITEMS.map((item, index) => (
-                  <div key={item.id} className="ueq-item">
-                    <div className="item-number">{index + 1}</div>
-                    <div className="semantic-differential">
-                      <span className="left-anchor">{item.left_anchor}</span>
-                      <div className="scale-points">
-                        {[1, 2, 3, 4, 5, 6, 7].map(value => (
-                          <label key={value} className="scale-point">
-                            <input
-                              type="radio"
-                              name={item.id}
-                              value={value}
-                              checked={formData.ueq_s[item.id] === value}
-                              onChange={() => handleNestedChange('ueq_s', item.id, value)}
-                            />
-                            <span className="point-marker">{value}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <span className="right-anchor">{item.right_anchor}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="divider"></div>
 
               <h3>Trust in AI</h3>
               <div className="likert-items">
@@ -919,6 +939,35 @@ const ResearchQuestionnaire = () => {
                 </div>
               </div>
 
+              {formData.used_kg_viz && (
+                <div className="feature-evaluation">
+                  {KG_VISUALIZATION_ITEMS.map((item, index) => (
+                    <div key={item.id} className="likert-item">
+                      <div className="item-number">{index + 1}</div>
+                      <div className="item-statement">{item.statement}</div>
+                      <div className="likert-scale">
+                        {[1, 2, 3, 4, 5, 6, 7].map(value => (
+                          <label key={value} className="likert-option">
+                            <input
+                              type="radio"
+                              name={item.id}
+                              value={value}
+                              checked={formData.kg_visualization[item.id] === value}
+                              onChange={() => handleNestedChange('kg_visualization', item.id, value)}
+                            />
+                            <span className="likert-value">{value}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="scale-labels">
+                        <span className="label-left">{item.min_label}</span>
+                        <span className="label-right">{item.max_label}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="divider"></div>
 
               <h3>Multilingual Support</h3>
@@ -946,13 +995,42 @@ const ResearchQuestionnaire = () => {
                 </div>
               </div>
 
+              {formData.used_non_english && (
+                <div className="feature-evaluation">
+                  {MULTILINGUAL_EVALUATION_ITEMS.map((item, index) => (
+                    <div key={item.id} className="likert-item">
+                      <div className="item-number">{index + 1}</div>
+                      <div className="item-statement">{item.statement}</div>
+                      <div className="likert-scale">
+                        {[1, 2, 3, 4, 5, 6, 7].map(value => (
+                          <label key={value} className="likert-option">
+                            <input
+                              type="radio"
+                              name={item.id}
+                              value={value}
+                              checked={formData.multilingual[item.id] === value}
+                              onChange={() => handleNestedChange('multilingual', item.id, value)}
+                            />
+                            <span className="likert-value">{value}</span>
+                          </label>
+                        ))}
+                      </div>
+                      <div className="scale-labels">
+                        <span className="label-left">{item.min_label}</span>
+                        <span className="label-right">{item.max_label}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="progress-indicator">
-                UEQ-S: {Object.keys(formData.ueq_s).length} / 8 |
                 Trust: {Object.keys(formData.trust_scale).length} / 8 |
                 NASA-TLX: {Object.keys(formData.nasa_tlx).length} / 5 |
                 Conversational: {Object.keys(formData.conversational_quality).length} / {CONVERSATIONAL_QUALITY_ITEMS.length} |
                 STP: {Object.keys(formData.stp_evaluation).length} / 4 |
-                Features: {[formData.used_kg_viz, formData.used_non_english].filter(v => v !== null).length} / 2
+                KG: {formData.used_kg_viz !== null ? (formData.used_kg_viz ? `${Object.keys(formData.kg_visualization).length}/${KG_VISUALIZATION_ITEMS.length}` : '✓') : '?'} |
+                Multilingual: {formData.used_non_english !== null ? (formData.used_non_english ? `${Object.keys(formData.multilingual).length}/${MULTILINGUAL_EVALUATION_ITEMS.length}` : '✓') : '?'}
               </div>
 
               <div className="info-box success">

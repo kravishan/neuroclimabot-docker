@@ -405,11 +405,53 @@ export const STP_EVALUATION_ITEMS = [
   }
 ];
 
-// Knowledge Graph Visualization Evaluation (Removed - not needed)
-export const KG_VISUALIZATION_ITEMS = [];
+// Knowledge Graph Visualization Evaluation (2 items - conditional)
+export const KG_VISUALIZATION_ITEMS = [
+  {
+    id: 'kg_viz_1',
+    statement: 'The knowledge graph visualization helped me understand connections between climate concepts',
+    scale_min: 1,
+    scale_max: 7,
+    min_label: 'Strongly Disagree',
+    max_label: 'Strongly Agree'
+  },
+  {
+    id: 'kg_viz_4',
+    statement: 'I successfully found the information I was looking for using the graph',
+    scale_min: 1,
+    scale_max: 7,
+    min_label: 'Strongly Disagree',
+    max_label: 'Strongly Agree'
+  }
+];
 
-// Multilingual Experience Evaluation (Removed - not needed)
-export const MULTILINGUAL_EVALUATION_ITEMS = [];
+// Multilingual Experience Evaluation (3 items - conditional)
+export const MULTILINGUAL_EVALUATION_ITEMS = [
+  {
+    id: 'multi_1',
+    statement: 'The responses in my language were natural and accurate',
+    scale_min: 1,
+    scale_max: 7,
+    min_label: 'Strongly Disagree',
+    max_label: 'Strongly Agree'
+  },
+  {
+    id: 'multi_2',
+    statement: 'I prefer using the chatbot in my native language versus English',
+    scale_min: 1,
+    scale_max: 7,
+    min_label: 'Strongly Disagree',
+    max_label: 'Strongly Agree'
+  },
+  {
+    id: 'multi_3',
+    statement: 'The translation quality met my expectations',
+    scale_min: 1,
+    scale_max: 7,
+    min_label: 'Strongly Disagree',
+    max_label: 'Strongly Agree'
+  }
+];
 
 // Demographics Options
 export const DEMOGRAPHICS = {
