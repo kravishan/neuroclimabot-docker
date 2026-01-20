@@ -105,9 +105,64 @@ await continueConversationSessionStreaming(
 - Accumulates content and calls callbacks
 - Returns final result when done
 
-## Usage Example
+## How Streaming Works Now (Integrated)
 
-### Frontend Usage
+### Automatic Streaming Flow
+
+The application now automatically streams all responses:
+
+1. **User sends message** → ResponsePage calls `sessionManager.startConversation()` or `continueConversation()`
+2. **sessionManager** → Calls streaming API functions with built-in callbacks
+3. **Streaming chunks arrive** → sessionManager notifies subscribers via `onStreamingChunk()`
+4. **useSession hook** → Updates `streamingContent` state
+5. **ResponsePage effect** → Updates message content progressively
+6. **Final metadata** → Set when stream completes (sources, STP, references)
+
+### Architecture
+
+```javascript
+// sessionManager.js - Now uses streaming by default
+async startConversation(query, language, difficulty) {
+  await startConversationSessionStreaming(
+    query, language, difficulty,
+
+    // onChunk - notify subscribers
+    (chunk, fullText) => {
+      this._notifyStreamingChunk(chunk, fullText)
+    },
+
+    // onComplete - return final result
+    (result) => { /* ... */ }
+  )
+}
+```
+
+```javascript
+// useSession.js - Exposes streaming state
+const { streamingContent } = useSession()
+
+// streamingContent updates on each chunk:
+// { chunk: "new text", fullText: "accumulated text" }
+```
+
+```javascript
+// ResponsePage/index.jsx - Updates UI progressively
+useEffect(() => {
+  if (streamingContent.fullText && latestResponseId) {
+    setMessages(prevMessages =>
+      prevMessages.map(msg =>
+        msg.id === latestResponseId
+          ? { ...msg, content: streamingContent.fullText }
+          : msg
+      )
+    )
+  }
+}, [streamingContent, latestResponseId])
+```
+
+## Manual Usage Example (Advanced)
+
+If you need to call the streaming API directly (not through sessionManager):
 
 ```javascript
 import { startConversationSessionStreaming } from '@/services/api/endpoints'
@@ -142,49 +197,6 @@ await startConversationSessionStreaming(
   handleComplete,
   handleError
 )
-```
-
-### ResponsePage Integration
-
-To integrate streaming into ResponsePage, update the conversation handlers:
-
-```javascript
-// In ResponsePage/index.jsx
-
-const handleStartConversation = async (query) => {
-  setLoading(true)
-  setResponseContent('')  // Clear previous content
-
-  try {
-    await startConversationSessionStreaming(
-      query,
-      selectedLanguage,
-      difficultyLevel,
-
-      // onChunk - Update content progressively
-      (chunk, fullText) => {
-        setResponseContent(fullText)
-      },
-
-      // onComplete - Set metadata
-      (result) => {
-        setTitle(result.response.title)
-        setReferences(result.references)
-        setSocialTippingPoint(result.response.socialTippingPoint)
-        setLoading(false)
-      },
-
-      // onError
-      (error) => {
-        console.error(error)
-        setLoading(false)
-      }
-    )
-  } catch (error) {
-    console.error('Streaming failed:', error)
-    setLoading(false)
-  }
-}
 ```
 
 ## Benefits of Streaming
@@ -303,13 +315,22 @@ Expected improvements:
 - **Vercel AI SDK** streaming conventions
 - **LangChain** streaming response format
 
-## Next Steps
+## Status: ✅ Streaming is Now Default
 
-1. **Update ResponsePage** to use streaming by default
-2. **Add streaming toggle** in settings
-3. **Implement incremental translation** for better UX
-4. **Add progress indicators** for long responses
-5. **Monitor performance** in production
+Streaming has been fully integrated and is now the default behavior for all conversations!
+
+### What's Live:
+✅ sessionManager uses streaming by default
+✅ ResponsePage renders content progressively
+✅ useSession hook exposes streaming state
+✅ Both start and continue conversations stream
+
+### Future Enhancements:
+1. **Add streaming toggle** in settings (allow users to disable if needed)
+2. **Implement incremental translation** for better UX
+3. **Add progress indicators** for long responses
+4. **Monitor performance** in production
+5. **Add streaming status indicators** (e.g., "Generating..." badge)
 
 ## Architecture Diagram
 
