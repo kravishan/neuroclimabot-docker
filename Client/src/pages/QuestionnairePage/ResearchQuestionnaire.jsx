@@ -92,6 +92,8 @@ const ResearchQuestionnaire = () => {
 
     // Section 8: Feature-Specific Evaluations
     stp_evaluation: {}, // 4 items
+    used_kg_viz: null,
+    used_non_english: null,
 
     // Metadata
     submission_date: new Date().toISOString(),
@@ -160,12 +162,14 @@ const ResearchQuestionnaire = () => {
                Object.keys(formData.info_finding).length === INFORMATION_FINDING_ITEMS.length &&
                Object.keys(formData.doc_quality).length === DOCUMENT_QUALITY_ITEMS.length &&
                Object.keys(formData.info_adequacy).length === INFORMATION_ADEQUACY_ITEMS.length
-      case 3: // Your Overall Experience (UEQ-S + Trust + NASA-TLX + Conversational + STP)
+      case 3: // Your Overall Experience (UEQ-S + Trust + NASA-TLX + Conversational + STP + Feature Usage)
         return Object.keys(formData.ueq_s).length === 8 &&
                Object.keys(formData.trust_scale).length === 8 &&
                Object.keys(formData.nasa_tlx).length === 5 &&
                Object.keys(formData.conversational_quality).length === CONVERSATIONAL_QUALITY_ITEMS.length &&
-               Object.keys(formData.stp_evaluation).length === 4
+               Object.keys(formData.stp_evaluation).length === 4 &&
+               formData.used_kg_viz !== null &&
+               formData.used_non_english !== null
       default:
         return false
     }
@@ -888,12 +892,67 @@ const ResearchQuestionnaire = () => {
                 ))}
               </div>
 
+              <div className="divider"></div>
+
+              <h3>Knowledge Graph Visualization</h3>
+              <div className="yes-no-selector">
+                <label>Did you use the Knowledge Graph visualization feature?</label>
+                <div className="yn-options">
+                  <label className="yn-option">
+                    <input
+                      type="radio"
+                      name="used_kg_viz"
+                      checked={formData.used_kg_viz === true}
+                      onChange={() => handleInputChange('used_kg_viz', true)}
+                    />
+                    <span>Yes</span>
+                  </label>
+                  <label className="yn-option">
+                    <input
+                      type="radio"
+                      name="used_kg_viz"
+                      checked={formData.used_kg_viz === false}
+                      onChange={() => handleInputChange('used_kg_viz', false)}
+                    />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="divider"></div>
+
+              <h3>Multilingual Support</h3>
+              <div className="yes-no-selector">
+                <label>Did you use the chatbot in a language other than English?</label>
+                <div className="yn-options">
+                  <label className="yn-option">
+                    <input
+                      type="radio"
+                      name="used_non_english"
+                      checked={formData.used_non_english === true}
+                      onChange={() => handleInputChange('used_non_english', true)}
+                    />
+                    <span>Yes</span>
+                  </label>
+                  <label className="yn-option">
+                    <input
+                      type="radio"
+                      name="used_non_english"
+                      checked={formData.used_non_english === false}
+                      onChange={() => handleInputChange('used_non_english', false)}
+                    />
+                    <span>No</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="progress-indicator">
                 UEQ-S: {Object.keys(formData.ueq_s).length} / 8 |
                 Trust: {Object.keys(formData.trust_scale).length} / 8 |
                 NASA-TLX: {Object.keys(formData.nasa_tlx).length} / 5 |
                 Conversational: {Object.keys(formData.conversational_quality).length} / {CONVERSATIONAL_QUALITY_ITEMS.length} |
-                STP: {Object.keys(formData.stp_evaluation).length} / 4
+                STP: {Object.keys(formData.stp_evaluation).length} / 4 |
+                Features: {[formData.used_kg_viz, formData.used_non_english].filter(v => v !== null).length} / 2
               </div>
 
               <div className="info-box success">
