@@ -149,9 +149,6 @@ class SessionManager:
             await self.redis_client.ping()
             self.is_connected = True
             
-            # Initialize metrics
-            await self._update_session_metrics()
-            
             logger.info("✅ Session manager initialized with Redis")
             logger.info(f"Session timeout: {self.session_timeout}s, Max history: {self.max_conversation_history}")
             
@@ -211,8 +208,6 @@ class SessionManager:
             except Exception as e:
                 logger.warning(f"Failed to update session count in stats database: {e}")
 
-            # Update Prometheus metrics
-            await self._update_session_metrics()
 
             logger.info(f"Created session {session_id} for user {user_id} (language: {language})")
             return session_id
@@ -393,8 +388,6 @@ class SessionManager:
             if result:
                 self.performance_stats["total_sessions_deleted"] += 1
             
-            # Update Prometheus metrics
-            await self._update_session_metrics()
             
             if result:
                 logger.info(f"Deleted session {session_id}")
@@ -581,9 +574,6 @@ class SessionManager:
             # Test Redis connection
             await self.redis_client.ping()
             
-            # Update metrics as part of health check
-            await self._update_session_metrics()
-            
             return True
             
         except Exception as e:
@@ -729,8 +719,6 @@ class SessionManager:
             self.performance_stats["cleanup_runs"] += 1
             self.performance_stats["last_cleanup"] = datetime.now().isoformat()
             
-            # Update Prometheus metrics
-            await self._update_session_metrics()
             
             if cleaned_count > 0:
                 logger.info(f"Cleaned up {cleaned_count} expired/corrupted sessions in {cleanup_time:.2f}s")

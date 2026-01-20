@@ -348,10 +348,7 @@ async def cleanup_expired_sessions(
             "cleanup_runs": 0,
             "last_cleanup": None
         }
-        
-        # Update metrics
-        await session_manager._update_session_metrics()
-        
+
         logger.warning("ADMIN ACTION: FLUSHALL executed - ALL Redis data cleared")
         
         return {
