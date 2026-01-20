@@ -267,7 +267,7 @@ class SessionManager:
                     # Clean up corrupted session
                     await self.redis_client.delete(session_key)
                     self.performance_stats["cache_misses"] += 1
-                        return None
+                    return None
             else:
                 self.performance_stats["cache_misses"] += 1
                 return None
