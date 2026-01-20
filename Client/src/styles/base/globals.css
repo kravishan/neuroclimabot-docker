@@ -40,7 +40,7 @@ body.index-page {
 }
 
 .app-container.blurred-bg {
-  height: 100vh; /* Full height only for home page */
+  min-height: 100vh; /* Minimum height for home page, allows footer to be visible */
 }
 
 /* For other pages, allow normal scrolling */
@@ -55,6 +55,11 @@ body:not(.index-page) {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+/* On home page, prevent main content from pushing footer out of viewport */
+.app-container.blurred-bg .main-content {
+  flex: 0 1 auto;
 }
 
 .disclaimer-text {
