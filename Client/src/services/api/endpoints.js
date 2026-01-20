@@ -1,6 +1,7 @@
 import apiClient from './client'
 import { API_CONFIG, SESSION_CONFIG } from '@/constants/config'
 import { consentService } from '@/services/consent/consentService'
+import { authService } from '@/services/auth/authService'
 
 // Helper function to parse SSE data chunks
 const parseSSEChunk = (line) => {
@@ -200,18 +201,24 @@ export const startConversationSessionStreaming = async (query, language = 'en', 
       consent_metadata: consentMetadata
     }
 
-    // Get auth token from localStorage
-    const token = localStorage.getItem('auth_token')
-    if (!token) {
-      throw new Error('Authentication required')
+    // Get auth token using authService (same as apiClient)
+    const isAuthEnabled = import.meta.env.VITE_AUTH_ENABLED !== 'false'
+    const token = isAuthEnabled ? authService.getToken() : null
+
+    const headers = {
+      'Content-Type': 'application/json'
+    }
+
+    // Add auth token if available and auth is enabled
+    if (isAuthEnabled && token) {
+      headers['Authorization'] = `Bearer ${token}`
+    } else if (isAuthEnabled && !token) {
+      console.warn('No auth token available for streaming request')
     }
 
     const response = await fetch(`${API_CONFIG.BASE_URL}/api/v1/chat/start/stream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers,
       body: JSON.stringify(requestBody)
     })
 
@@ -330,18 +337,24 @@ export const continueConversationSessionStreaming = async (sessionId, message, l
     if (language) requestBody.language = language
     if (difficulty) requestBody.difficulty_level = difficulty
 
-    // Get auth token
-    const token = localStorage.getItem('auth_token')
-    if (!token) {
-      throw new Error('Authentication required')
+    // Get auth token using authService (same as apiClient)
+    const isAuthEnabled = import.meta.env.VITE_AUTH_ENABLED !== 'false'
+    const token = isAuthEnabled ? authService.getToken() : null
+
+    const headers = {
+      'Content-Type': 'application/json'
+    }
+
+    // Add auth token if available and auth is enabled
+    if (isAuthEnabled && token) {
+      headers['Authorization'] = `Bearer ${token}`
+    } else if (isAuthEnabled && !token) {
+      console.warn('No auth token available for streaming request')
     }
 
     const response = await fetch(`${API_CONFIG.BASE_URL}/api/v1/chat/continue/${sessionId}/stream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers,
       body: JSON.stringify(requestBody)
     })
 
