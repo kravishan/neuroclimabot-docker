@@ -32,10 +32,6 @@ spec:
     targetPort: 8000
     protocol: TCP
     name: http
-  - port: 8001
-    targetPort: 8001
-    protocol: TCP
-    name: metrics
   selector:
     app: neuroclima
     component: server
