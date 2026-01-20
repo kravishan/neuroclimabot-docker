@@ -150,7 +150,6 @@ async def start_conversation_stream(
     - data: {"type": "done", "title": "..."} - Final completion signal
     """
     from app.services.external.translation_client import get_translation_client
-    from app.services.rag.chain import get_chain_service
 
     async def event_generator():
         try:
@@ -162,7 +161,6 @@ async def start_conversation_stream(
             logger.info(f"🌍 Streaming - Detected: {detected_language} | Target: {target_language}")
 
             # Step 2: Start RAG conversation and get retrieval data
-            chain_service = await get_chain_service()
             rag_result = await orchestrator.start_new_conversation(
                 initial_message=english_message,
                 user_id="anonymous",
