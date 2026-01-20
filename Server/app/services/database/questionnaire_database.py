@@ -79,33 +79,33 @@ class QuestionnaireDatabase:
                     doc_quality TEXT,  -- JSON object
                     info_adequacy TEXT,  -- JSON object
 
-                    -- Section 4: UEQ-S (JSON)
+                    -- Section 2: Effectiveness & Quality - UEQ-S (JSON)
                     ueq_s TEXT,  -- JSON object with 8 items
 
-                    -- Section 5: Trust Scale (JSON)
-                    trust_scale TEXT,  -- JSON object with 12 items
+                    -- Section 3: Overall Rating - Trust Scale (JSON)
+                    trust_scale TEXT,  -- JSON object with 8 items (streamlined)
 
-                    -- Section 6: NASA-TLX (JSON)
-                    nasa_tlx TEXT,  -- JSON object with 6 subscales
+                    -- Section 3: Overall Rating - NASA-TLX (JSON)
+                    nasa_tlx TEXT,  -- JSON object with 5 subscales (streamlined)
 
-                    -- Section 7: Conversational Quality (JSON)
-                    conversational_quality TEXT,  -- JSON object with 5 items
+                    -- Section 3: Overall Rating - Conversational Quality (JSON)
+                    conversational_quality TEXT,  -- JSON object with 3 items (streamlined)
 
-                    -- Section 8: Feature-Specific Evaluations (JSON)
-                    stp_evaluation TEXT,  -- JSON object
-                    kg_visualization TEXT,  -- JSON object
-                    multilingual TEXT,  -- JSON object
+                    -- Section 3: Overall Rating - Feature-Specific Evaluations (JSON)
+                    stp_evaluation TEXT,  -- JSON object with 4 items
+                    kg_visualization TEXT,  -- JSON object with 3 items (conditional)
+                    multilingual TEXT,  -- JSON object with 3 items (conditional)
                     used_kg_viz INTEGER,
                     used_non_english INTEGER,
 
-                    -- Section 9: RAG Transparency & Behavioral Intentions (JSON)
-                    rag_transparency TEXT,  -- JSON object
-                    behavioral_intentions TEXT,  -- JSON object
+                    -- Removed sections (kept for backward compatibility)
+                    rag_transparency TEXT,  -- JSON object (deprecated)
+                    behavioral_intentions TEXT,  -- JSON object (deprecated)
 
-                    -- Section 10: Open-Ended Feedback
-                    most_useful_features TEXT,
-                    suggested_improvements TEXT,
-                    additional_comments TEXT,
+                    -- Section 3: Overall Rating - Additional Feedback
+                    most_useful_features TEXT,  -- Deprecated
+                    suggested_improvements TEXT,  -- Deprecated
+                    additional_comments TEXT,  -- Only this field is used now
 
                     -- Metadata
                     submission_date TEXT,
