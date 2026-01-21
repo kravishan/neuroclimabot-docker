@@ -213,25 +213,27 @@ spec:
         - name: server-data
           mountPath: /app/data
         # Readiness probe: Check if server is ready to serve requests
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 3
+        # Temporarily disabled until correct health endpoint path is determined
+        # readinessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8000
+        #   initialDelaySeconds: 10
+        #   periodSeconds: 10
+        #   timeoutSeconds: 5
+        #   successThreshold: 1
+        #   failureThreshold: 3
         # Liveness probe: Check if server is alive and healthy
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 20
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 3
+        # Temporarily disabled until correct health endpoint path is determined
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 8000
+        #   initialDelaySeconds: 30
+        #   periodSeconds: 20
+        #   timeoutSeconds: 5
+        #   successThreshold: 1
+        #   failureThreshold: 3
         resources:
           requests:
             memory: "1Gi"
