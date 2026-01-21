@@ -7,7 +7,7 @@ metadata:
     app: neuroclima
     component: unstructured
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: neuroclima
@@ -18,6 +18,17 @@ spec:
         app: neuroclima
         component: unstructured
     spec:
+      # Pod anti-affinity to spread replicas across different nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: neuroclima
+                  component: unstructured
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: unstructured
         image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
@@ -31,6 +42,23 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "1000m"
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -41,7 +69,7 @@ metadata:
     app: neuroclima
     component: processor
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: neuroclima
@@ -52,6 +80,17 @@ spec:
         app: neuroclima
         component: processor
     spec:
+      # Pod anti-affinity to spread replicas across different nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: neuroclima
+                  component: processor
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: processor
         image: docker.io/raviyah/neuroclima-processor:latest
@@ -108,6 +147,23 @@ spec:
           limits:
             memory: "5Gi"
             cpu: "2000m"
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
       volumes:
       - name: processor-data
         persistentVolumeClaim:
