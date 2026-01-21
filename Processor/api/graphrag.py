@@ -7,8 +7,10 @@ import logging
 import json
 import pandas as pd
 import numpy as np
+import re
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse, unquote
 
 from fastapi import HTTPException
 from pydantic import BaseModel, Field
@@ -26,6 +28,30 @@ from api.graphrag_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_url_for_matching(url: str) -> str:
+    """
+    Sanitize URL to match the format used when storing news articles in GraphRAG.
+    This should match the logic in graphrag_processor.py:_sanitize_url()
+    """
+    try:
+        parsed = urlparse(url)
+        domain = parsed.netloc.replace('www.', '')
+        path = unquote(parsed.path.strip('/'))
+
+        if path:
+            meaningful_part = path.split('/')[-1]
+            meaningful_part = re.sub(r'[^a-zA-Z0-9\-_]', '_', meaningful_part)
+            sanitized = f"{domain}_{meaningful_part}"
+        else:
+            sanitized = domain
+
+        sanitized = re.sub(r'_+', '_', sanitized).strip('_')
+        return sanitized[:120] if len(sanitized) > 120 else sanitized
+    except Exception as e:
+        logger.error(f"Error sanitizing URL {url}: {e}")
+        return url
 
 
 # ============================================================================
@@ -306,12 +332,43 @@ def setup_graphrag_routes(app, get_services_func=None):
 
             # Flexible filename matching
             if request.source.startswith("http://") or request.source.startswith("https://"):
+                # For URLs (news articles), first try source_url column if it exists
                 if "source_url" in docs_df.columns:
                     doc_match = docs_df[docs_df["source_url"] == request.source]
                 else:
                     doc_match = pd.DataFrame()
+
+                # If not found via source_url, sanitize the URL and match against filename/title
                 if doc_match.empty:
-                    raise HTTPException(status_code=404, detail=f"Document with URL '{request.source}' not found")
+                    sanitized_url = _sanitize_url_for_matching(request.source)
+                    logger.info(f"🔍 URL not found in source_url column. Trying sanitized match: '{sanitized_url}'")
+
+                    # Try matching against filename or title columns
+                    search_column = "title" if "title" in docs_df.columns else "filename" if "filename" in docs_df.columns else None
+
+                    if search_column:
+                        # Try exact match with sanitized URL
+                        doc_match = docs_df[docs_df[search_column] == sanitized_url]
+
+                        # Try with .txt extension
+                        if doc_match.empty:
+                            sanitized_with_ext = f"{sanitized_url}.txt"
+                            doc_match = docs_df[docs_df[search_column] == sanitized_with_ext]
+
+                        # Try startswith match
+                        if doc_match.empty:
+                            doc_match = docs_df[docs_df[search_column].str.startswith(sanitized_url, na=False)]
+
+                        # Try contains match
+                        if doc_match.empty:
+                            doc_match = docs_df[docs_df[search_column].str.contains(sanitized_url, case=False, na=False)]
+
+                if doc_match.empty:
+                    available_docs = docs_df["title"].tolist() if "title" in docs_df.columns else docs_df["filename"].tolist() if "filename" in docs_df.columns else []
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Document with URL '{request.source}' not found. Tried sanitized form: '{_sanitize_url_for_matching(request.source)}'. Available documents: {available_docs[:10]}"
+                    )
             else:
                 doc_match = pd.DataFrame()
                 search_column = "title" if "title" in docs_df.columns else "filename" if "filename" in docs_df.columns else None
