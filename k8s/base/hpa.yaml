@@ -1,0 +1,135 @@
+# ============================================================================
+# Horizontal Pod Autoscalers - Auto-scale Based on Load
+# ============================================================================
+# HPA automatically scales pods based on CPU/memory metrics
+#
+# Prerequisites:
+#   - Metrics Server must be installed in the cluster
+#   - Check with: kubectl get apiservice v1beta1.metrics.k8s.io
+#   - If not installed: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+#
+# Scaling Policies:
+#   - Client: 2-4 replicas (CPU target: 70%)
+#   - Server: 2-4 replicas (CPU target: 70%)
+#   - Processor: 1-2 replicas (CPU target: 70%, requires additional cluster nodes)
+#
+# Note: To enable processor scaling to 2 replicas, ensure cluster has sufficient memory
+#       (processor requires 5Gi limit per replica)
+# ============================================================================
+
+---
+# Client HPA: Scale 2-4 replicas based on CPU usage
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: neuroclima-client-hpa
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: client
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neuroclima-client
+  minReplicas: 2  # Minimum 2 replicas for HA
+  maxReplicas: 4  # Scale up to 4 during high load
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Target 70% CPU utilization
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+      - type: Percent
+        value: 50  # Scale down max 50% of pods at a time
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60  # Wait 1 minute before scaling up
+      policies:
+      - type: Percent
+        value: 100  # Can double pods quickly during spikes
+        periodSeconds: 60
+
+---
+# Server HPA: Scale 2-4 replicas based on CPU usage
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: neuroclima-server-hpa
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: server
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neuroclima-server
+  minReplicas: 2  # Minimum 2 replicas for HA
+  maxReplicas: 4  # Scale up to 4 during high load
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Target 70% CPU utilization
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+      - type: Percent
+        value: 50  # Scale down max 50% of pods at a time
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60  # Wait 1 minute before scaling up
+      policies:
+      - type: Percent
+        value: 100  # Can double pods quickly during spikes
+        periodSeconds: 60
+
+---
+# Processor HPA: Scale 1-2 replicas based on CPU usage
+# ⚠️  IMPORTANT: Scaling to 2 replicas requires additional cluster memory
+#     Processor needs 5Gi limit per replica (10Gi total for 2 replicas)
+#     Consider adding a memory-optimized node before enabling this HPA
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: neuroclima-processor-hpa
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: processor
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neuroclima-processor
+  minReplicas: 1  # Start with 1 replica (memory-intensive)
+  maxReplicas: 2  # Scale to 2 when cluster has sufficient memory
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Target 70% CPU utilization
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 600  # Wait 10 minutes before scaling down (document processing is bursty)
+      policies:
+      - type: Pods
+        value: 1  # Scale down 1 pod at a time
+        periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 120  # Wait 2 minutes before scaling up
+      policies:
+      - type: Pods
+        value: 1  # Scale up 1 pod at a time (resource-intensive)
+        periodSeconds: 60

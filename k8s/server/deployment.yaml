@@ -49,6 +49,17 @@ spec:
         persistentVolumeClaim:
           claimName: redis-data-pvc
 ---
+# ============================================================================
+# NeuroClima Server Deployment - Production Configuration
+# ============================================================================
+# FastAPI backend server with high availability configuration
+#
+# Production Features:
+#   ✅ 2 replicas for high availability and load distribution
+#   ✅ Pod anti-affinity to spread across nodes
+#   ✅ Readiness/liveness probes for health checks
+#   ✅ Shared Redis for session management across replicas
+# ============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -58,7 +69,7 @@ metadata:
     app: neuroclima
     component: server
 spec:
-  replicas: 1
+  replicas: 2  # Production: 2 replicas for high availability and load distribution
   selector:
     matchLabels:
       app: neuroclima
@@ -69,6 +80,19 @@ spec:
         app: neuroclima
         component: server
     spec:
+      # Pod anti-affinity: Spread replicas across different nodes for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - server
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: server
         image: docker.io/raviyah/neuroclima-server:latest
@@ -88,7 +112,7 @@ spec:
         - name: REDIS_PORT
           value: "6379"
         - name: DOCUMENT_PROCESSOR_URL
-          value: "hhttp://neuroclima-processor:5000"
+          value: "http://neuroclima-processor:5000"
         # Milvus from shared config and secrets
         - name: MILVUS_HOST
           valueFrom:
@@ -188,6 +212,26 @@ spec:
         volumeMounts:
         - name: server-data
           mountPath: /app/data
+        # Readiness probe: Check if server is ready to serve requests
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        # Liveness probe: Check if server is alive and healthy
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
         resources:
           requests:
             memory: "1Gi"

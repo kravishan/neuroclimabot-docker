@@ -32,6 +32,20 @@ spec:
             memory: "2Gi"
             cpu: "1000m"
 ---
+# ============================================================================
+# NeuroClima Processor Deployment - Production Configuration
+# ============================================================================
+# Document processing service with high availability configuration
+#
+# Production Features:
+#   ⚠️  Currently 1 replica (memory-intensive: 5Gi limit)
+#   ✅ Pod anti-affinity ready for scaling to multiple replicas
+#   ✅ Readiness/liveness probes for health checks
+#   📈 Ready to scale to 2+ replicas when cluster resources allow
+#
+# Note: This service requires significant memory (5Gi limit per replica).
+#       To scale to 2+ replicas, consider adding memory-optimized nodes.
+# ============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -41,7 +55,7 @@ metadata:
     app: neuroclima
     component: processor
 spec:
-  replicas: 1
+  replicas: 1  # Start with 1 replica (memory-intensive). Scale up when cluster resources allow.
   selector:
     matchLabels:
       app: neuroclima
@@ -52,6 +66,19 @@ spec:
         app: neuroclima
         component: processor
     spec:
+      # Pod anti-affinity: Spread replicas across different nodes when scaling
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - processor
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: processor
         image: docker.io/raviyah/neuroclima-processor:latest
@@ -101,6 +128,26 @@ spec:
           subPath: settings.yaml
         - name: graphrag-prompts
           mountPath: /app/graphrag/prompts
+        # Readiness probe: Check if processor is ready to accept requests
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        # Liveness probe: Check if processor is alive and healthy
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 45
+          periodSeconds: 30
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
         resources:
           requests:
             memory: "1500Mi"
