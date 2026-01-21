@@ -88,7 +88,7 @@ spec:
         - name: REDIS_PORT
           value: "6379"
         - name: DOCUMENT_PROCESSOR_URL
-          value: "http://86.50.252.6:5000"
+          value: "hhttp://neuroclima-processor:5000"
         # Milvus from shared config and secrets
         - name: MILVUS_HOST
           valueFrom:
