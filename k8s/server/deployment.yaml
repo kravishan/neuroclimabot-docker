@@ -88,7 +88,7 @@ spec:
         - name: REDIS_PORT
           value: "6379"
         - name: DOCUMENT_PROCESSOR_URL
-          value: "http://neuroclima-processor:5000"
+          value: "http://86.50.252.6:5000"
         # Milvus from shared config and secrets
         - name: MILVUS_HOST
           valueFrom:
@@ -190,11 +190,11 @@ spec:
           mountPath: /app/data
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "500m"
+            memory: "1Gi"
+            cpu: "250m"
           limits:
-            memory: "4Gi"
-            cpu: "2000m"
+            memory: "2Gi"
+            cpu: "1000m"
       volumes:
       - name: server-data
         persistentVolumeClaim:

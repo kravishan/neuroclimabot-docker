@@ -26,11 +26,11 @@ spec:
           name: http
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "500m"
+            memory: "1Gi"
+            cpu: "250m"
           limits:
-            memory: "4Gi"
-            cpu: "2000m"
+            memory: "2Gi"
+            cpu: "1000m"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -103,10 +103,10 @@ spec:
           mountPath: /app/graphrag/prompts
         resources:
           requests:
-            memory: "2Gi"
+            memory: "1500Mi"
             cpu: "500m"
           limits:
-            memory: "4Gi"
+            memory: "5Gi"
             cpu: "2000m"
       volumes:
       - name: processor-data

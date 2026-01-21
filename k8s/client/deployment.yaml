@@ -61,6 +61,10 @@ spec:
           value: "/processor"  # Routes translation API through processor
         - name: VITE_STP_SERVICE_URL
           value: "/processor"  # Routes STP service through processor
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
         resources:
           requests:
             memory: "128Mi"
@@ -68,3 +72,7 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "200m"
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: client-nginx-config
