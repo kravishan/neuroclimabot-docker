@@ -145,7 +145,7 @@ const ExplorePage = () => {
 
       // ALL ATTEMPTS FAILED
       console.error("❌ All attempts failed. No data found for primary or fallback documents.")
-      setError('Sorry, we don\'t have the knowledge graph data for this question.')
+      setError(`Knowledge graph visualization is not available for this document "${docName}".\n\nThis could happen if:\n• The document hasn't been processed by GraphRAG yet\n• The document is a news article that needs GraphRAG indexing\n• The document name doesn't match any processed documents in the database\n\nPlease try exploring a different document, or contact support if this persists.`)
       setLoading(false)
       hasFetchedData.current = false
     }
@@ -155,7 +155,7 @@ const ExplorePage = () => {
 
       // Check if the transformed data has any nodes
       if (!transformedGraphData.nodes || transformedGraphData.nodes.length === 0) {
-        setError('Sorry, we don\'t have the knowledge graph data for this question.')
+        setError(`No knowledge graph data found for "${docName}".\n\nThe document may not have been processed through GraphRAG yet, or it may not contain enough entities and relationships to visualize.\n\nFor news articles specifically, GraphRAG processing must be completed before visualization is available.`)
         setLoading(false)
         return
       }
