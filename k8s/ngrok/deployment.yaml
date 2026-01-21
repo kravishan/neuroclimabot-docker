@@ -1,3 +1,15 @@
+# ============================================================================
+# OBSOLETE: This deployment is no longer needed
+# ============================================================================
+# The application now uses Traefik IngressRoute with bot.neuroclima.eu domain
+# This ngrok deployment was previously used with nginx-gateway (now removed)
+#
+# Traefik provides:
+# - TLS termination with Let's Encrypt
+# - Direct routing to services (client, server, processor)
+# - Load balancing across replicas
+# ============================================================================
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +19,7 @@ metadata:
     app: neuroclima
     component: ngrok
 spec:
-  replicas: 1
+  replicas: 0  # Set to 0 - not in use (using Traefik IngressRoute instead)
   selector:
     matchLabels:
       app: neuroclima
@@ -26,7 +38,7 @@ spec:
         - http
         - --authtoken=$(NGROK_AUTHTOKEN)
         - --log=stdout
-        - nginx-gateway:80
+        - nginx-gateway:80  # OBSOLETE: nginx-gateway has been removed
         env:
         - name: NGROK_AUTHTOKEN
           valueFrom:

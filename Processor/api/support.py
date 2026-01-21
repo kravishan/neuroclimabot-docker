@@ -74,7 +74,7 @@ def get_model_name(source_lang: str, target_lang: str) -> str:
     model_map = {
         ('it', 'en'): 'Helsinki-NLP/opus-mt-it-en',
         ('pt', 'en'): 'Helsinki-NLP/opus-mt-roa-en',
-        ('el', 'en'): 'Helsinki-NLP/opus-mt-tc-big-el-en',  # Fixed: Use tc-big model for Greek
+        ('el', 'en'): 'Helsinki-NLP/opus-mt-grk-en',  # Fixed: Use tc-big model for Greek
         ('en', 'it'): 'Helsinki-NLP/opus-mt-en-it',
         ('en', 'pt'): 'Helsinki-NLP/opus-mt-en-roa',
         ('en', 'el'): 'Helsinki-NLP/opus-mt-en-el'

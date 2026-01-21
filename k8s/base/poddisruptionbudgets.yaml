@@ -1,0 +1,96 @@
+# ============================================================================
+# Pod Disruption Budgets - Ensure High Availability During Voluntary Disruptions
+# ============================================================================
+# PodDisruptionBudgets (PDB) protect services during:
+# - Node drains (maintenance, upgrades)
+# - Cluster autoscaling down
+# - kubectl drain operations
+#
+# For 2-replica services: Ensure at least 1 pod always available
+# For 1-replica services: Prevent voluntary disruption (maxUnavailable: 0)
+# ============================================================================
+
+---
+# Client PDB: Ensure at least 1 replica available during disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: neuroclima-client-pdb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: client
+spec:
+  minAvailable: 1  # At least 1 pod must be available
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: client
+
+---
+# Server PDB: Ensure at least 1 replica available during disruptions
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: neuroclima-server-pdb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: server
+spec:
+  minAvailable: 1  # At least 1 pod must be available
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: server
+
+---
+# Processor PDB: Prevent voluntary disruption (only 1 replica)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: neuroclima-processor-pdb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: processor
+spec:
+  maxUnavailable: 0  # Don't allow voluntary disruption of the single replica
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: processor
+
+---
+# Redis PDB: Prevent voluntary disruption (stateful, single replica)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: neuroclima-redis-pdb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: redis
+spec:
+  maxUnavailable: 0  # Don't allow voluntary disruption of Redis
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: redis
+
+---
+# Unstructured PDB: Prevent voluntary disruption (only 1 replica)
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: neuroclima-unstructured-pdb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: unstructured
+spec:
+  maxUnavailable: 0  # Don't allow voluntary disruption of the single replica
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: unstructured

@@ -1,26 +1,24 @@
 # ============================================================================
-# NeuroClima Client Deployment - Nginx Gateway Architecture
+# NeuroClima Client Deployment - Production Configuration
 # ============================================================================
-# This deployment uses an industry-standard reverse proxy pattern:
+# This deployment uses Traefik IngressRoute for routing:
 #
 # Architecture:
-#   Internet → ngrok → Nginx Gateway → Path-based routing:
-#                           ↓
-#         /          → neuroclima-client (Frontend)
-#         /server/*  → neuroclima-server (Backend API)
-#         /processor/* → neuroclima-processor (Document Processing)
+#   Internet → Traefik LB (TLS termination) → Path-based routing:
+#         bot.neuroclima.eu/          → neuroclima-client (Frontend)
+#         bot.neuroclima.eu/server    → neuroclima-server (Backend API)
+#         bot.neuroclima.eu/processor → neuroclima-processor (Document Processing)
 #
-# Benefits:
-#   ✅ Single entry point - One URL for all services
+# Production Features:
+#   ✅ 2 replicas for high availability and load distribution
+#   ✅ Pod anti-affinity to spread across nodes
+#   ✅ Readiness/liveness probes for health checks
 #   ✅ No CORS issues - Everything on same domain
-#   ✅ Production-ready - Industry standard pattern
-#   ✅ Easy to scale - Add services by adding paths
-#   ✅ Works without domain - Use with ngrok, NodePort, or LoadBalancer
+#   ✅ TLS termination via Traefik with Let's Encrypt
 #
 # Environment Variables (Optional):
 #   - These override the defaults set in config.js
 #   - Default values: /server and /processor (relative paths)
-#   - Only change if you need custom routing
 # ============================================================================
 
 apiVersion: apps/v1
@@ -32,7 +30,7 @@ metadata:
     app: neuroclima
     component: client
 spec:
-  replicas: 1
+  replicas: 1  # Initial deployment: Start with 1 replica. Scale to 2 after verifying deployment.
   selector:
     matchLabels:
       app: neuroclima
@@ -43,6 +41,19 @@ spec:
         app: neuroclima
         component: client
     spec:
+      # Pod anti-affinity: Spread replicas across different nodes for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - client
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: client
         image: docker.io/raviyah/neuroclima-client:latest
@@ -65,6 +76,26 @@ spec:
         - name: nginx-config
           mountPath: /etc/nginx/conf.d/default.conf
           subPath: default.conf
+        # Readiness probe: Check if nginx is ready to serve traffic
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        # Liveness probe: Check if container is alive and healthy
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
         resources:
           requests:
             memory: "128Mi"
