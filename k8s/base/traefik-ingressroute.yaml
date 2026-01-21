@@ -1,0 +1,93 @@
+# Traefik IngressRoute for NeuroClima Application
+# This exposes the application to the internet via Traefik proxy
+#
+# IMPORTANT: Replace <YOUR_SUBDOMAIN> with your actual subdomain
+# Example: neuroclima.neuroclima.eu or app.neuroclima.eu
+#
+# What this does:
+# 1. Routes https://<YOUR_SUBDOMAIN>.neuroclima.eu/ to the client (frontend)
+# 2. Routes https://<YOUR_SUBDOMAIN>.neuroclima.eu/server to the server API
+# 3. Routes https://<YOUR_SUBDOMAIN>.neuroclima.eu/processor to the processor API
+# 4. Automatically gets SSL certificate from Let's Encrypt
+#
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: neuroclima-ingressroute
+  namespace: uoulu
+  labels:
+    app: neuroclima
+spec:
+  # Entry point - websecure means HTTPS (port 443)
+  entryPoints:
+    - websecure
+
+  routes:
+  # Route 1: Frontend Client - serves the main UI
+  - kind: Rule
+    match: Host(`<YOUR_SUBDOMAIN>.neuroclima.eu`) && PathPrefix(`/`)
+    priority: 1  # Lower priority, catch-all route
+    services:
+    - kind: Service
+      name: neuroclima-client
+      namespace: uoulu
+      port: 80
+      # No scheme needed - client is HTTP inside cluster
+
+  # Route 2: Server API - handles backend API requests
+  - kind: Rule
+    match: Host(`<YOUR_SUBDOMAIN>.neuroclima.eu`) && PathPrefix(`/server`)
+    priority: 10  # Higher priority to match before catch-all
+    middlewares:
+    - name: neuroclima-stripprefix-server
+      namespace: uoulu
+    services:
+    - kind: Service
+      name: neuroclima-server
+      namespace: uoulu
+      port: 8000
+
+  # Route 3: Processor API - handles document processing
+  - kind: Rule
+    match: Host(`<YOUR_SUBDOMAIN>.neuroclima.eu`) && PathPrefix(`/processor`)
+    priority: 10  # Higher priority to match before catch-all
+    middlewares:
+    - name: neuroclima-stripprefix-processor
+      namespace: uoulu
+    services:
+    - kind: Service
+      name: neuroclima-processor
+      namespace: uoulu
+      port: 5000
+
+  # TLS Configuration - automatic HTTPS via Let's Encrypt
+  tls:
+    certResolver: letsencrypt
+    domains:
+    - main: <YOUR_SUBDOMAIN>.neuroclima.eu
+
+---
+# Middleware: Strip /server prefix before forwarding to backend
+# Example: /server/api/chat -> /api/chat
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: neuroclima-stripprefix-server
+  namespace: uoulu
+spec:
+  stripPrefix:
+    prefixes:
+      - /server
+
+---
+# Middleware: Strip /processor prefix before forwarding to processor
+# Example: /processor/upload -> /upload
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: neuroclima-stripprefix-processor
+  namespace: uoulu
+spec:
+  stripPrefix:
+    prefixes:
+      - /processor
