@@ -12,9 +12,6 @@ from app.services.tracing import get_langfuse_client, is_langfuse_enabled
 from app.utils.references import process_references_with_urls_and_count
 from app.utils.logger import get_logger
 
-# Import Prometheus metrics functions
-from app.core.middleware import record_llm_duration, record_retrieval_duration
-
 logger = get_logger(__name__)
 settings = get_settings()
 
@@ -167,13 +164,7 @@ class CleanRAGService:
             
             # Calculate total time
             total_time = time.perf_counter() - total_start_time
-            
-            # Record Prometheus metrics
-            if retrieval_time > 0:
-                record_retrieval_duration(retrieval_time)
-            if llm_time > 0:
-                record_llm_duration(llm_time)
-            
+
             # Update internal performance stats
             self._update_performance_stats(total_time, retrieval_time, llm_time)
             
@@ -561,10 +552,7 @@ class CleanRAGService:
                             "content_length": len(fallback_response["content"])
                         }
                     )
-                    
-                    # Record LLM time for fallback
-                    record_llm_duration(fallback_time)
-                    
+
                     return {
                         "answer": fallback_response["content"],
                         "title": fallback_response["title"],
@@ -577,12 +565,11 @@ class CleanRAGService:
                 fallback_response = await self._generate_fallback_response(
                     query, difficulty_level, conversation_type
                 )
-                
+
                 fallback_time = time.perf_counter() - fallback_start
-                record_llm_duration(fallback_time)
-                
+
                 logger.info(f"✅ Fallback response generated in {fallback_time:.3f}s - Title: '{fallback_response['title']}'")
-                
+
                 return {
                     "answer": fallback_response["content"],
                     "title": fallback_response["title"],

@@ -13,7 +13,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-from prometheus_client import start_http_server
 
 from app.api.v1.router import api_router
 from app.config import get_settings
@@ -102,15 +101,11 @@ async def startup_event():
     # Initialize GraphRAG (optional)
     tasks.append(initialize_graphrag())
 
-    # Start metrics server
-    if settings.ENABLE_METRICS:
-        tasks.append(start_metrics_server())
-
     # Run all initialization tasks
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     # Log results
-    task_names = ["langfuse", "auth", "milvus", "minio", "rag", "session_manager", "stats_database", "graphrag", "metrics"]
+    task_names = ["langfuse", "auth", "milvus", "minio", "rag", "session_manager", "stats_database", "graphrag"]
     for i, result in enumerate(results):
         if isinstance(result, Exception):
             task_name = task_names[i] if i < len(task_names) else f"task_{i}"
@@ -266,22 +261,13 @@ async def initialize_graphrag():
         # Don't raise - GraphRAG is optional
 
 
-async def start_metrics_server():
-    """Start Prometheus metrics server."""
-    try:
-        start_http_server(settings.METRICS_PORT)
-        logger.info(f"✅ Metrics server started on port {settings.METRICS_PORT}")
-    except Exception as e:
-        logger.warning(f"⚠️  Failed to start metrics server: {e}")
-
-
 def create_application() -> FastAPI:
     """Create and configure FastAPI application."""
     
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
-        description="Modern RAG system for climate policy Q&A with authentication, Langfuse tracing and Prometheus metrics",
+        description="Modern RAG system for climate policy Q&A with authentication and Langfuse tracing",
         docs_url="/docs" if settings.DEBUG else None,
         redoc_url="/redoc" if settings.DEBUG else None,
         openapi_url="/openapi.json" if settings.DEBUG else None,
@@ -296,14 +282,7 @@ def create_application() -> FastAPI:
     
     # Include routers
     app.include_router(api_router, prefix="/api/v1")
-    
-    # Add metrics endpoint
-    @app.get("/metrics", include_in_schema=False, tags=["Monitoring"])
-    async def metrics():
-        """Prometheus metrics endpoint."""
-        from app.core.middleware import get_metrics_response
-        return get_metrics_response()
-    
+
     # Add root endpoint
     @app.get("/", include_in_schema=False)
     async def root():
@@ -324,10 +303,6 @@ def create_application() -> FastAPI:
             "tracing": {
                 "langfuse_enabled": settings.LANGFUSE_ENABLED,
                 "langfuse_configured": settings.langfuse_is_configured
-            },
-            "monitoring": {
-                "prometheus_metrics": "/metrics",
-                "health_check": "/health"
             }
         }
     
@@ -360,19 +335,15 @@ def setup_middleware(app: FastAPI):
     
     # Compression middleware
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-    
+
     # Custom middleware (ORDER MATTERS!)
-    # 1. Prometheus metrics (first to capture all requests)
-    from app.core.middleware import PrometheusMiddleware
-    app.add_middleware(PrometheusMiddleware)
-    
-    # 2. Timing middleware
+    # 1. Timing middleware
     app.add_middleware(TimingMiddleware)
-    
-    # 3. Logging middleware
+
+    # 2. Logging middleware
     app.add_middleware(LoggingMiddleware)
-    
-    # 4. Rate limiting middleware (last to apply limits)
+
+    # 3. Rate limiting middleware (last to apply limits)
     if settings.RATE_LIMIT_ENABLED:
         app.add_middleware(
             RateLimitMiddleware,

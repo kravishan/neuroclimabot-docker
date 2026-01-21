@@ -211,7 +211,6 @@ platformdirs==4.3.7
 POT==0.9.5
 preshed==3.0.9
 priority==2.0.0
-prometheus_client==0.21.1
 prompt_toolkit==3.0.51
 propcache==0.3.1
 proto-plus==1.26.1

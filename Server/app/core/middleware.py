@@ -1,4 +1,4 @@
-"""Custom middleware for the application with Prometheus metrics."""
+"""Custom middleware for the application."""
 
 import time
 import uuid
@@ -12,97 +12,6 @@ from app.core.exceptions import RateLimitError
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-# Prometheus metrics (with fallback if prometheus_client not available)
-try:
-    from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
-    
-    # Define metrics
-    request_count = Counter(
-        'neuroclima_requests_total', 
-        'Total HTTP requests', 
-        ['method', 'endpoint', 'status_code']
-    )
-    request_duration = Histogram(
-        'neuroclima_request_duration_seconds', 
-        'HTTP request duration in seconds',
-        ['method', 'endpoint']
-    )
-    active_sessions = Gauge('neuroclima_active_sessions', 'Number of active sessions')
-    cache_hit_rate = Gauge('neuroclima_cache_hit_rate', 'Cache hit rate')
-    llm_duration = Histogram('neuroclima_llm_duration_seconds', 'LLM generation time in seconds')
-    retrieval_duration = Histogram('neuroclima_retrieval_duration_seconds', 'Document retrieval time in seconds')
-    active_requests = Gauge('neuroclima_active_requests', 'Number of requests currently being processed')
-    
-    PROMETHEUS_AVAILABLE = True
-    logger.info("✅ Prometheus metrics enabled")
-except ImportError:
-    PROMETHEUS_AVAILABLE = False
-    logger.warning("⚠️  Prometheus client not available - metrics disabled")
-
-
-class PrometheusMiddleware(BaseHTTPMiddleware):
-    """Middleware to collect Prometheus metrics."""
-    
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        if not PROMETHEUS_AVAILABLE:
-            return await call_next(request)
-        
-        # Skip metrics collection for the metrics endpoint itself
-        if request.url.path == "/metrics":
-            return await call_next(request)
-        
-        start_time = time.perf_counter()
-        method = request.method
-        endpoint = self._get_endpoint_label(request.url.path)
-        
-        # Increment active requests
-        active_requests.inc()
-        
-        try:
-            response = await call_next(request)
-            status_code = str(response.status_code)
-        except Exception as e:
-            status_code = "500"
-            # Re-raise the exception after recording metrics
-            duration = time.perf_counter() - start_time
-            request_count.labels(method=method, endpoint=endpoint, status_code=status_code).inc()
-            request_duration.labels(method=method, endpoint=endpoint).observe(duration)
-            active_requests.dec()
-            raise
-        
-        # Record metrics
-        duration = time.perf_counter() - start_time
-        request_count.labels(method=method, endpoint=endpoint, status_code=status_code).inc()
-        request_duration.labels(method=method, endpoint=endpoint).observe(duration)
-        active_requests.dec()
-        
-        return response
-    
-    def _get_endpoint_label(self, path: str) -> str:
-        """Convert path to a metrics-friendly endpoint label."""
-        # Group similar endpoints to avoid metric explosion
-        if path.startswith("/api/v1/chat/continue/"):
-            return "/api/v1/chat/continue/{session_id}"
-        elif path.startswith("/api/v1/chat/sessions/"):
-            if path.endswith("/messages"):
-                return "/api/v1/chat/sessions/{session_id}/messages"
-            else:
-                return "/api/v1/chat/sessions/{session_id}"
-        elif path == "/":
-            return "/"
-        elif path == "/health":
-            return "/health"
-        elif path == "/docs":
-            return "/docs"
-        elif path == "/openapi.json":
-            return "/openapi.json"
-        elif path.startswith("/api/v1/"):
-            # Keep the first 3 parts of API paths
-            parts = path.split("/")[:4]  # ['', 'api', 'v1', 'endpoint']
-            return "/".join(parts)
-        else:
-            return "other"
 
 
 class TimingMiddleware(BaseHTTPMiddleware):
@@ -140,21 +49,18 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         
         # Get request ID
         request_id = getattr(request.state, 'request_id', None)
-        
-        # Skip logging for metrics endpoint to reduce noise
-        if request.url.path != "/metrics":
-            logger.info(
-                f"Request started: {request.method} {request.url} from {client_ip} (ID: {request_id})"
-            )
+
+        logger.info(
+            f"Request started: {request.method} {request.url} from {client_ip} (ID: {request_id})"
+        )
         
         response = await call_next(request)
-        
-        # Log response (skip metrics endpoint)
-        if request.url.path != "/metrics":
-            process_time = time.perf_counter() - start_time
-            logger.info(
-                f"Request completed: {request.method} {request.url} - {response.status_code} - {round(process_time, 4)}s (ID: {request_id})"
-            )
+
+        # Log response
+        process_time = time.perf_counter() - start_time
+        logger.info(
+            f"Request completed: {request.method} {request.url} - {response.status_code} - {round(process_time, 4)}s (ID: {request_id})"
+        )
         
         return response
 
@@ -169,10 +75,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.window_size = 60  # 1 minute
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Skip rate limiting for metrics endpoint
-        if request.url.path == "/metrics":
-            return await call_next(request)
-        
         client_ip = request.client.host if request.client else "unknown"
         current_time = time.time()
         
@@ -181,14 +83,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         
         # Check rate limit
         if self._is_rate_limited(client_ip, current_time):
-            # Record rate limit hit in metrics
-            if PROMETHEUS_AVAILABLE:
-                request_count.labels(
-                    method=request.method, 
-                    endpoint=request.url.path, 
-                    status_code="429"
-                ).inc()
-            
             return JSONResponse(
                 status_code=429,
                 content={
@@ -229,48 +123,3 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             self.clients[client_ip] = []
         
         self.clients[client_ip].append(current_time)
-
-
-# Helper functions to update metrics from other parts of the application
-def update_active_sessions(count: int):
-    """Update the active sessions metric."""
-    if PROMETHEUS_AVAILABLE:
-        active_sessions.set(count)
-
-
-def update_cache_hit_rate(rate: float):
-    """Update the cache hit rate metric."""
-    if PROMETHEUS_AVAILABLE:
-        cache_hit_rate.set(rate)
-
-
-def record_llm_duration(duration: float):
-    """Record LLM generation duration."""
-    if PROMETHEUS_AVAILABLE:
-        llm_duration.observe(duration)
-
-
-def record_retrieval_duration(duration: float):
-    """Record document retrieval duration."""
-    if PROMETHEUS_AVAILABLE:
-        retrieval_duration.observe(duration)
-
-
-def get_metrics_response():
-    """Generate Prometheus metrics response."""
-    if not PROMETHEUS_AVAILABLE:
-        return PlainTextResponse(
-            "# Prometheus metrics not available\n# Install prometheus_client package\n",
-            media_type="text/plain"
-        )
-    
-    try:
-        metrics_data = generate_latest()
-        return PlainTextResponse(metrics_data, media_type=CONTENT_TYPE_LATEST)
-    except Exception as e:
-        logger.error(f"Error generating metrics: {e}")
-        return PlainTextResponse(
-            f"# Error generating metrics: {e}\n",
-            media_type="text/plain",
-            status_code=500
-        )

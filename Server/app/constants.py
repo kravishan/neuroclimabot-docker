@@ -193,14 +193,6 @@ MAX_CONCURRENT_REQUESTS = 10            # Max concurrent HTTP requests
 
 
 # =============================================================================
-# Monitoring Constants
-# =============================================================================
-
-METRICS_PORT = 8001                     # Prometheus metrics port
-PERFORMANCE_LOG_THRESHOLD = 2.0         # Log performance if > N seconds
-
-
-# =============================================================================
 # Email Constants
 # =============================================================================
 

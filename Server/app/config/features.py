@@ -113,33 +113,6 @@ class FeaturesConfig(BaseSettings):
     ENABLE_AUTO_SUMMARIZATION: bool = False
 
     # =============================================================================
-    # Monitoring & Observability
-    # =============================================================================
-
-    ENABLE_METRICS: bool = True
-    METRICS_PORT: int = 8001
-    TRACK_RESPONSE_TIMES: bool = True
-    PERFORMANCE_LOG_THRESHOLD: float = 2.0
-
-    # GraphRAG API specific monitoring
-    TRACK_GRAPHRAG_API_PERFORMANCE: bool = Field(
-        default=True,
-        description="Track GraphRAG API performance metrics"
-    )
-    TRACK_RELEVANCE_FILTERING: bool = Field(
-        default=True,
-        description="Track relevance filtering statistics"
-    )
-    TRACK_BUCKET_USAGE: bool = Field(
-        default=True,
-        description="Track bucket usage statistics"
-    )
-    TRACK_STP_PERFORMANCE: bool = Field(
-        default=True,
-        description="Track STP service performance metrics"
-    )
-
-    # =============================================================================
     # Memory and Session Configuration
     # =============================================================================
 

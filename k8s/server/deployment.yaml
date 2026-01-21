@@ -75,8 +75,6 @@ spec:
         ports:
         - containerPort: 8000
           name: http
-        - containerPort: 8001
-          name: metrics
         env:
         - name: REDIS_PASSWORD
           valueFrom:
