@@ -30,7 +30,7 @@ metadata:
     app: neuroclima
     component: client
 spec:
-  replicas: 2  # Production: 2 replicas for high availability and load distribution
+  replicas: 1  # Initial deployment: Start with 1 replica. Scale to 2 after verifying deployment.
   selector:
     matchLabels:
       app: neuroclima
