@@ -9,6 +9,7 @@ import json
 import shutil
 import os
 import re
+import pandas as pd
 from pathlib import Path
 from typing import Dict, Any, List
 from datetime import datetime
@@ -164,11 +165,15 @@ class GraphRAGProcessor:
             
             # Run GraphRAG indexing
             success = await self._run_graphrag_indexing(workspace_path)
-            
+
             processing_time = (datetime.now() - start_time).total_seconds()
-            
+
             if success:
                 logger.info(f"✅ GraphRAG indexing completed in {processing_time:.2f}s")
+
+                # Add source_url to documents.parquet before merging
+                if final_source_url:
+                    self._add_source_url_to_documents(workspace_path, final_source_url)
 
                 # Merge workspace data to master GraphRAG output
                 logger.info(f"📊 Merging to master GraphRAG output...")
@@ -385,7 +390,37 @@ class GraphRAGProcessor:
         except Exception as e:
             logger.error(f"💥 GraphRAG indexing exception: {e}")
             return False
-    
+
+    def _add_source_url_to_documents(self, workspace_path: Path, source_url: str) -> bool:
+        """
+        Add source_url column to documents.parquet after GraphRAG processing.
+        This preserves the original URL for news articles so they can be matched in visualizations.
+        """
+        try:
+            documents_file = workspace_path / "output" / "documents.parquet"
+
+            if not documents_file.exists():
+                logger.warning(f"⚠️  documents.parquet not found at {documents_file}")
+                return False
+
+            # Read the existing documents.parquet
+            docs_df = pd.read_parquet(documents_file)
+            logger.info(f"📄 Read documents.parquet: {len(docs_df)} rows, columns: {list(docs_df.columns)}")
+
+            # Add or update the source_url column
+            # All rows get the same source_url since this workspace processed a single document
+            docs_df['source_url'] = source_url
+
+            # Save back to parquet
+            docs_df.to_parquet(documents_file)
+            logger.info(f"✅ Added source_url column to documents.parquet: '{source_url}'")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Failed to add source_url to documents.parquet: {e}")
+            return False
+
     async def _run_command(self, cmd: List[str], workspace_path: Path = None) -> subprocess.CompletedProcess:
         """Run command asynchronously with workspace environment"""
         loop = asyncio.get_event_loop()
