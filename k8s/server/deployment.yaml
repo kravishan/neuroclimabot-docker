@@ -190,11 +190,11 @@ spec:
           mountPath: /app/data
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "500m"
+            memory: "1Gi"
+            cpu: "250m"
           limits:
-            memory: "4Gi"
-            cpu: "2000m"
+            memory: "2Gi"
+            cpu: "1000m"
       volumes:
       - name: server-data
         persistentVolumeClaim:
