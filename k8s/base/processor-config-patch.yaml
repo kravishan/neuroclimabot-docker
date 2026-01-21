@@ -4,4 +4,8 @@ metadata:
   name: processor-config
   namespace: uoulu
 data:
+  # Security
   SECURE: "True"
+
+  # CORS Settings - Allow the production domain
+  CORS_ORIGINS: "https://bot.neuroclima.eu,http://localhost:3000,http://localhost:8080"

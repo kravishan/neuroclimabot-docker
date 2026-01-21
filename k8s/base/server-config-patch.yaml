@@ -4,4 +4,11 @@ metadata:
   name: server-config
   namespace: uoulu
 data:
+  # CORS Settings - Allow the production domain
+  ALLOWED_ORIGINS: "https://bot.neuroclima.eu,http://localhost:3000,http://localhost:8000"
+  ALLOW_CREDENTIALS: "true"
+  ALLOWED_METHODS: "*"
+  ALLOWED_HEADERS: "*"
+
+  # MinIO Security
   MINIO_SECURE: "true"
