@@ -4,6 +4,12 @@ metadata:
   name: server-config
   namespace: uoulu
 data:
+  # Application Settings
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  ENVIRONMENT: "production"
+
   # CORS Settings - Allow the production domain
   ALLOWED_ORIGINS: "https://bot.neuroclima.eu,http://localhost:3000,http://localhost:8000"
   ALLOW_CREDENTIALS: "true"
@@ -12,3 +18,23 @@ data:
 
   # MinIO Security
   MINIO_SECURE: "true"
+
+  # Authentication
+  AUTH_TOKEN_EXPIRY_DAYS: "7"
+
+  # Email Configuration
+  EMAIL_PROVIDER: "smtp"
+  MAILEROO_FROM_NAME: "NeuroClima Bot"
+  EMAIL_TIMEOUT_SECONDS: "30"
+  EMAIL_RETRY_ATTEMPTS: "3"
+  EMAIL_RETRY_DELAY_SECONDS: "1.0"
+
+  # Ollama Configuration
+  OLLAMA_MODEL: "mistral:7b"
+  OLLAMA_TEMPERATURE: "0.2"
+  OLLAMA_MAX_TOKENS: "1500"
+  OLLAMA_TIMEOUT: "30"
+
+  # GraphRAG Configuration
+  GRAPHRAG_SERVER_URL: "http://neuroclima-processor:5000"
+  GRAPHRAG_API_TIMEOUT: "30.0"
