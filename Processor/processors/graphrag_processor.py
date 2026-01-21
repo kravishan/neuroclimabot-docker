@@ -124,6 +124,43 @@ class GraphRAGProcessor:
         safe_filename = re.sub(r'[^a-zA-Z0-9\-_]', '_', filename)
         return f"{bucket}://{safe_filename}_{timestamp}_{uuid.uuid4().hex[:8]}"
 
+    async def _populate_document_source_url(self, workspace_path: Path, source_url: str, document_identifier: str):
+        """
+        Populate source_url field in documents.parquet for news articles.
+        This fixes the issue where GraphRAG creates documents.parquet without source_url,
+        causing visualization lookups to fail for news articles.
+        """
+        try:
+            import pandas as pd
+
+            output_dir = workspace_path / "output"
+            documents_file = output_dir / "documents.parquet"
+
+            if not documents_file.exists():
+                logger.warning(f"⚠️  documents.parquet not found in workspace - skipping source_url population")
+                return
+
+            # Read documents
+            docs_df = pd.read_parquet(documents_file)
+            logger.info(f"📄 Read documents.parquet: {len(docs_df)} rows")
+
+            # Add source_url column if it doesn't exist
+            if 'source_url' not in docs_df.columns:
+                docs_df['source_url'] = ""
+                logger.info("✅ Added source_url column to documents")
+
+            # Populate source_url for all rows (usually just 1 row per workspace)
+            docs_df['source_url'] = source_url
+            logger.info(f"✅ Populated source_url with: {source_url}")
+
+            # Save updated documents
+            docs_df.to_parquet(documents_file)
+            logger.info(f"💾 Saved documents.parquet with source_url populated")
+
+        except Exception as e:
+            logger.error(f"❌ Failed to populate source_url in documents.parquet: {e}")
+            # Don't fail the whole process, just log the error
+
     async def process_document_graphrag(self, text_content: str, filename: str, bucket: str,
                                       source_url: str = "") -> Dict[str, Any]:
         """Process document using GraphRAG CLI workflow with automatic LanceDB transfer"""
@@ -169,6 +206,10 @@ class GraphRAGProcessor:
             
             if success:
                 logger.info(f"✅ GraphRAG indexing completed in {processing_time:.2f}s")
+
+                # CRITICAL FIX: Populate source_url in documents.parquet for news articles
+                if is_url_document and final_source_url:
+                    await self._populate_document_source_url(workspace_path, final_source_url, document_identifier)
 
                 # Merge workspace data to master GraphRAG output
                 logger.info(f"📊 Merging to master GraphRAG output...")
