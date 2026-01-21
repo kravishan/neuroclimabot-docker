@@ -35,6 +35,6 @@ data:
   OLLAMA_MAX_TOKENS: "1500"
   OLLAMA_TIMEOUT: "30"
 
-  # GraphRAG Configuration
-  GRAPHRAG_SERVER_URL: "http://neuroclima-processor:5000"
+  # GraphRAG Configuration - Using external VM processor
+  GRAPHRAG_SERVER_URL: "http://86.50.252.6:5000"
   GRAPHRAG_API_TIMEOUT: "30.0"
