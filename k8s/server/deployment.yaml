@@ -173,6 +173,12 @@ spec:
             secretKeyRef:
               name: neuroclima-secrets
               key: ADMIN_PASSWORD
+        # Email provider configuration
+        - name: EMAIL_PROVIDER
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: EMAIL_PROVIDER
         # Maileroo email credentials
         - name: MAILEROO_API_KEY
           valueFrom:
@@ -184,6 +190,16 @@ spec:
             secretKeyRef:
               name: neuroclima-secrets
               key: MAILEROO_FROM_EMAIL
+        - name: MAILEROO_FROM_NAME
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MAILEROO_FROM_NAME
+        - name: MAILEROO_API_URL
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MAILEROO_API_URL
         # Langfuse credentials
         - name: LANGFUSE_SECRET_KEY
           valueFrom:
