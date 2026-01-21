@@ -103,11 +103,11 @@ spec:
           mountPath: /app/graphrag/prompts
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "250m"
+            memory: "1500Mi"
+            cpu: "500m"
           limits:
-            memory: "3Gi"
-            cpu: "1500m"
+            memory: "5Gi"
+            cpu: "2000m"
       volumes:
       - name: processor-data
         persistentVolumeClaim:
