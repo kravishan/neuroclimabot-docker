@@ -247,7 +247,13 @@ class DocumentExtractor:
                 "languages": ["eng"]
             }
 
+            # Add image-specific parameters when extraction is enabled
             if should_extract_images:
+                data.update({
+                    "extract_image_block_types": ["Image", "Figure"],
+                    "extract_image_block_to_payload": True,
+                    "extract_image_block_output_dir": None  # Return in payload, not save to disk
+                })
                 logger.info(f"🖼️ Image extraction enabled for {filename} ({file_type})")
             
             if extra_params:
@@ -263,10 +269,19 @@ class DocumentExtractor:
                 data=data,
                 timeout=float(self.timeout)
             )
-            
+
             if response.status_code == 200:
                 result = response.json()
                 logger.info(f"✅ Unstructured API success: {len(result)} elements")
+
+                # Debug: Log response structure when images are enabled
+                if should_extract_images:
+                    image_elements = [e for e in result if e.get("type") == "Image"]
+                    if image_elements:
+                        logger.info(f"🔍 Found {len(image_elements)} Image elements in response")
+                        # Log first image element structure for debugging
+                        logger.debug(f"🔍 Sample Image element structure: {image_elements[0]}")
+
                 return result
             else:
                 logger.error(f"❌ Unstructured API error: {response.status_code} - {response.text}")
@@ -341,9 +356,20 @@ class DocumentExtractor:
                 images_processed += 1
                 metadata = element.get("metadata", {})
 
+                # Debug: Log all metadata keys to understand Unstructured API response format
+                logger.info(f"🔍 Image element metadata keys: {list(metadata.keys())}")
+                logger.debug(f"🔍 Full Image element: {element}")
+
                 # Get image data from metadata (Unstructured API returns base64 in metadata)
-                image_base64 = metadata.get("image_base64")
-                image_path = metadata.get("image_path")
+                # Check multiple possible keys where image data might be stored
+                image_base64 = (
+                    metadata.get("image_base64") or
+                    metadata.get("image") or
+                    metadata.get("base64") or
+                    element.get("image_base64") or
+                    element.get("text")  # Sometimes image data is in the text field
+                )
+                image_path = metadata.get("image_path") or metadata.get("filename")
 
                 if image_base64:
                     try:
