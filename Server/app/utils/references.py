@@ -309,19 +309,29 @@ async def _extract_reference_from_graph_document_with_shareable_url(
         
         # Get bucket information
         bucket_source = (
-            graph_doc.get("bucket") or 
+            graph_doc.get("bucket") or
             graph_doc.get("metadata", {}).get("bucket") or
             graph_doc.get("metadata", {}).get("bucket_source") or
             "researchpapers"
         )
-        
-        is_news = bucket_source.lower() == "news"
-        
+
+        # Check if document_name is a URL (news article)
+        # Either by bucket_source == "news" OR if document_name starts with http:// or https://
+        is_url = document_name.startswith(("http://", "https://"))
+        is_news = bucket_source.lower() == "news" or is_url
+
         if is_news:
+            # Handle case where document_name might be comma-separated URLs
+            # Example: "https://url1.com, https://url2.com"
+            # We'll use the first URL
+            if ", " in document_name:
+                first_url = document_name.split(", ")[0].strip()
+                document_name = first_url
+
             title = _create_title_from_news_url(document_name) or "News Article"
             url = document_name
             doc_name = document_name
-            
+
             if not _is_valid_news_url(url):
                 return None
         else:
