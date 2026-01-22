@@ -10,8 +10,12 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 import pandas as pd
 import io
+import asyncio
+from io import BytesIO
+from PIL import Image
 
 from config import config
+from shared.clients.vision_client import get_vision_client
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +28,26 @@ class DocumentExtractor:
         unstructured_config = config.get('unstructured')
         self.api_url = f"{unstructured_config['api_url']}/general/v0/general"
         self.timeout = unstructured_config['timeout']
-        
+
         # Get cache settings
         cache_settings = config.get_cache_settings()
         self.cache_enabled = cache_settings['enable_cache']
         self.cache_dir = Path(cache_settings['extraction_cache_dir'])
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
+        # Get vision configuration for image extraction
+        vision_config = config.get_vision_config()
+        self.image_extraction_enabled = vision_config.get('enabled', False)
+        self.extract_images_from_pdf = vision_config.get('extract_from_pdf', True)
+        self.extract_images_from_docx = vision_config.get('extract_from_docx', True)
+        self.replace_images_with_descriptions = vision_config.get('replace_with_descriptions', True)
+
+        # Initialize vision client if image extraction is enabled
+        self.vision_client = None
+        if self.image_extraction_enabled:
+            self.vision_client = get_vision_client()
+            logger.info(f"🖼️ Image extraction enabled with vision model")
+
         logger.info(f"DocumentExtractor initialized with API: {self.api_url}")
         
     def extract_content(self, document_content: bytes, filename: str, 
@@ -209,16 +226,29 @@ class DocumentExtractor:
         logger.info(f"📋 Processing generic file: {filename} with strategy: {strategy}")
         return self._call_unstructured_api(document_content, filename, strategy)
     
-    def _call_unstructured_api(self, document_content: bytes, filename: str, 
+    def _call_unstructured_api(self, document_content: bytes, filename: str,
                               strategy: str, extra_params: Dict = None) -> List[Dict[str, Any]]:
         """Call Unstructured API"""
         try:
+            # Determine if we should extract images based on file type and config
+            file_type = self._detect_file_type(filename)
+            should_extract_images = False
+
+            if self.image_extraction_enabled:
+                if file_type == "pdf" and self.extract_images_from_pdf:
+                    should_extract_images = True
+                elif file_type == "word" and self.extract_images_from_docx:
+                    should_extract_images = True
+
             data = {
                 "strategy": strategy,
                 "coordinates": True,
-                "extract_images": False,
+                "extract_images": should_extract_images,
                 "languages": ["eng"]
             }
+
+            if should_extract_images:
+                logger.info(f"🖼️ Image extraction enabled for {filename} ({file_type})")
             
             if extra_params:
                 data.update(extra_params)
@@ -294,32 +324,143 @@ class DocumentExtractor:
                 "metadata": {"source": "minimal_fallback", "error": str(e)}
             }]
     
-    def _post_process_elements(self, elements: List[Dict[str, Any]], 
+    async def _process_images_async(self, elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Process extracted images with vision model asynchronously"""
+        if not self.image_extraction_enabled or not self.vision_client:
+            return elements
+
+        processed_elements = []
+        images_processed = 0
+        images_described = 0
+
+        for element in elements:
+            element_type = element.get("type", "")
+
+            # Check if this is an image element
+            if element_type == "Image":
+                images_processed += 1
+                metadata = element.get("metadata", {})
+
+                # Get image data from metadata (Unstructured API returns base64 in metadata)
+                image_base64 = metadata.get("image_base64")
+                image_path = metadata.get("image_path")
+
+                if image_base64:
+                    try:
+                        # Decode base64 image
+                        import base64
+                        image_bytes = base64.b64decode(image_base64)
+                        image = Image.open(BytesIO(image_bytes))
+
+                        # Get description from vision model
+                        logger.info(f"🖼️ Processing image from document...")
+                        description = await self.vision_client.describe_image(image)
+
+                        if description:
+                            images_described += 1
+                            logger.info(f"✅ Image described: {description[:100]}...")
+
+                            if self.replace_images_with_descriptions:
+                                # Replace image element with text description
+                                element["type"] = "NarrativeText"
+                                element["text"] = f"[Image Description]: {description}"
+                                element["metadata"]["original_type"] = "Image"
+                                element["metadata"]["image_described"] = True
+                                processed_elements.append(element)
+                            else:
+                                # Keep image element but add description to metadata
+                                element["metadata"]["description"] = description
+                                processed_elements.append(element)
+                        else:
+                            logger.warning(f"⚠️ Failed to describe image, skipping")
+                            if not self.replace_images_with_descriptions:
+                                processed_elements.append(element)
+
+                    except Exception as e:
+                        logger.error(f"❌ Error processing image: {e}")
+                        if not self.replace_images_with_descriptions:
+                            processed_elements.append(element)
+                elif image_path:
+                    # Handle file path based images if present
+                    try:
+                        logger.info(f"🖼️ Processing image from path: {image_path}")
+                        description = await self.vision_client.describe_image(image_path)
+
+                        if description:
+                            images_described += 1
+                            logger.info(f"✅ Image described: {description[:100]}...")
+
+                            if self.replace_images_with_descriptions:
+                                element["type"] = "NarrativeText"
+                                element["text"] = f"[Image Description]: {description}"
+                                element["metadata"]["original_type"] = "Image"
+                                element["metadata"]["image_described"] = True
+                                processed_elements.append(element)
+                            else:
+                                element["metadata"]["description"] = description
+                                processed_elements.append(element)
+                        else:
+                            if not self.replace_images_with_descriptions:
+                                processed_elements.append(element)
+
+                    except Exception as e:
+                        logger.error(f"❌ Error processing image from path: {e}")
+                        if not self.replace_images_with_descriptions:
+                            processed_elements.append(element)
+                else:
+                    logger.warning(f"⚠️ Image element has no image data")
+                    if not self.replace_images_with_descriptions:
+                        processed_elements.append(element)
+            else:
+                # Not an image element, keep as-is
+                processed_elements.append(element)
+
+        if images_processed > 0:
+            logger.info(f"🖼️ Processed {images_processed} images, {images_described} successfully described")
+
+        return processed_elements
+
+    def _process_images(self, elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Synchronous wrapper for async image processing"""
+        if not self.image_extraction_enabled or not self.vision_client:
+            return elements
+
+        # Run async processing
+        try:
+            return asyncio.run(self._process_images_async(elements))
+        except Exception as e:
+            logger.error(f"❌ Failed to process images: {e}")
+            return elements
+
+    def _post_process_elements(self, elements: List[Dict[str, Any]],
                               filename: str, file_type: str) -> List[Dict[str, Any]]:
         """Post-process extracted elements"""
+        # First process images if enabled
+        elements = self._process_images(elements)
+
         processed = []
-        
+
         for element in elements:
             text_content = element.get("text", "").strip()
             if not text_content:
                 continue
-            
+
             # Add metadata
             if "metadata" not in element:
                 element["metadata"] = {}
-            
+
             element["metadata"].update({
                 "filename": filename,
                 "file_type": file_type,
                 "extraction_timestamp": self._get_current_timestamp(),
                 "text_length": len(text_content)
             })
-            
+
             # Clean text - preserve structure but remove excessive whitespace
             element["text"] = " ".join(text_content.split())
-            
+
             processed.append(element)
-        
+
         logger.info(f"📝 Post-processed {len(processed)} elements for {filename}")
         return processed
     
