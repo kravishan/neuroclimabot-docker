@@ -463,10 +463,23 @@ def add_document_names_to_context(
             return context
 
         # Create document lookup: document_id -> document_name
+        # For news articles with URLs, use the source_url instead of title/filename
         doc_id_to_name = {}
         doc_id_column = 'document_id' if 'document_id' in documents_df.columns else 'id'
+        has_source_url = 'source_url' in documents_df.columns
+
         for _, doc in documents_df.iterrows():
             doc_id = str(doc.get(doc_id_column, ''))
+
+            # Check if this is a news article with a URL
+            if has_source_url:
+                source_url = str(doc.get('source_url', '')).strip()
+                # If source_url exists and is a valid URL, use it
+                if source_url and (source_url.startswith('http://') or source_url.startswith('https://')):
+                    doc_id_to_name[doc_id] = source_url
+                    continue
+
+            # Otherwise, use title/filename (for PDFs and other documents)
             doc_name = str(doc.get('title', doc.get('filename', '')))
             # Remove file extension (e.g., .txt, .pdf, .p, etc.)
             doc_name = os.path.splitext(doc_name)[0]
@@ -793,9 +806,27 @@ def extract_document_titles_from_context(
             if all_doc_ids:
                 doc_id_column = 'document_id' if 'document_id' in documents.columns else 'id'
                 matching_docs = documents[documents[doc_id_column].astype(str).isin(all_doc_ids)]
-                if not matching_docs.empty and 'title' in matching_docs.columns:
-                    titles = [os.path.splitext(t)[0].replace('_', ' ') for t in matching_docs['title'].tolist()]
-                    logger.info(f"✅ Extracted {len(titles)} document titles from {len(sources_df)} sources")
+                if not matching_docs.empty:
+                    titles = []
+                    has_source_url = 'source_url' in matching_docs.columns
+
+                    for _, doc in matching_docs.iterrows():
+                        # For news articles with URLs, use source_url
+                        if has_source_url:
+                            source_url = str(doc.get('source_url', '')).strip()
+                            if source_url and (source_url.startswith('http://') or source_url.startswith('https://')):
+                                titles.append(source_url)
+                                continue
+
+                        # For PDFs and other documents, use title/filename
+                        if 'title' in matching_docs.columns:
+                            title = str(doc.get('title', ''))
+                            # Remove file extension and clean up
+                            title = os.path.splitext(title)[0].replace('_', ' ')
+                            if title:
+                                titles.append(title)
+
+                    logger.info(f"✅ Extracted {len(titles)} document identifiers from {len(sources_df)} sources")
                     return list(set(titles))
 
         # Fallback: if matching failed but we have very few sources, don't return all titles
@@ -803,10 +834,26 @@ def extract_document_titles_from_context(
             logger.warning(f"⚠️ Could not match sources with text_units, but only {len(sources_df)} sources present (filtered)")
             return []
 
-        logger.warning("⚠️ Could not match sources with text_units by text content, returning all document titles")
-        if 'title' in documents.columns:
-            titles = [os.path.splitext(t)[0].replace('_', ' ') for t in documents['title'].tolist()]
-            return list(set(titles))
+        logger.warning("⚠️ Could not match sources with text_units by text content, returning all document identifiers")
+        titles = []
+        has_source_url = 'source_url' in documents.columns
+
+        for _, doc in documents.iterrows():
+            # For news articles with URLs, use source_url
+            if has_source_url:
+                source_url = str(doc.get('source_url', '')).strip()
+                if source_url and (source_url.startswith('http://') or source_url.startswith('https://')):
+                    titles.append(source_url)
+                    continue
+
+            # For PDFs and other documents, use title/filename
+            if 'title' in documents.columns:
+                title = str(doc.get('title', ''))
+                title = os.path.splitext(title)[0].replace('_', ' ')
+                if title:
+                    titles.append(title)
+
+        return list(set(titles))
 
         return []
 
