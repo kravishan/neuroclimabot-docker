@@ -5,6 +5,7 @@ FastAPI endpoints for GraphRAG search and visualization
 
 import logging
 import json
+import re
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -26,6 +27,49 @@ from api.graphrag_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# URL SANITIZATION HELPER
+# ============================================================================
+
+def sanitize_url_to_filename(url: str) -> str:
+    """
+    Convert URL to filesystem-safe filename matching the format used during processing.
+
+    This is the reverse operation used when displaying URLs.
+    Converts: https://www.fao.org/newsroom/detail/article/en
+    To:       https_www.fao.org_newsroom_detail_article_en.txt
+    """
+    if not url:
+        return url
+
+    # Replace problematic characters with underscores
+    safe_url = url.replace('://', '_')
+    safe_url = safe_url.replace('/', '_')
+    safe_url = safe_url.replace('?', '_')
+    safe_url = safe_url.replace('&', '_')
+    safe_url = safe_url.replace('=', '_')
+    safe_url = safe_url.replace('#', '_')
+    safe_url = safe_url.replace('%', '_')
+    safe_url = safe_url.replace('<', '_')
+    safe_url = safe_url.replace('>', '_')
+    safe_url = safe_url.replace(':', '_')
+    safe_url = safe_url.replace('"', '_')
+    safe_url = safe_url.replace('|', '_')
+    safe_url = safe_url.replace('*', '_')
+    safe_url = safe_url.replace('\\', '_')
+
+    # Collapse multiple underscores to single
+    safe_url = re.sub(r'_+', '_', safe_url)
+    safe_url = safe_url.strip('_')
+
+    # Limit length (keep first 250 chars)
+    if len(safe_url) > 250:
+        safe_url = safe_url[:250]
+
+    # Add .txt extension
+    return f"{safe_url}.txt"
 
 
 # ============================================================================
@@ -306,11 +350,28 @@ def setup_graphrag_routes(app, get_services_func=None):
 
             # Flexible filename matching
             if request.source.startswith("http://") or request.source.startswith("https://"):
-                if "source_url" in docs_df.columns:
-                    doc_match = docs_df[docs_df["source_url"] == request.source]
+                # For URLs (news articles), sanitize to match stored format
+                sanitized_filename = sanitize_url_to_filename(request.source)
+                logger.info(f"📊 GraphRAG visualization: '{request.source}'")
+                logger.info(f"🔍 Searching for sanitized filename: '{sanitized_filename}'")
+
+                # Search in title column (where sanitized filenames are stored)
+                search_column = "title" if "title" in docs_df.columns else "filename" if "filename" in docs_df.columns else None
+
+                if search_column:
+                    doc_match = docs_df[docs_df[search_column] == sanitized_filename]
+
+                    # If exact match fails, try without .txt extension
+                    if doc_match.empty:
+                        sanitized_without_ext = sanitized_filename.replace('.txt', '')
+                        doc_match = docs_df[docs_df[search_column] == sanitized_without_ext]
                 else:
                     doc_match = pd.DataFrame()
+
                 if doc_match.empty:
+                    logger.warning(f"No graph data found for {request.source}")
+                    available_titles = docs_df[search_column].tolist() if search_column and search_column in docs_df.columns else []
+                    logger.debug(f"Available documents: {available_titles[:5]}...")  # Show first 5
                     raise HTTPException(status_code=404, detail=f"Document with URL '{request.source}' not found")
             else:
                 doc_match = pd.DataFrame()
