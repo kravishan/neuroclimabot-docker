@@ -17,15 +17,26 @@ logger = logging.getLogger(__name__)
 
 class BaseSummarizer(ABC):
     """Base class for document summarizers"""
-    
+
     def __init__(self):
         self.ollama_config = config.get('ollama')
         self.api_url = self.ollama_config["api_url"]
         self.model = self.ollama_config["model"]
         self.timeout = self.ollama_config["timeout"]
         self.headers = self.ollama_config["headers"]
-        
-        logger.info(f"Initialized {self.__class__.__name__} with model: {self.model}")
+
+        # ClimateGPT configuration
+        self.climategpt_config = config.get_climategpt_config()
+        self.use_climategpt = self.climategpt_config.get('enabled', False)
+        self.climategpt_model = None
+        self.climategpt_tokenizer = None
+
+        # Initialize ClimateGPT if enabled
+        if self.use_climategpt:
+            self._initialize_climategpt()
+            logger.info(f"Initialized {self.__class__.__name__} with ClimateGPT-7B model")
+        else:
+            logger.info(f"Initialized {self.__class__.__name__} with Ollama model: {self.model}")
     
     @abstractmethod
     def get_bucket_type(self) -> str:
@@ -36,7 +47,111 @@ class BaseSummarizer(ABC):
     def prepare_content(self, extracted_content: Dict[str, Any], filename: str) -> Dict[str, Any]:
         """Prepare content for summarization"""
         pass
-    
+
+    def _initialize_climategpt(self):
+        """Initialize ClimateGPT-7B model for summarization"""
+        try:
+            from transformers import AutoTokenizer, AutoModelForCausalLM
+            import torch
+
+            model_name = self.climategpt_config.get('model_name', 'eci-io/climategpt-7b')
+            device = self.climategpt_config.get('device', 'auto')
+            load_in_8bit = self.climategpt_config.get('load_in_8bit', False)
+            load_in_4bit = self.climategpt_config.get('load_in_4bit', False)
+
+            logger.info(f"🌍 Loading ClimateGPT model: {model_name}")
+            logger.info(f"   Device: {device}, 8-bit: {load_in_8bit}, 4-bit: {load_in_4bit}")
+
+            # Load tokenizer
+            self.climategpt_tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+            # Prepare model loading kwargs
+            model_kwargs = {}
+            if device == 'auto':
+                model_kwargs['device_map'] = 'auto'
+            else:
+                model_kwargs['device_map'] = device
+
+            # Add quantization if requested
+            if load_in_8bit:
+                model_kwargs['load_in_8bit'] = True
+            elif load_in_4bit:
+                model_kwargs['load_in_4bit'] = True
+
+            # Load model
+            self.climategpt_model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                **model_kwargs,
+                torch_dtype=torch.float16 if not (load_in_8bit or load_in_4bit) else torch.float32,
+                trust_remote_code=True
+            )
+
+            logger.info("✅ ClimateGPT model loaded successfully")
+
+        except Exception as e:
+            logger.error(f"❌ Failed to load ClimateGPT model: {e}")
+            logger.warning("⚠️ Falling back to Ollama model")
+            self.use_climategpt = False
+            self.climategpt_model = None
+            self.climategpt_tokenizer = None
+
+    def _generate_climategpt_summary(self, text: str, bucket: str, filename: str = "") -> str:
+        """Generate summary using ClimateGPT-7B model"""
+        try:
+            import torch
+
+            # Get ClimateGPT configuration
+            system_prompt = self.climategpt_config.get('system_prompt', '')
+            generation_config = self.climategpt_config.get('generation_config', {})
+
+            # Get bucket-specific prompt template
+            summary_config = config.get_summarization_config(bucket)
+            template = summary_config.get('template', config.get('summarization.default.template'))
+            user_prompt = template.format(content=text)
+
+            # Combine system and user prompts
+            full_prompt = f"{system_prompt}\n\n{user_prompt}"
+
+            logger.info(f"🌍 Generating ClimateGPT summary for {filename}")
+
+            # Tokenize input
+            inputs = self.climategpt_tokenizer(full_prompt, return_tensors="pt", truncation=True, max_length=2048)
+
+            # Move to same device as model
+            device = next(self.climategpt_model.parameters()).device
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            # Generate summary
+            with torch.no_grad():
+                outputs = self.climategpt_model.generate(
+                    **inputs,
+                    max_new_tokens=generation_config.get('max_new_tokens', 400),
+                    temperature=generation_config.get('temperature', 0.3),
+                    top_p=generation_config.get('top_p', 0.9),
+                    top_k=generation_config.get('top_k', 50),
+                    repetition_penalty=generation_config.get('repetition_penalty', 1.1),
+                    do_sample=generation_config.get('do_sample', True),
+                    pad_token_id=self.climategpt_tokenizer.eos_token_id
+                )
+
+            # Decode the generated text
+            generated_text = self.climategpt_tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+            # Extract only the new generated content (remove the prompt)
+            summary = generated_text[len(full_prompt):].strip()
+
+            if not summary:
+                raise Exception("Empty response from ClimateGPT")
+
+            cleaned_summary = self._clean_summary(summary)
+            logger.info(f"✅ ClimateGPT summary generated: {len(cleaned_summary)} characters")
+            return cleaned_summary
+
+        except Exception as e:
+            logger.error(f"❌ ClimateGPT summarization error: {e}")
+            logger.info(f"🔄 Falling back to extractive summary for {filename}")
+            return self._create_fallback_summary(text, filename)
+
     def create_summary(self, extracted_content: Dict[str, Any], filename: str, bucket: str) -> Optional[SummaryData]:
         """Generate summary for the document"""
         try:
@@ -77,6 +192,9 @@ class BaseSummarizer(ABC):
             # Extract metadata
             metadata = self._extract_document_metadata(extracted_content, prepared_content, filename)
             
+            # Determine which model was used
+            model_used = self.climategpt_config.get('model_name', 'eci-io/climategpt-7b') if (self.use_climategpt and self.climategpt_model is not None) else self.model
+
             # Create SummaryData object
             return SummaryData(
                 doc_name=filename,
@@ -85,7 +203,7 @@ class BaseSummarizer(ABC):
                 abstractive_summary=summary_text,
                 document_metadata=metadata,
                 processing_info={
-                    "model_used": self.model,
+                    "model_used": model_used,
                     "summarization_method": self._get_summarization_method(),
                     "summary_length": len(summary_text),
                     "text_length_processed": prepared_text_length,
@@ -124,20 +242,25 @@ class BaseSummarizer(ABC):
         return f"{context_prefix} contains: {summary}"
     
     def _generate_llm_summary(self, text: str, bucket: str, filename: str = "") -> str:
-        """Generate summary using Ollama API"""
-        
+        """Generate summary using LLM (ClimateGPT or Ollama)"""
+
+        # Route to ClimateGPT if enabled and initialized
+        if self.use_climategpt and self.climategpt_model is not None:
+            return self._generate_climategpt_summary(text, bucket, filename)
+
+        # Otherwise use Ollama
         # Get summarization config for bucket
         summary_config = config.get_summarization_config(bucket)
-        
+
         # Create prompt using template
         template = summary_config.get('template', config.get('summarization.default.template'))
         prompt = template.format(content=text)
-        
+
         # Build payload
         payload = config.get_ollama_payload(prompt, bucket)
-        
+
         try:
-            logger.info(f"🤖 Generating LLM summary for {filename}")
+            logger.info(f"🤖 Generating Ollama summary for {filename}")
 
             response = requests.post(
                 self.api_url,
