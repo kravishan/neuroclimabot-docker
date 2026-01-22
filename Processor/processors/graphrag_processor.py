@@ -68,19 +68,48 @@ class GraphRAGProcessor:
             parsed = urlparse(url)
             domain = parsed.netloc.replace('www.', '')
             path = unquote(parsed.path.strip('/'))
-            
+
             if path:
                 meaningful_part = path.split('/')[-1]
                 meaningful_part = re.sub(r'[^a-zA-Z0-9\-_]', '_', meaningful_part)
                 sanitized = f"{domain}_{meaningful_part}"
             else:
                 sanitized = domain
-            
+
             sanitized = re.sub(r'_+', '_', sanitized).strip('_')
             return sanitized[:120] if len(sanitized) > 120 else sanitized
-            
+
         except Exception:
             return re.sub(r'[^a-zA-Z0-9\-_]', '_', url)[:120]
+
+    def _url_to_safe_filename(self, url: str) -> str:
+        """Convert URL to filesystem-safe filename while preserving the full URL"""
+        # Replace only characters that are problematic for filesystems
+        # Keep the URL structure intact as much as possible
+        safe_url = url.replace('://', '_')  # Replace :// with _
+        safe_url = safe_url.replace('/', '_')  # Replace / with _
+        safe_url = safe_url.replace('?', '_')  # Replace ? with _
+        safe_url = safe_url.replace('&', '_')  # Replace & with _
+        safe_url = safe_url.replace('=', '_')  # Replace = with _
+        safe_url = safe_url.replace('#', '_')  # Replace # with _
+        safe_url = safe_url.replace('%', '_')  # Replace % with _
+        safe_url = safe_url.replace('<', '_')  # Replace < with _
+        safe_url = safe_url.replace('>', '_')  # Replace > with _
+        safe_url = safe_url.replace(':', '_')  # Replace : with _
+        safe_url = safe_url.replace('"', '_')  # Replace " with _
+        safe_url = safe_url.replace('|', '_')  # Replace | with _
+        safe_url = safe_url.replace('*', '_')  # Replace * with _
+        safe_url = safe_url.replace('\\', '_')  # Replace \ with _
+
+        # Collapse multiple underscores to single
+        safe_url = re.sub(r'_+', '_', safe_url)
+        safe_url = safe_url.strip('_')
+
+        # Limit length to avoid filesystem issues (keep first 250 chars)
+        if len(safe_url) > 250:
+            safe_url = safe_url[:250]
+
+        return safe_url
     
     def _extract_title_from_url(self, url: str) -> str:
         """Extract readable title from URL"""
@@ -323,28 +352,32 @@ class GraphRAGProcessor:
         # Create input file
         input_dir = workspace_path / "input"
         input_dir.mkdir(exist_ok=True)
-        
-        # Generate safe filename
+
+        # Generate safe filename - preserve full URL for document name
         if document_identifier.startswith(('http://', 'https://')):
-            sanitized_name = self._sanitize_url(document_identifier)
+            # Use full URL as filename (filesystem-safe version)
+            sanitized_name = self._url_to_safe_filename(document_identifier)
         else:
             sanitized_name = self._sanitize_filename(document_identifier)
-        
+
         txt_filename = f"{sanitized_name}.txt"
-        if len(txt_filename) > 200:
-            txt_filename = f"{sanitized_name[:190]}.txt"
-        
+        if len(txt_filename) > 255:  # Filesystem limit
+            txt_filename = f"{sanitized_name[:250]}.txt"
+
         input_file = input_dir / txt_filename
-        
+
         try:
             with open(input_file, 'w', encoding='utf-8', errors='replace') as f:
                 f.write(text_content)
-        except Exception:
+            logger.info(f"✅ Created input file: {txt_filename}")
+        except Exception as e:
             # Fallback filename
+            logger.warning(f"⚠️ Failed to create file with name {txt_filename}: {e}")
             fallback_filename = f"document_{uuid.uuid4().hex[:8]}.txt"
             input_file = input_dir / fallback_filename
             with open(input_file, 'w', encoding='utf-8', errors='replace') as f:
                 f.write(text_content)
+            logger.info(f"✅ Created input file with fallback name: {fallback_filename}")
     
     async def _run_graphrag_indexing(self, workspace_path: Path) -> bool:
         """Run GraphRAG indexing with full logging"""

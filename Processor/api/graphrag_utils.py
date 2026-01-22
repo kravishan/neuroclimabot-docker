@@ -17,6 +17,39 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
+# URL RESTORATION HELPER
+# ============================================================================
+
+def restore_url_from_filename(filename: str) -> str:
+    """
+    Restore original URL from filesystem-safe filename
+
+    Converts: https_www.fao.org_newsroom_detail_article_en
+    Back to:  https://www.fao.org/newsroom/detail/article/en
+    """
+    if not filename:
+        return filename
+
+    # Check if this looks like a sanitized URL (starts with http_ or https_)
+    if filename.startswith('https_') or filename.startswith('http_'):
+        # Restore the protocol
+        if filename.startswith('https_'):
+            restored = 'https://' + filename[6:]  # Remove 'https_' prefix
+        else:
+            restored = 'http://' + filename[5:]  # Remove 'http_' prefix
+
+        # Replace underscores with slashes (except for special cases)
+        # We need to be careful: some URLs might have actual underscores
+        # For now, replace all underscores with slashes as that's what we did in sanitization
+        restored = restored.replace('_', '/')
+
+        return restored
+
+    # Not a URL, just replace underscores with spaces for readability
+    return filename.replace('_', ' ')
+
+
+# ============================================================================
 # DATA LOADING FROM MASTER GRAPHRAG OUTPUT
 # ============================================================================
 
@@ -470,8 +503,8 @@ def add_document_names_to_context(
             doc_name = str(doc.get('title', doc.get('filename', '')))
             # Remove file extension (e.g., .txt, .pdf, .p, etc.)
             doc_name = os.path.splitext(doc_name)[0]
-            # Replace underscores with spaces for better readability
-            doc_name = doc_name.replace('_', ' ')
+            # Restore original URL or replace underscores with spaces for readability
+            doc_name = restore_url_from_filename(doc_name)
             doc_id_to_name[doc_id] = doc_name
 
         # Build comprehensive mappings from text_units
@@ -794,7 +827,7 @@ def extract_document_titles_from_context(
                 doc_id_column = 'document_id' if 'document_id' in documents.columns else 'id'
                 matching_docs = documents[documents[doc_id_column].astype(str).isin(all_doc_ids)]
                 if not matching_docs.empty and 'title' in matching_docs.columns:
-                    titles = [os.path.splitext(t)[0].replace('_', ' ') for t in matching_docs['title'].tolist()]
+                    titles = [restore_url_from_filename(os.path.splitext(t)[0]) for t in matching_docs['title'].tolist()]
                     logger.info(f"✅ Extracted {len(titles)} document titles from {len(sources_df)} sources")
                     return list(set(titles))
 
@@ -805,7 +838,7 @@ def extract_document_titles_from_context(
 
         logger.warning("⚠️ Could not match sources with text_units by text content, returning all document titles")
         if 'title' in documents.columns:
-            titles = [os.path.splitext(t)[0].replace('_', ' ') for t in documents['title'].tolist()]
+            titles = [restore_url_from_filename(os.path.splitext(t)[0]) for t in documents['title'].tolist()]
             return list(set(titles))
 
         return []
