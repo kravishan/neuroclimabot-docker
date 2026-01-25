@@ -284,8 +284,10 @@ class STPSearchService:
     """STP (Social Tipping Points) Search Service"""
 
     def __init__(self):
-        self.db_name = "mvp_stp_chunks_short"
-        self.collection_name = "stp_documents"
+        from config import config
+        stp_milvus_config = config.get_stp_milvus_config()
+        self.db_name = stp_milvus_config['database']
+        self.collection_name = stp_milvus_config['collection']
         self.embedding_dim = 384
         self.connection = None
         self.collection = None
