@@ -38,3 +38,9 @@ data:
   # GraphRAG Configuration - Using external VM processor
   GRAPHRAG_SERVER_URL: "http://neuroclima-processor:5000"
   GRAPHRAG_API_TIMEOUT: "30.0"
+
+  # Translation Service - Processor handles translation
+  TRANSLATION_SERVICE_URL: "http://neuroclima-processor:5000"
+
+  # STP (Social Tipping Points) Service - Processor handles STP
+  STP_SERVICE_URL: "http://neuroclima-processor:5000"
