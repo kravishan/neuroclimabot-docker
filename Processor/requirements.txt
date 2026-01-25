@@ -3,6 +3,7 @@ aiohappyeyeballs==2.6.1
 aiohttp==3.11.16
 aiolimiter==1.2.1
 aiosignal==1.4.0
+accelerate==1.6.0
 annotated-types==0.7.0
 anyio==4.10.0
 anytree==2.13.0

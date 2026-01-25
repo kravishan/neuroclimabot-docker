@@ -67,24 +67,46 @@ class BaseSummarizer(ABC):
 
             # Prepare model loading kwargs
             model_kwargs = {}
-            if device == 'auto':
-                model_kwargs['device_map'] = 'auto'
-            else:
-                model_kwargs['device_map'] = device
 
-            # Add quantization if requested
-            if load_in_8bit:
-                model_kwargs['load_in_8bit'] = True
-            elif load_in_4bit:
-                model_kwargs['load_in_4bit'] = True
+            # Try to use device_map (requires accelerate library)
+            try:
+                if device == 'auto':
+                    model_kwargs['device_map'] = 'auto'
+                else:
+                    model_kwargs['device_map'] = device
 
-            # Load model
-            self.climategpt_model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                **model_kwargs,
-                torch_dtype=torch.float16 if not (load_in_8bit or load_in_4bit) else torch.float32,
-                trust_remote_code=True
-            )
+                # Add quantization if requested
+                if load_in_8bit:
+                    model_kwargs['load_in_8bit'] = True
+                elif load_in_4bit:
+                    model_kwargs['load_in_4bit'] = True
+
+                # Load model with device_map
+                self.climategpt_model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    **model_kwargs,
+                    torch_dtype=torch.float16 if not (load_in_8bit or load_in_4bit) else torch.float32,
+                    trust_remote_code=True
+                )
+
+            except Exception as device_map_error:
+                # Check if the error is due to missing accelerate library
+                if "accelerate" in str(device_map_error).lower():
+                    logger.warning("⚠️ Accelerate library not installed. Install it with: pip install accelerate")
+                    logger.info("🔄 Attempting to load model without device_map...")
+
+                    # Fallback: Load model without device_map (simpler but less memory efficient)
+                    device_str = 'cuda' if torch.cuda.is_available() and device != 'cpu' else 'cpu'
+                    logger.info(f"   Loading on device: {device_str}")
+
+                    self.climategpt_model = AutoModelForCausalLM.from_pretrained(
+                        model_name,
+                        torch_dtype=torch.float16 if device_str == 'cuda' else torch.float32,
+                        trust_remote_code=True
+                    ).to(device_str)
+                else:
+                    # Re-raise if it's a different error
+                    raise
 
             logger.info("✅ ClimateGPT model loaded successfully")
 
