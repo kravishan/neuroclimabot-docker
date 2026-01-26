@@ -79,6 +79,32 @@ spec:
                   values:
                   - processor
               topologyKey: kubernetes.io/hostname
+      # Init container: Copy GraphRAG data from image to PVC if PVC is empty
+      initContainers:
+      - name: init-graphrag-data
+        image: docker.io/raviyah/neuroclima-processor:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Checking if GraphRAG data needs to be initialized..."
+          if [ -d "/app/graphrag-init/output" ] && [ "$(ls -A /app/graphrag-init/output 2>/dev/null)" ]; then
+            if [ ! -f "/app/graphrag/output/entities.parquet" ]; then
+              echo "PVC is empty, copying GraphRAG data from image..."
+              mkdir -p /app/graphrag/output
+              cp -r /app/graphrag-init/output/* /app/graphrag/output/
+              echo "GraphRAG data initialized successfully!"
+              ls -la /app/graphrag/output/
+            else
+              echo "GraphRAG data already exists in PVC, skipping initialization."
+              ls -la /app/graphrag/output/
+            fi
+          else
+            echo "No GraphRAG init data found in image, skipping."
+          fi
+        volumeMounts:
+        - name: graphrag-data
+          mountPath: /app/graphrag
       containers:
       - name: processor
         image: docker.io/raviyah/neuroclima-processor:latest
