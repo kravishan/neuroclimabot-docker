@@ -16,6 +16,7 @@ class LLMConfig(BaseSettings):
 
     # Embedding Model Configuration (from .env)
     EMBEDDING_API_URL: str = "https://lex.itml.space/v1/embeddings"
+    EMBEDDING_API_TOKEN: Optional[str] = None  # Optional: Only needed if API requires auth
     EMBEDDING_MODEL: str = "nomic-embed-text"
     EMBEDDING_DIMENSION: int = 768
     EMBEDDING_TIMEOUT: int = 30
