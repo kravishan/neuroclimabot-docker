@@ -1,7 +1,8 @@
 """
-Unified LLM Client supporting both Ollama and OpenAI
+Unified LLM Client supporting both Bedrock (AWS) and OpenAI
 
 Automatically switches between providers based on MODEL_PROVIDER environment variable.
+Uses OpenAI-compatible API format for Bedrock via lex.itml.space gateway.
 """
 
 import os
@@ -37,18 +38,19 @@ class BaseLLMClient(ABC):
         pass
 
 
-class OllamaLLMClient(BaseLLMClient):
-    """LLM client using Ollama (Free, Local)."""
+class BedrockLLMClient(BaseLLMClient):
+    """LLM client using AWS Bedrock via OpenAI-compatible API gateway."""
 
     def __init__(self):
-        self.api_url = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
-        self.model = os.getenv("OLLAMA_MODEL", "mistral:7b")
-        self.embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
+        self.api_url = os.getenv("BEDROCK_API_URL", "https://lex.itml.space")
+        self.api_key = os.getenv("BEDROCK_API_KEY", "")
+        self.model = os.getenv("BEDROCK_MODEL", "mistral.mistral-7b-instruct-v0:2")
+        self.embedding_model = os.getenv("BEDROCK_EMBEDDING_MODEL", "amazon.titan-embed-text-v1")
         # Timeout is in MINUTES in .env, convert to seconds
-        timeout_minutes = int(os.getenv("OLLAMA_TIMEOUT", "2"))
+        timeout_minutes = int(os.getenv("BEDROCK_TIMEOUT", "2"))
         self.timeout = timeout_minutes * 60
 
-        logger.info(f"🆓 Initialized Ollama LLM Client - Model: {self.model}")
+        logger.info(f"☁️ Initialized Bedrock LLM Client - Model: {self.model}")
 
     async def generate_text(
         self,
@@ -57,52 +59,69 @@ class OllamaLLMClient(BaseLLMClient):
         temperature: float = 0.7,
         max_tokens: int = 2000
     ) -> str:
-        """Generate text using Ollama."""
+        """Generate text using Bedrock via OpenAI-compatible API."""
         import httpx
+
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
 
         payload = {
             "model": self.model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": temperature,
-                "num_predict": max_tokens
-            }
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens
         }
 
-        if system_prompt:
-            payload["system"] = system_prompt
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(
-                f"{self.api_url}/api/generate",
-                json=payload
+                f"{self.api_url}/v1/chat/completions",
+                json=payload,
+                headers=headers
             )
             response.raise_for_status()
             result = response.json()
-            return result.get("response", "")
+            # OpenAI-compatible response format
+            return result.get("choices", [{}])[0].get("message", {}).get("content", "")
 
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding using Ollama."""
+        """Generate embedding using Bedrock via OpenAI-compatible API."""
         import httpx
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(
-                f"{self.api_url}/api/embeddings",
+                f"{self.api_url}/v1/embeddings",
                 json={
                     "model": self.embedding_model,
-                    "prompt": text
-                }
+                    "input": text
+                },
+                headers=headers
             )
             response.raise_for_status()
             result = response.json()
-            return result.get("embedding", [])
+            # OpenAI-compatible response format
+            return result.get("data", [{}])[0].get("embedding", [])
 
     async def generate_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for multiple texts."""
         import asyncio
         tasks = [self.generate_embedding(text) for text in texts]
         return await asyncio.gather(*tasks)
+
+
+# Backward compatibility alias
+OllamaLLMClient = BedrockLLMClient
 
 
 class OpenAILLMClient(BaseLLMClient):
@@ -196,17 +215,17 @@ def create_llm_client() -> BaseLLMClient:
     Create LLM client based on MODEL_PROVIDER environment variable.
 
     Returns:
-        BaseLLMClient: Ollama client (free) or OpenAI client (paid)
+        BaseLLMClient: Bedrock client (default) or OpenAI client (paid)
 
     """
-    provider = os.getenv("MODEL_PROVIDER", "free").lower()
+    provider = os.getenv("MODEL_PROVIDER", "bedrock").lower()
 
-    if provider == "paid":
-        logger.info("💳 Using PAID model provider (OpenAI)")
+    if provider == "openai" or provider == "paid":
+        logger.info("💳 Using OpenAI model provider")
         return OpenAILLMClient()
     else:
-        logger.info("🆓 Using FREE model provider (Ollama)")
-        return OllamaLLMClient()
+        logger.info("☁️ Using Bedrock model provider (AWS)")
+        return BedrockLLMClient()
 
 
 # Global instance (lazy initialization)

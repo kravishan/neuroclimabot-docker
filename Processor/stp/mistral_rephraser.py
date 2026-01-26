@@ -1,13 +1,15 @@
+import os
 import requests
 import pandas as pd
 from typing import List
 
 class MistralRephraser:
-    """Mistral 7B API rephraser for text clarity and structure"""
+    """Bedrock API rephraser for text clarity and structure (OpenAI-compatible)"""
 
-    def __init__(self, model_name: str = None, api_url: str = None):
-        self.model_name = "mistral:7b"
-        self.api_url = api_url or "http://localhost:11434/api/generate"
+    def __init__(self, model_name: str = None, api_url: str = None, api_key: str = None):
+        self.model_name = model_name or os.getenv("BEDROCK_MODEL", "mistral.mistral-7b-instruct-v0:2")
+        self.api_url = api_url or os.getenv("BEDROCK_API_URL", "https://lex.itml.space") + "/v1/chat/completions"
+        self.api_key = api_key or os.getenv("BEDROCK_API_KEY", "")
 
     def _get_rephrasing_prompt(self) -> str:
         """Get the system prompt for text rephrasing"""
@@ -34,57 +36,54 @@ class MistralRephraser:
             "Return ONLY the rephrased/summarized text without any additional commentary, explanations, or meta-text."
         )
 
-    def _format_prompt(self, text: str) -> str:
-        """Format the prompt for Mistral (wrap in [/INST])"""
+    def _format_messages(self, text: str) -> list:
+        """Format the messages for OpenAI-compatible API"""
         system_prompt = self._get_rephrasing_prompt()
-        prompt = f"<s>[INST] {system_prompt}\n\nRephrase/summarize this text:\n\n{text} [/INST]"
-        return prompt
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Rephrase/summarize this text:\n\n{text}"}
+        ]
 
     def rephrase_text(self, text: str) -> str:
-        """Rephrase or summarize the given text using Mistral 7B API"""
+        """Rephrase or summarize the given text using Bedrock API"""
         if not text or len(text.strip()) < 10:
             return text
-        
-        prompt = self._format_prompt(text)
+
+        messages = self._format_messages(text)
         payload = {
             "model": self.model_name,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.7,
-                "top_p": 0.9
-            }
+            "messages": messages,
+            "temperature": 0.7,
+            "max_tokens": 300
         }
-        
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+
         try:
-            response = requests.post(self.api_url, json=payload, timeout=90.0)
+            response = requests.post(self.api_url, json=payload, headers=headers, timeout=90.0)
             response.raise_for_status()
             data = response.json()
-            
-            # Extract the response text
+
+            # OpenAI-compatible response format
             rephrased = None
             if isinstance(data, dict):
-                for key in ['response', 'result', 'text', 'choices']:
-                    if key in data:
-                        if isinstance(data[key], str):
-                            rephrased = data[key].strip()
-                            break
-                        elif isinstance(data[key], list) and data[key]:
-                            if isinstance(data[key][0], dict) and 'text' in data[key][0]:
-                                rephrased = data[key][0]['text'].strip()
-                                break
-                            elif isinstance(data[key][0], str):
-                                rephrased = data[key][0].strip()
-                                break
-            
+                choices = data.get("choices", [])
+                if choices and isinstance(choices[0], dict):
+                    message = choices[0].get("message", {})
+                    if isinstance(message, dict):
+                        rephrased = message.get("content", "").strip()
+
             if not rephrased:
                 rephrased = str(data).strip()
-            
+
             # Clean up any remaining artifacts
             rephrased = self._clean_output(rephrased)
-            
+
             return rephrased
-            
+
         except Exception as e:
             print(f"⚠️ Rephrasing failed: {str(e)}")
             return text  # Return original text if rephrasing fails
@@ -100,18 +99,18 @@ class MistralRephraser:
             "Here is a summary:",
             "Here is the text:",
         ]
-        
+
         cleaned = text.strip()
         for prefix in prefixes_to_remove:
             if cleaned.lower().startswith(prefix.lower()):
                 cleaned = cleaned[len(prefix):].strip()
-        
+
         # Remove quotes if the entire text is wrapped in them
         if cleaned.startswith('"') and cleaned.endswith('"'):
             cleaned = cleaned[1:-1].strip()
         if cleaned.startswith("'") and cleaned.endswith("'"):
             cleaned = cleaned[1:-1].strip()
-        
+
         return cleaned
 
     def batch_rephrase(self, texts: List[str], batch_size: int = 1) -> List[str]:
@@ -123,11 +122,11 @@ class MistralRephraser:
             results.append(result)
         return results
 
-    def process_dataframe(self, df: pd.DataFrame, text_column: str = 'content', 
+    def process_dataframe(self, df: pd.DataFrame, text_column: str = 'content',
                          stp_only: bool = True, stp_column: str = 'stp_prediction') -> pd.DataFrame:
         """Process DataFrame and add rephrased text column"""
         df = df.copy()
-        
+
         # Determine which rows to process
         if stp_only and stp_column in df.columns:
             stp_mask = df[stp_column] == 'STP'
@@ -136,10 +135,10 @@ class MistralRephraser:
         else:
             process_indices = df.index.tolist()
             process_texts = df[text_column].tolist()
-        
+
         # Initialize rephrased_content column with original text
         df['rephrased_content'] = df[text_column]
-        
+
         # Process and update
         if process_texts:
             print(f"Rephrasing {len(process_texts)} text chunks...")
@@ -147,11 +146,11 @@ class MistralRephraser:
             for idx, result in zip(process_indices, results):
                 df.at[idx, 'rephrased_content'] = result
             print("✅ Rephrasing complete!")
-        
+
         return df
 
     def get_memory_usage(self) -> dict:
         """No-op for API usage"""
         return {'message': 'API mode, no local memory usage'}
 
-print("✅ Mistral 7B Rephraser (API mode) ready!")
+print("✅ Bedrock Rephraser (API mode) ready!")

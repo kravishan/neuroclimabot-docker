@@ -1,6 +1,6 @@
 """
 LLM (Large Language Model) configuration.
-Settings for OpenAI, Ollama, and other LLM providers.
+Settings for Bedrock (AWS), OpenAI, and other LLM providers.
 """
 
 from typing import Optional
@@ -11,13 +11,14 @@ from pydantic_settings import BaseSettings
 class LLMConfig(BaseSettings):
     """LLM provider configurations."""
 
-    # Ollama Configuration (from .env)
-    OLLAMA_BASE_URL: str  # From .env
-    OLLAMA_MODEL: str  # From .env
-    OLLAMA_TEMPERATURE: float  # From .env
-    OLLAMA_MAX_TOKENS: int  # From .env
-    OLLAMA_TIMEOUT: int  # From .env
-    OLLAMA_CONNECTION_POOL_SIZE: int = 5  # Default, not in .env
+    # Bedrock Configuration (from .env) - OpenAI-compatible API via lex.itml.space
+    BEDROCK_API_URL: str = "https://lex.itml.space"  # From .env
+    BEDROCK_API_KEY: str = ""  # From .env (API token)
+    BEDROCK_MODEL: str = "mistral.mistral-7b-instruct-v0:2"  # From .env
+    BEDROCK_TEMPERATURE: float = 0.2  # From .env
+    BEDROCK_MAX_TOKENS: int = 1500  # From .env
+    BEDROCK_TIMEOUT: int = 30  # From .env (seconds)
+    BEDROCK_CONNECTION_POOL_SIZE: int = 5  # Default, not in .env
 
     # OpenAI Configuration (from .env)
     OPENAI_API_KEY: Optional[str] = None  # Optional from .env

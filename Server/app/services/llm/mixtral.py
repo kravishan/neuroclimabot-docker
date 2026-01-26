@@ -1,4 +1,4 @@
-"""Mixtral LLM implementation via hosted endpoint with async semaphore control."""
+"""Bedrock LLM implementation via OpenAI-compatible endpoint with async semaphore control."""
 
 import asyncio
 import json
@@ -17,18 +17,19 @@ logger = get_logger(__name__)
 
 
 class MixtralLLM(LLM):
-    """Mixtral LLM implementation via hosted endpoint."""
-    
-    base_url: str = Field(default="http://localhost:11434")  # Will be overridden by settings
-    model: str = Field(default="mistral:7b")
+    """Bedrock LLM implementation via OpenAI-compatible endpoint."""
+
+    base_url: str = Field(default="https://lex.itml.space")  # Will be overridden by settings
+    api_key: str = Field(default="")  # Bearer token for authentication
+    model: str = Field(default="mistral.mistral-7b-instruct-v0:2")
     temperature: float = Field(default=0.2)
     max_tokens: int = Field(default=2000)
     timeout: int = Field(default=300)
-    
+
     @property
     def _llm_type(self) -> str:
-        return "mixtral"
-    
+        return "bedrock_mixtral"
+
     def _call(
         self,
         prompt: str,
@@ -36,18 +37,18 @@ class MixtralLLM(LLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
-        """Call the Mixtral model synchronously."""
+        """Call the Bedrock model synchronously."""
         # Run async method in sync context
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        
+
         return loop.run_until_complete(
             self._acall(prompt, stop, run_manager, **kwargs)
         )
-    
+
     async def _acall(
         self,
         prompt: str,
@@ -56,76 +57,78 @@ class MixtralLLM(LLM):
         **kwargs: Any,
     ) -> str:
         """
-        Call the Mixtral model asynchronously with semaphore control.
+        Call the Bedrock model asynchronously with semaphore control.
 
-        Limits concurrent Mixtral API calls to prevent overload and
+        Limits concurrent Bedrock API calls to prevent overload and
         manage resource usage across the application.
         """
         semaphore_manager = get_semaphore_manager()
 
-        logger.debug("🔒 Waiting for LLM semaphore (Mixtral)...")
+        logger.debug("🔒 Waiting for LLM semaphore (Bedrock)...")
         async with semaphore_manager.llm_semaphore:
-            logger.debug("✅ LLM semaphore acquired (Mixtral)")
+            logger.debug("✅ LLM semaphore acquired (Bedrock)")
+
+            # Build OpenAI-compatible chat completions payload
+            messages = [{"role": "user", "content": prompt}]
 
             payload = {
                 "model": self.model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": self.temperature,
-                    "num_predict": self.max_tokens,
-                    "stop": stop or [],
-                }
+                "messages": messages,
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
             }
+
+            if stop:
+                payload["stop"] = stop
 
             try:
                 headers = {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.api_key}"
                 }
 
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
-                        f"{self.base_url}/api/generate",
+                        f"{self.base_url}/v1/chat/completions",
                         json=payload,
                         headers=headers,
                         timeout=aiohttp.ClientTimeout(total=self.timeout)
                     ) as response:
                         if response.status != 200:
                             error_text = await response.text()
-                            raise LLMError(f"Mixtral API error {response.status}: {error_text}")
+                            raise LLMError(f"Bedrock API error {response.status}: {error_text}")
 
                         result = await response.json()
-                        logger.debug("🔓 LLM semaphore released (Mixtral)")
-                        return result.get("response", "").strip()
+                        logger.debug("🔓 LLM semaphore released (Bedrock)")
+                        # OpenAI-compatible response format
+                        return result.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
 
             except aiohttp.ClientError as e:
-                raise LLMError(f"Mixtral connection error: {str(e)}")
+                raise LLMError(f"Bedrock connection error: {str(e)}")
             except asyncio.TimeoutError:
-                raise LLMError("Mixtral request timed out")
+                raise LLMError("Bedrock request timed out")
             except Exception as e:
-                raise LLMError(f"Mixtral error: {str(e)}")
-    
+                raise LLMError(f"Bedrock error: {str(e)}")
+
     async def test_connection(self) -> bool:
-        """Test connection to hosted Mixtral endpoint."""
+        """Test connection to Bedrock endpoint."""
         try:
             headers = {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}"
             }
 
-            # Simple test payload
+            # Simple test payload using OpenAI-compatible format
             test_payload = {
                 "model": self.model,
-                "prompt": "Hello",
-                "stream": False,
-                "options": {
-                    "temperature": 0.1,
-                    "num_predict": 10
-                }
+                "messages": [{"role": "user", "content": "Hello"}],
+                "temperature": 0.1,
+                "max_tokens": 10
             }
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self.base_url}/api/generate",
+                    f"{self.base_url}/v1/chat/completions",
                     json=test_payload,
                     headers=headers,
                     timeout=aiohttp.ClientTimeout(total=30)
@@ -133,12 +136,13 @@ class MixtralLLM(LLM):
                     if response.status == 200:
                         result = await response.json()
                         # Check if we got a valid response
-                        return bool(result.get("response"))
+                        choices = result.get("choices", [])
+                        return len(choices) > 0 and bool(choices[0].get("message", {}).get("content"))
                     return False
         except Exception as e:
-            logger.error(f"Failed to connect to hosted Mixtral: {e}")
+            logger.error(f"Failed to connect to Bedrock: {e}")
             return False
-    
+
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Return identifying parameters."""

@@ -42,7 +42,7 @@ class FaultTolerantRetriever:
         self.embedding_dimension = milvus_config.EMBEDDING_DIMENSION
         self.metric_type = milvus_config.METRIC_TYPE
         self.nlist = milvus_config.NLIST
-        self.ollama_base_url = settings.OLLAMA_BASE_URL
+        self.bedrock_base_url = settings.BEDROCK_API_URL
         
         # Caching
         self.embedding_cache = {}

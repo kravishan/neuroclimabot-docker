@@ -46,7 +46,7 @@ class Config:
         """Load all configurations once"""
         self._cache = {
             'app': self._load_app(),
-            'ollama': self._load_ollama(),
+            'bedrock': self._load_ollama(),  # Bedrock LLM (OpenAI-compatible)
             'minio': self._load_minio(),
             'milvus': self._load_milvus(),
             'lancedb': self._load_lancedb(),
@@ -92,20 +92,26 @@ class Config:
     
     # Service Configurations
     def _load_ollama(self) -> Dict[str, Any]:
-        base_url = os.getenv('OLLAMA_API_URL', 'http://localhost:11434')
+        """Load Bedrock LLM configuration (OpenAI-compatible API)"""
+        base_url = os.getenv('BEDROCK_API_URL', 'https://lex.itml.space')
+        api_key = os.getenv('BEDROCK_API_KEY', '')
         # Timeout is in MINUTES in .env, convert to seconds
-        timeout_minutes = int(os.getenv('OLLAMA_TIMEOUT', '2'))
+        timeout_minutes = int(os.getenv('BEDROCK_TIMEOUT', '2'))
         timeout_seconds = timeout_minutes * 60
         return {
             'base_url': base_url,
-            'api_url': f"{base_url}/api/generate",
-            'embedding_url': f"{base_url}/api/embeddings",
+            'api_url': f"{base_url}/v1/chat/completions",
+            'embedding_url': f"{base_url}/v1/embeddings",
             'openai_url': f"{base_url}/v1",
-            'model': os.getenv('OLLAMA_MODEL', 'mistral:7b'),
-            'embedding_model': os.getenv('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
+            'model': os.getenv('BEDROCK_MODEL', 'mistral.mistral-7b-instruct-v0:2'),
+            'embedding_model': os.getenv('BEDROCK_EMBEDDING_MODEL', 'amazon.titan-embed-text-v1'),
+            'api_key': api_key,
             'timeout': timeout_seconds,
             'max_retries': 3,
-            'headers': {"Content-Type": "application/json"}
+            'headers': {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            }
         }
     
     def _load_minio(self) -> Dict[str, Any]:
@@ -241,23 +247,23 @@ class Config:
             'chunk_overlap': int(os.getenv('GRAPHRAG_CHUNK_OVERLAP', '100')),
             'timeout': graphrag_timeout_seconds,
 
-            # LLM Configuration for GraphRAG
+            # LLM Configuration for GraphRAG (using Bedrock)
             'llm': {
-                'api_key': os.getenv('GRAPHRAG_API_KEY', os.getenv('OPENAI_API_KEY', 'not-needed')),
+                'api_key': os.getenv('GRAPHRAG_API_KEY', os.getenv('BEDROCK_API_KEY', '')),
                 'type': os.getenv('GRAPHRAG_LLM_TYPE', 'openai_chat'),
-                'model': os.getenv('GRAPHRAG_LLM_MODEL', 'mistral:7b'),
-                'api_base': os.getenv('GRAPHRAG_LLM_API_BASE', 'http://localhost:11434/v1'),
+                'model': os.getenv('GRAPHRAG_LLM_MODEL', 'mistral.mistral-7b-instruct-v0:2'),
+                'api_base': os.getenv('GRAPHRAG_LLM_API_BASE', 'https://lex.itml.space/v1'),
                 'temperature': float(os.getenv('GRAPHRAG_LLM_TEMPERATURE', '0.1')),
                 'max_tokens': int(os.getenv('GRAPHRAG_LLM_MAX_TOKENS', '4000')),
                 'request_timeout': llm_timeout_seconds
             },
-            
-            # Embedding Configuration for GraphRAG
+
+            # Embedding Configuration for GraphRAG (using Bedrock)
             'embeddings': {
-                'api_key': os.getenv('GRAPHRAG_EMBEDDING_API_KEY', os.getenv('OPENAI_API_KEY', 'not-needed')),
+                'api_key': os.getenv('GRAPHRAG_EMBEDDING_API_KEY', os.getenv('BEDROCK_API_KEY', '')),
                 'type': os.getenv('GRAPHRAG_EMBEDDING_TYPE', 'openai_embedding'),
-                'model': os.getenv('GRAPHRAG_EMBEDDING_MODEL', 'nomic-embed-text:latest'),
-                'api_base': os.getenv('GRAPHRAG_EMBEDDING_API_BASE', 'http://localhost:11434/v1'),
+                'model': os.getenv('GRAPHRAG_EMBEDDING_MODEL', 'amazon.titan-embed-text-v1'),
+                'api_base': os.getenv('GRAPHRAG_EMBEDDING_API_BASE', 'https://lex.itml.space/v1'),
             },
             
             # Entity types for different buckets
@@ -431,8 +437,8 @@ class Config:
         return {
             # Vision Model Configuration
             'enabled': os.getenv('ENABLE_IMAGE_EXTRACTION', 'True').lower() == 'true',
-            'provider': os.getenv('VISION_MODEL_PROVIDER', 'ollama'),  # 'ollama' or 'openai'
-            'ollama_model': os.getenv('OLLAMA_VISION_MODEL', 'llava:13b'),
+            'provider': os.getenv('VISION_MODEL_PROVIDER', 'bedrock'),  # 'bedrock' or 'openai'
+            'bedrock_model': os.getenv('BEDROCK_VISION_MODEL', 'anthropic.claude-3-sonnet-20240229-v1:0'),
             'openai_model': os.getenv('OPENAI_VISION_MODEL', 'gpt-4-vision-preview'),
 
             # Image Extraction Settings
@@ -596,18 +602,19 @@ class Config:
         """Get entity types for GraphRAG processing by bucket"""
         return self.get(f'graphrag.entity_types.{bucket}', ['ORGANIZATION', 'PERSON', 'LOCATION'])
 
-    def get_ollama_payload(self, prompt: str, bucket: str = 'default') -> Dict[str, Any]:
-        """Build Ollama API payload"""
+    def get_llm_payload(self, prompt: str, bucket: str = 'default', system_prompt: str = None) -> Dict[str, Any]:
+        """Build Bedrock/OpenAI-compatible API payload"""
         config_data = self.get_summarization_config(bucket)
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
         return {
-            'model': self.get('ollama.model'),
-            'prompt': prompt,
-            'stream': config_data['stream'],
-            'options': {
-                'temperature': config_data['temperature'],
-                'top_p': config_data['top_p'],
-                'max_tokens': config_data['max_tokens']
-            }
+            'model': self.get('bedrock.model'),
+            'messages': messages,
+            'temperature': config_data['temperature'],
+            'max_tokens': config_data['max_tokens'],
+            'stream': config_data['stream']
         }
 
     def get_news_summarization_template(self, template_type: str = 'default') -> str:
@@ -736,12 +743,12 @@ class Config:
         else:
             errors.append("STP classifier model path not configured")
 
-        # Check Ollama configuration (STP uses main Ollama config)
-        ollama_config = self.get('ollama', {})
-        if not ollama_config.get('embedding_url'):
-            warnings.append("Ollama embedding URL not configured (used by STP)")
-        if not ollama_config.get('api_url'):
-            warnings.append("Ollama API URL not configured (used by STP)")
+        # Check Bedrock configuration (STP uses main Bedrock config)
+        bedrock_config = self.get('bedrock', {})
+        if not bedrock_config.get('embedding_url'):
+            warnings.append("Bedrock embedding URL not configured (used by STP)")
+        if not bedrock_config.get('api_url'):
+            warnings.append("Bedrock API URL not configured (used by STP)")
 
         return {
             'valid': len(errors) == 0,

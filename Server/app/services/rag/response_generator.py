@@ -38,7 +38,7 @@ class ResponseGeneratorService:
         self.prompt_manager = None
         self.is_initialized = False
         self.max_context_length = settings.MAX_CONTEXT_LENGTH
-        self.response_timeout = settings.OLLAMA_TIMEOUT
+        self.response_timeout = settings.BEDROCK_TIMEOUT
         
         # Content length limits per source type
         self.CONTENT_LIMITS = {

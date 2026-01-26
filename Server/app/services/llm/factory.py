@@ -30,13 +30,13 @@ async def get_llm(provider: Optional[str] = None) -> BaseLLM:
             # Otherwise fallback to Mixtral
             logger.info("Falling back to Mixtral LLM")
     
-    # Try Mixtral/Ollama
+    # Try Mixtral/Bedrock
     try:
         return await get_mixtral_llm()
     except Exception as e:
-        logger.error(f"Failed to initialize Mixtral LLM: {e}")
-        if provider == "mixtral":
-            raise LLMError(f"Mixtral LLM initialization failed: {str(e)}")
+        logger.error(f"Failed to initialize Bedrock LLM: {e}")
+        if provider == "mixtral" or provider == "bedrock":
+            raise LLMError(f"Bedrock LLM initialization failed: {str(e)}")
         
         # If we haven't tried OpenAI yet and we have a key, try it as last resort
         if not provider and settings.OPENAI_API_KEY:
@@ -50,27 +50,28 @@ async def get_llm(provider: Optional[str] = None) -> BaseLLM:
 
 
 async def get_mixtral_llm() -> BaseLLM:
-    """Get Mixtral LLM instance via configured endpoint."""
+    """Get Mixtral LLM instance via Bedrock (OpenAI-compatible) endpoint."""
     try:
         llm = MixtralLLM(
-            base_url=settings.OLLAMA_BASE_URL,
-            model=settings.OLLAMA_MODEL,
-            temperature=settings.OLLAMA_TEMPERATURE,
-            max_tokens=settings.OLLAMA_MAX_TOKENS,
-            timeout=settings.OLLAMA_TIMEOUT,
+            base_url=settings.BEDROCK_API_URL,
+            api_key=settings.BEDROCK_API_KEY,
+            model=settings.BEDROCK_MODEL,
+            temperature=settings.BEDROCK_TEMPERATURE,
+            max_tokens=settings.BEDROCK_MAX_TOKENS,
+            timeout=settings.BEDROCK_TIMEOUT,
         )
-        
+
         # Test connection
         connection_ok = await llm.test_connection()
         if not connection_ok:
-            raise LLMError(f"Could not connect to Mixtral at {settings.OLLAMA_BASE_URL}")
-            
-        logger.info(f"✅ Mixtral LLM initialized via {settings.OLLAMA_BASE_URL}")
+            raise LLMError(f"Could not connect to Bedrock at {settings.BEDROCK_API_URL}")
+
+        logger.info(f"✅ Bedrock LLM initialized via {settings.BEDROCK_API_URL}")
         return llm
-        
+
     except Exception as e:
-        logger.error(f"Failed to initialize Mixtral LLM: {e}")
-        raise LLMError(f"Mixtral LLM initialization failed: {str(e)}")
+        logger.error(f"Failed to initialize Bedrock LLM: {e}")
+        raise LLMError(f"Bedrock LLM initialization failed: {str(e)}")
 
 
 async def get_openai_llm() -> BaseLLM:

@@ -1,14 +1,15 @@
+import os
 import requests
 import pandas as pd
 from typing import List
 
 class MistralQualifyingFactorsGenerator:
-    """Mistral 7B API generator for STP qualifying factors"""
+    """Bedrock API generator for STP qualifying factors (OpenAI-compatible)"""
 
-    def __init__(self, model_name: str = None, api_url: str = None):
-        # Use Mistral 7B and the provided endpoint by default
-        self.model_name = "mistral:7b"
-        self.api_url = api_url or "http://localhost:11434/api/generate"
+    def __init__(self, model_name: str = None, api_url: str = None, api_key: str = None):
+        self.model_name = model_name or os.getenv("BEDROCK_MODEL", "mistral.mistral-7b-instruct-v0:2")
+        self.api_url = api_url or os.getenv("BEDROCK_API_URL", "https://lex.itml.space") + "/v1/chat/completions"
+        self.api_key = api_key or os.getenv("BEDROCK_API_KEY", "")
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt for STP qualifying factors analysis"""
@@ -36,37 +37,41 @@ class MistralQualifyingFactorsGenerator:
             "REMEMBER: Always output exactly five points, using the format and rules above. No summaries, no commentary, no preambles."
         )
 
-    def _format_prompt(self, description: str) -> str:
-        """Format the prompt for Mistral (wrap in [/INST])"""
+    def _format_messages(self, description: str) -> list:
+        """Format the messages for OpenAI-compatible API"""
         system_prompt = self._get_system_prompt()
-        prompt = f"<s>[INST] {system_prompt}\n\nAnalyze this text for the 5 STP qualifying factors:\n\n{description} [/INST]"
-        return prompt
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Analyze this text for the 5 STP qualifying factors:\n\n{description}"}
+        ]
 
     def generate_factors(self, description: str) -> str:
-        """Generate qualifying factors analysis using Mistral 7B API"""
-        prompt = self._format_prompt(description)
+        """Generate qualifying factors analysis using Bedrock API"""
+        messages = self._format_messages(description)
         payload = {
             "model": self.model_name,
-            "prompt": prompt,
-            "stream": False
+            "messages": messages,
+            "temperature": 0.3,
+            "max_tokens": 600
         }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+
         try:
-            response = requests.post(self.api_url, json=payload, timeout=60.0)
+            response = requests.post(self.api_url, json=payload, headers=headers, timeout=60.0)
             response.raise_for_status()
             data = response.json()
-            # Expecting the result in data['response'] or similar
+
+            # OpenAI-compatible response format
             if isinstance(data, dict):
-                # Try common keys
-                for key in ['response', 'result', 'text', 'choices']:
-                    if key in data:
-                        if isinstance(data[key], str):
-                            return data[key].strip()
-                        elif isinstance(data[key], list) and data[key]:
-                            # If choices, return first text
-                            if isinstance(data[key][0], dict) and 'text' in data[key][0]:
-                                return data[key][0]['text'].strip()
-                            elif isinstance(data[key][0], str):
-                                return data[key][0].strip()
+                choices = data.get("choices", [])
+                if choices and isinstance(choices[0], dict):
+                    message = choices[0].get("message", {})
+                    if isinstance(message, dict):
+                        return message.get("content", "").strip()
             return str(data)
         except Exception as e:
             return f"Error generating factors: {str(e)}"
@@ -79,7 +84,7 @@ class MistralQualifyingFactorsGenerator:
             results.append(result)
         return results
 
-    def process_dataframe(self, df: pd.DataFrame, text_column: str = 'content', 
+    def process_dataframe(self, df: pd.DataFrame, text_column: str = 'content',
                          stp_only: bool = True, stp_column: str = 'stp_prediction') -> pd.DataFrame:
         """Process DataFrame and add qualifying factors"""
         df = df.copy()
@@ -103,4 +108,4 @@ class MistralQualifyingFactorsGenerator:
         """No-op for API usage"""
         return {'message': 'API mode, no local memory usage'}
 
-print("✅ Mistral 7B Qualifying Factors Generator (API mode) ready!")
+print("✅ Bedrock Qualifying Factors Generator (API mode) ready!")

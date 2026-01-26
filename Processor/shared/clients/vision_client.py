@@ -1,7 +1,7 @@
 """
 Vision Model Client for Image Description
 
-Supports both Ollama (LLaVA) and OpenAI (GPT-4 Vision) for image analysis.
+Supports both Bedrock (via OpenAI-compatible API) and OpenAI (GPT-4 Vision) for image analysis.
 """
 
 import os
@@ -24,13 +24,14 @@ class VisionModelClient:
         vision_config = config.get_vision_config()
 
         self.enabled = vision_config.get('enabled', True)
-        self.provider = vision_config.get('provider', 'ollama').lower()
+        self.provider = vision_config.get('provider', 'bedrock').lower()
 
         # Model configuration
-        if self.provider == "ollama":
-            self.model = vision_config.get('ollama_model', 'llava:13b')
-            self.api_url = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
-            logger.info(f"🖼️ Vision Model: Ollama {self.model}")
+        if self.provider == "bedrock":
+            self.model = vision_config.get('bedrock_model', 'anthropic.claude-3-sonnet-20240229-v1:0')
+            self.api_url = os.getenv("BEDROCK_API_URL", "https://lex.itml.space")
+            self.api_key = os.getenv("BEDROCK_API_KEY", "")
+            logger.info(f"🖼️ Vision Model: Bedrock {self.model}")
         else:
             self.model = vision_config.get('openai_model', 'gpt-4-vision-preview')
             self.api_key = os.getenv("OPENAI_API_KEY")
@@ -81,8 +82,8 @@ class VisionModelClient:
 
         return base64.b64encode(image_bytes).decode("utf-8")
 
-    async def describe_image_ollama(self, image: Union[Image.Image, bytes, str, Path]) -> str:
-        """Describe image using Ollama LLaVA model."""
+    async def describe_image_bedrock(self, image: Union[Image.Image, bytes, str, Path]) -> str:
+        """Describe image using Bedrock via OpenAI-compatible API."""
         import httpx
 
         # Process image
@@ -102,22 +103,41 @@ class VisionModelClient:
         # Convert to base64
         image_base64 = self._image_to_base64(pil_image)
 
-        # Call Ollama API
+        # Call Bedrock API using OpenAI-compatible format
         payload = {
             "model": self.model,
-            "prompt": self.description_prompt,
-            "images": [image_base64],
-            "stream": False
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": self.description_prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{image_base64}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "max_tokens": 500
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
         }
 
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
-                f"{self.api_url}/api/generate",
-                json=payload
+                f"{self.api_url}/v1/chat/completions",
+                json=payload,
+                headers=headers
             )
             response.raise_for_status()
             result = response.json()
-            return result.get("response", "")
+            # OpenAI-compatible response format
+            return result.get("choices", [{}])[0].get("message", {}).get("content", "")
 
     async def describe_image_openai(self, image: Union[Image.Image, bytes, str, Path]) -> str:
         """Describe image using OpenAI GPT-4 Vision."""
@@ -196,8 +216,8 @@ class VisionModelClient:
                 return None
 
             # Call appropriate provider
-            if self.provider == "ollama":
-                description = await self.describe_image_ollama(image)
+            if self.provider == "bedrock":
+                description = await self.describe_image_bedrock(image)
             else:  # openai
                 description = await self.describe_image_openai(image)
 

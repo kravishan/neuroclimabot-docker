@@ -1,5 +1,5 @@
 """
-Ollama-based embedding service using the hosted nomic-embed-text model.
+Bedrock-based embedding service using the OpenAI-compatible API.
 """
 
 import asyncio
@@ -18,15 +18,16 @@ milvus_config = get_milvus_config()
 settings = get_settings()
 
 
-class OllamaEmbeddings(Embeddings):
-    """Ollama-based embedding service using hosted nomic-embed-text model."""
-    
+class BedrockEmbeddings(Embeddings):
+    """Bedrock-based embedding service using OpenAI-compatible API."""
+
     def __init__(self):
-        self.ollama_base_url = settings.OLLAMA_BASE_URL
-        self.model_name = "nomic-embed-text"  # The model name in Ollama
+        self.bedrock_base_url = settings.BEDROCK_API_URL
+        self.api_key = settings.BEDROCK_API_KEY
+        self.model_name = getattr(settings, 'BEDROCK_EMBEDDING_MODEL', 'amazon.titan-embed-text-v1')
         self.embedding_dimension = milvus_config.EMBEDDING_DIMENSION  # 768
         self.timeout = 30  # Timeout for embedding requests
-        
+
         # Performance tracking
         self.stats = {
             "total_requests": 0,
@@ -34,48 +35,54 @@ class OllamaEmbeddings(Embeddings):
             "avg_request_time": 0.0,
             "error_count": 0
         }
-        
-        logger.info(f"✅ Ollama Embedding Service initialized")
-        logger.info(f"🌐 Ollama URL: {self.ollama_base_url}")
+
+        logger.info(f"✅ Bedrock Embedding Service initialized")
+        logger.info(f"🌐 Bedrock URL: {self.bedrock_base_url}")
         logger.info(f"🤖 Model: {self.model_name}")
         logger.info(f"📏 Expected dimension: {self.embedding_dimension}")
-    
-    async def _get_embeddings_from_ollama(self, texts: List[str]) -> List[List[float]]:
-        """Get embeddings from Ollama server."""
+
+    async def _get_embeddings_from_bedrock(self, texts: List[str]) -> List[List[float]]:
+        """Get embeddings from Bedrock server via OpenAI-compatible API."""
         import time
         start_time = time.perf_counter()
-        
+
         try:
             headers = {
                 "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}"
             }
-            
+
             embeddings = []
-            
-            # Process texts individually (Ollama embedding API typically handles one at a time)
+
+            # Process texts individually (OpenAI embedding API)
             for text in texts:
                 payload = {
                     "model": self.model_name,
-                    "prompt": text.replace('\n', ' ').strip()  # Clean the text
+                    "input": text.replace('\n', ' ').strip()  # Clean the text
                 }
-                
+
                 async with aiohttp.ClientSession() as session:
                     async with session.post(
-                        f"{self.ollama_base_url}/api/embeddings",
+                        f"{self.bedrock_base_url}/v1/embeddings",
                         json=payload,
                         headers=headers,
                         timeout=aiohttp.ClientTimeout(total=self.timeout)
                     ) as response:
                         if response.status != 200:
                             error_text = await response.text()
-                            raise Exception(f"Ollama API error {response.status}: {error_text}")
-                        
+                            raise Exception(f"Bedrock API error {response.status}: {error_text}")
+
                         result = await response.json()
-                        embedding = result.get("embedding", [])
-                        
+                        # OpenAI-compatible response format
+                        data = result.get("data", [])
+                        if not data:
+                            raise Exception("No embedding returned from Bedrock")
+
+                        embedding = data[0].get("embedding", [])
+
                         if not embedding:
-                            raise Exception("No embedding returned from Ollama")
-                        
+                            raise Exception("No embedding in response data")
+
                         # Verify dimension
                         if len(embedding) != self.embedding_dimension:
                             logger.warning(f"Embedding dimension mismatch: got {len(embedding)}, expected {self.embedding_dimension}")
@@ -84,113 +91,116 @@ class OllamaEmbeddings(Embeddings):
                                 embedding = embedding[:self.embedding_dimension]
                             else:
                                 embedding.extend([0.0] * (self.embedding_dimension - len(embedding)))
-                        
+
                         embeddings.append(embedding)
-            
+
             # Update stats
             request_time = time.perf_counter() - start_time
             self._update_stats(len(texts), request_time)
-            
+
             logger.debug(f"Generated {len(embeddings)} embeddings in {request_time:.3f}s")
             return embeddings
-            
+
         except asyncio.TimeoutError:
             self.stats["error_count"] += 1
-            logger.error(f"Ollama embedding request timed out after {self.timeout}s")
+            logger.error(f"Bedrock embedding request timed out after {self.timeout}s")
             raise Exception("Embedding request timed out")
         except aiohttp.ClientError as e:
             self.stats["error_count"] += 1
-            logger.error(f"Ollama connection error: {e}")
-            raise Exception(f"Failed to connect to Ollama: {str(e)}")
+            logger.error(f"Bedrock connection error: {e}")
+            raise Exception(f"Failed to connect to Bedrock: {str(e)}")
         except Exception as e:
             self.stats["error_count"] += 1
-            logger.error(f"Ollama embedding error: {e}")
+            logger.error(f"Bedrock embedding error: {e}")
             raise Exception(f"Embedding generation failed: {str(e)}")
-    
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """Embed a list of documents using Ollama."""
+        """Embed a list of documents using Bedrock."""
         if not texts:
             return []
-        
+
         try:
             # Run async method in sync context
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-        
-        return loop.run_until_complete(self._get_embeddings_from_ollama(texts))
-    
+
+        return loop.run_until_complete(self._get_embeddings_from_bedrock(texts))
+
     def embed_query(self, text: str) -> List[float]:
-        """Embed a single query using Ollama."""
+        """Embed a single query using Bedrock."""
         embeddings = self.embed_documents([text])
         return embeddings[0] if embeddings else [0.0] * self.embedding_dimension
-    
+
     async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
         """Async version of embed_documents."""
         if not texts:
             return []
-        return await self._get_embeddings_from_ollama(texts)
-    
+        return await self._get_embeddings_from_bedrock(texts)
+
     async def aembed_query(self, text: str) -> List[float]:
         """Async version of embed_query."""
         embeddings = await self.aembed_documents([text])
         return embeddings[0] if embeddings else [0.0] * self.embedding_dimension
-    
+
     def _update_stats(self, text_count: int, request_time: float):
         """Update performance statistics."""
         self.stats["total_requests"] += 1
         self.stats["total_texts_embedded"] += text_count
-        
+
         # Update running average
         total_requests = self.stats["total_requests"]
         current_avg = self.stats["avg_request_time"]
         new_avg = ((current_avg * (total_requests - 1)) + request_time) / total_requests
         self.stats["avg_request_time"] = new_avg
-    
+
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the embedding model."""
         return {
             "model_name": self.model_name,
             "dimension": self.embedding_dimension,
-            "source": "ollama_server",
-            "base_url": self.ollama_base_url,
+            "source": "bedrock_server",
+            "base_url": self.bedrock_base_url,
             "metric_type": milvus_config.METRIC_TYPE,
             "nlist": milvus_config.NLIST,
             "stats": self.stats.copy()
         }
-    
+
     async def health_check(self) -> bool:
-        """Check if Ollama embedding service is healthy."""
+        """Check if Bedrock embedding service is healthy."""
         try:
             # Test with a simple embedding
             test_embedding = await self.aembed_query("health check")
-            
+
             # Verify we got a valid embedding
             if len(test_embedding) == self.embedding_dimension:
-                logger.debug("✅ Ollama embedding service health check passed")
+                logger.debug("✅ Bedrock embedding service health check passed")
                 return True
             else:
                 logger.error(f"❌ Health check failed: wrong dimension {len(test_embedding)}")
                 return False
-                
+
         except Exception as e:
-            logger.error(f"❌ Ollama embedding health check failed: {e}")
+            logger.error(f"❌ Bedrock embedding health check failed: {e}")
             return False
 
 
+# Backward compatibility alias
+OllamaEmbeddings = BedrockEmbeddings
+
 # Global embeddings instance
-_ollama_embeddings = None
+_bedrock_embeddings = None
 
 
 def get_embeddings() -> Embeddings:
-    """Get the Ollama embeddings instance."""
-    global _ollama_embeddings
-    
-    if _ollama_embeddings is None:
-        _ollama_embeddings = OllamaEmbeddings()
-    
-    return _ollama_embeddings
+    """Get the Bedrock embeddings instance."""
+    global _bedrock_embeddings
+
+    if _bedrock_embeddings is None:
+        _bedrock_embeddings = BedrockEmbeddings()
+
+    return _bedrock_embeddings
 
 
 def get_embedding_model_info() -> Dict[str, Any]:
@@ -199,9 +209,9 @@ def get_embedding_model_info() -> Dict[str, Any]:
     return embeddings.get_model_info()
 
 
-async def test_ollama_embeddings():
-    """Test function to verify Ollama embeddings are working."""
-    logger.info("🧪 Testing Ollama Embeddings...")
+async def test_bedrock_embeddings():
+    """Test function to verify Bedrock embeddings are working."""
+    logger.info("🧪 Testing Bedrock Embeddings...")
 
     try:
         embeddings = get_embeddings()
@@ -235,5 +245,9 @@ async def test_ollama_embeddings():
         return True
 
     except Exception as e:
-        logger.error(f"❌ Ollama embedding test failed: {e}")
+        logger.error(f"❌ Bedrock embedding test failed: {e}")
         return False
+
+
+# Backward compatibility
+test_ollama_embeddings = test_bedrock_embeddings

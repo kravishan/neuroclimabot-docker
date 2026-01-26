@@ -139,8 +139,8 @@ NLIST = 512                             # Milvus index parameter
 # LLM Constants
 # =============================================================================
 
-DEFAULT_OLLAMA_TEMPERATURE = 0.2        # Ollama temperature setting
-DEFAULT_OLLAMA_MAX_TOKENS = 1500        # Ollama max tokens
+DEFAULT_BEDROCK_TEMPERATURE = 0.2       # Bedrock temperature setting
+DEFAULT_BEDROCK_MAX_TOKENS = 1500       # Bedrock max tokens
 DEFAULT_OPENAI_TEMPERATURE = 0.2        # OpenAI temperature setting
 DEFAULT_OPENAI_MAX_TOKENS = 1500        # OpenAI max tokens
 

@@ -52,7 +52,7 @@ class Settings(
 
     - BaseConfig: Core application settings (APP_NAME, HOST, PORT, etc.)
     - SecurityConfig: Security, authentication, CORS, rate limiting
-    - LLMConfig: LLM provider settings (Ollama, OpenAI)
+    - LLMConfig: LLM provider settings (Bedrock, OpenAI)
     - RAGConfig: RAG pipeline configuration (retrieval, reranking, responses)
     - IntegrationsConfig: External services (Langfuse, GraphRAG, MinIO, STP)
     - FeaturesConfig: Feature flags, performance, monitoring
