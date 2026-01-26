@@ -15,8 +15,11 @@ class LLMConfig(BaseSettings):
     DEFAULT_LLM_PROVIDER: str = "bedrock"  # Options: "bedrock", "ollama", "openai"
 
     # Embedding Model Configuration (from .env)
+    EMBEDDING_API_URL: str = "https://lex.itml.space/v1/embeddings"
+    EMBEDDING_API_TOKEN: Optional[str] = None
     EMBEDDING_MODEL: str = "nomic-embed-text"
     EMBEDDING_DIMENSION: int = 768
+    EMBEDDING_TIMEOUT: int = 30
 
     # AWS Bedrock Configuration (from .env)
     BEDROCK_REGION: str = "us-east-1"
