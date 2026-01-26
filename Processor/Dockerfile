@@ -42,6 +42,14 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p /app/data /app/graphrag /app/lancedb
 
+# Backup graphrag data to init location (for init container to copy to PVC)
+# This preserves the data when PVC is mounted over /app/graphrag
+RUN if [ -d "/app/graphrag/output" ] && [ "$(ls -A /app/graphrag/output 2>/dev/null)" ]; then \
+    mkdir -p /app/graphrag-init && \
+    cp -r /app/graphrag/output /app/graphrag-init/output && \
+    echo "GraphRAG data backed up to /app/graphrag-init/output"; \
+    fi
+
 # Expose port
 EXPOSE 5000
 
