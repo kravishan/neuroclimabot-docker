@@ -1,6 +1,6 @@
 """
 LLM (Large Language Model) configuration.
-Settings for AWS Bedrock, OpenAI, Ollama, and other LLM providers.
+Settings for OpenAI-compatible APIs, OpenAI, Ollama, and other LLM providers.
 """
 
 from typing import Optional
@@ -12,24 +12,21 @@ class LLMConfig(BaseSettings):
     """LLM provider configurations."""
 
     # Default LLM Provider (from .env)
-    DEFAULT_LLM_PROVIDER: str = "bedrock"  # Options: "bedrock", "ollama", "openai"
+    DEFAULT_LLM_PROVIDER: str = "openai_compatible"  # Options: "openai_compatible", "ollama", "openai"
 
     # Embedding Model Configuration (from .env)
     EMBEDDING_API_URL: str = "https://lex.itml.space/v1/embeddings"
-    EMBEDDING_API_TOKEN: Optional[str] = None
     EMBEDDING_MODEL: str = "nomic-embed-text"
     EMBEDDING_DIMENSION: int = 768
     EMBEDDING_TIMEOUT: int = 30
 
-    # AWS Bedrock Configuration (from .env)
-    BEDROCK_REGION: str = "us-east-1"
-    BEDROCK_MODEL_ID: str = "anthropic.claude-3-sonnet-20240229-v1:0"
-    BEDROCK_ACCESS_KEY_ID: Optional[str] = None
-    BEDROCK_SECRET_ACCESS_KEY: Optional[str] = None
-    BEDROCK_ENDPOINT_URL: Optional[str] = None  # Optional custom endpoint
-    BEDROCK_TEMPERATURE: float = 0.2
-    BEDROCK_MAX_TOKENS: int = 1500
-    BEDROCK_TIMEOUT: int = 60
+    # OpenAI-Compatible API Configuration (from .env)
+    LLM_API_URL: str = "https://lex.itml.space/v1/chat/completions"
+    LLM_API_TOKEN: Optional[str] = None
+    LLM_MODEL: str = "mistral.mistral-7b-instruct-v0:2"
+    LLM_TEMPERATURE: float = 0.2
+    LLM_MAX_TOKENS: int = 1500
+    LLM_TIMEOUT: int = 60
 
     # Ollama Configuration (from .env)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
