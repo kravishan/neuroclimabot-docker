@@ -1,6 +1,6 @@
 """Tracing services for observability and monitoring."""
 
-# Import with fallbacks to avoid circular imports
+# Import Langfuse with fallbacks to avoid circular imports
 try:
     from .langfuse_service import (
         get_langfuse_service,
@@ -76,6 +76,7 @@ except ImportError as e:
         return decorator
 
 __all__ = [
+    # Langfuse exports
     "get_langfuse_service",
     "get_langfuse_client",
     "is_langfuse_enabled",
@@ -83,5 +84,46 @@ __all__ = [
     "get_analytics_consent",
     "langfuse_service",
     "ConversationTracer",
-    "trace_api_call"
+    "trace_api_call",
+    # TruLens exports
+    "get_trulens_service",
+    "is_trulens_enabled",
+    "set_evaluation_consent",
+    "get_evaluation_consent",
+    "queue_rag_evaluation",
+    "trulens_service"
 ]
+
+
+# Import TruLens with fallbacks
+try:
+    from .trulens_service import (
+        get_trulens_service,
+        is_trulens_enabled,
+        set_evaluation_consent,
+        get_evaluation_consent,
+        queue_rag_evaluation,
+        trulens_service
+    )
+except ImportError as e:
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Could not import trulens_service: {e}")
+
+    # Fallback implementations
+    async def get_trulens_service():
+        return None
+
+    def is_trulens_enabled():
+        return False
+
+    def set_evaluation_consent(consent: bool):
+        pass
+
+    def get_evaluation_consent():
+        return True
+
+    async def queue_rag_evaluation(*args, **kwargs):
+        return None
+
+    trulens_service = None

@@ -9,6 +9,7 @@ from app.services.rag.orchestrator import get_rag_orchestrator
 from app.services.memory.conversation import get_conversation_memory
 from app.services.external.stp_client import get_stp_client
 from app.services.tracing import get_langfuse_client, is_langfuse_enabled
+from app.services.tracing import is_trulens_enabled, queue_rag_evaluation
 from app.utils.references import process_references_with_urls_and_count
 from app.utils.logger import get_logger
 
@@ -344,6 +345,31 @@ class CleanRAGService:
                 "sources": sources_result["sources"],
                 "total_references": sources_result["total_references"]
             }
+
+            # Queue TruLens evaluation (async, non-blocking, zero latency impact)
+            if is_trulens_enabled():
+                try:
+                    asyncio.create_task(
+                        queue_rag_evaluation(
+                            query=query_analysis.original_query,
+                            response=english_response,
+                            context_chunks=rag_result.reference_data.get("chunks", []) if rag_result.reference_data else [],
+                            context_summaries=rag_result.reference_data.get("summaries", []) if rag_result.reference_data else [],
+                            context_graph=rag_result.reference_data.get("graph_data", []) if rag_result.reference_data else [],
+                            social_tipping_point=social_tipping_point,
+                            session_id=session_id or "anonymous",
+                            conversation_type=conversation_type,
+                            metadata={
+                                "difficulty_level": difficulty_level,
+                                "has_relevant_data": has_relevant_data,
+                                "sources_used": rag_result.sources_used if hasattr(rag_result, 'sources_used') else {}
+                            }
+                        )
+                    )
+                    logger.debug("TruLens evaluation queued for RAG response")
+                except Exception as e:
+                    logger.warning(f"Failed to queue TruLens evaluation: {e}")
+
             return result
         else:
             # Enhanced LLM fallback - get response first, then STP

@@ -66,14 +66,17 @@ async def lifespan(app: FastAPI):
 
 
 async def startup_event():
-    """Application startup event with Langfuse, authentication, and parallel processing setup."""
+    """Application startup event with Langfuse, TruLens, authentication, and parallel processing setup."""
     global cleanup_task
 
     tasks = []
-    
+
     # Initialize Langfuse service first (non-blocking)
     tasks.append(initialize_langfuse_service())
-    
+
+    # Initialize TruLens evaluation service (non-blocking)
+    tasks.append(initialize_trulens_service())
+
     # Initialize authentication service
     tasks.append(initialize_auth_service())
     
@@ -105,7 +108,7 @@ async def startup_event():
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     # Log results
-    task_names = ["langfuse", "auth", "milvus", "minio", "rag", "session_manager", "stats_database", "graphrag"]
+    task_names = ["langfuse", "trulens", "auth", "milvus", "minio", "rag", "session_manager", "stats_database", "graphrag"]
     for i, result in enumerate(results):
         if isinstance(result, Exception):
             task_name = task_names[i] if i < len(task_names) else f"task_{i}"
@@ -137,6 +140,15 @@ async def shutdown_event():
             await langfuse_service.shutdown()
     except Exception as e:
         logger.warning(f"Error shutting down Langfuse service: {e}")
+
+    # Shutdown TruLens service to process pending evaluations
+    try:
+        from app.services.tracing.trulens_service import get_trulens_service
+        trulens_service = await get_trulens_service()
+        if trulens_service:
+            await trulens_service.shutdown()
+    except Exception as e:
+        logger.warning(f"Error shutting down TruLens service: {e}")
     
     # Close other connections
     if hasattr(milvus_client, 'close'):
@@ -187,15 +199,31 @@ async def initialize_langfuse_service():
     try:
         from app.services.tracing.langfuse_service import get_langfuse_service
         langfuse_service = await get_langfuse_service()
-        
+
         if langfuse_service and langfuse_service.is_enabled:
             logger.info("✅ Langfuse tracing service initialized")
         else:
             logger.info("ℹ️  Langfuse tracing disabled or not configured")
-            
+
     except Exception as e:
         logger.warning(f"⚠️  Langfuse initialization failed (non-critical): {e}")
         # Don't raise - Langfuse is optional for core functionality
+
+
+async def initialize_trulens_service():
+    """Initialize TruLens evaluation service."""
+    try:
+        from app.services.tracing.trulens_service import get_trulens_service
+        trulens_service = await get_trulens_service()
+
+        if trulens_service and trulens_service.is_enabled:
+            logger.info("✅ TruLens evaluation service initialized")
+        else:
+            logger.info("ℹ️  TruLens evaluation disabled or not configured")
+
+    except Exception as e:
+        logger.warning(f"⚠️  TruLens initialization failed (non-critical): {e}")
+        # Don't raise - TruLens is optional for core functionality
 
 
 async def initialize_milvus():
@@ -303,6 +331,10 @@ def create_application() -> FastAPI:
             "tracing": {
                 "langfuse_enabled": settings.LANGFUSE_ENABLED,
                 "langfuse_configured": settings.langfuse_is_configured
+            },
+            "evaluation": {
+                "trulens_enabled": settings.TRULENS_ENABLED,
+                "trulens_configured": settings.trulens_is_configured
             }
         }
     
@@ -410,6 +442,19 @@ async def perform_health_check() -> Dict:
     except Exception as e:
         services["langfuse"] = "error"
         logger.debug(f"Langfuse health check failed: {e}")
+
+    # Check TruLens (optional)
+    try:
+        from app.services.tracing.trulens_service import get_trulens_service
+        trulens_service = await get_trulens_service()
+        if trulens_service:
+            trulens_health = await trulens_service.health_check()
+            services["trulens"] = trulens_health["status"]
+        else:
+            services["trulens"] = "disabled"
+    except Exception as e:
+        services["trulens"] = "error"
+        logger.debug(f"TruLens health check failed: {e}")
     
     # Add database configuration info
     db_info = {

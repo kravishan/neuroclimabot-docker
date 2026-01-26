@@ -286,6 +286,120 @@ class IntegrationsConfig(BaseSettings):
     )
 
     # =============================================================================
+    # TruLens Evaluation Configuration
+    # =============================================================================
+
+    # TruLens Core Settings
+    TRULENS_ENABLED: bool = Field(
+        default=False,
+        description="Enable/disable TruLens evaluation service"
+    )
+    TRULENS_DATABASE_URL: Optional[str] = Field(
+        default=None,
+        description="Database URL for TruLens storage (SQLite or PostgreSQL)"
+    )
+    TRULENS_APP_NAME: str = Field(
+        default="neuroclima-rag",
+        description="Application name for TruLens tracking"
+    )
+    TRULENS_APP_VERSION: str = Field(
+        default="1.0.0",
+        description="Application version for TruLens tracking"
+    )
+
+    # TruLens Evaluation Provider
+    TRULENS_PROVIDER: str = Field(
+        default="ollama",
+        description="LLM provider for evaluations: 'ollama', 'openai', 'litellm'"
+    )
+    TRULENS_EVAL_MODEL: str = Field(
+        default="mistral:7b",
+        description="Model to use for TruLens evaluations"
+    )
+    TRULENS_OPENAI_API_KEY: Optional[str] = Field(
+        default=None,
+        description="OpenAI API key for TruLens evaluations (if using OpenAI provider)"
+    )
+
+    # Async Evaluation Settings
+    TRULENS_ASYNC_MODE: bool = Field(
+        default=True,
+        description="Run evaluations asynchronously (non-blocking)"
+    )
+    TRULENS_SAMPLE_RATE: float = Field(
+        default=1.0,
+        description="Fraction of responses to evaluate (0.0-1.0). Set to 0.1 for 10%"
+    )
+    TRULENS_BATCH_SIZE: int = Field(
+        default=10,
+        description="Batch size for deferred evaluations"
+    )
+    TRULENS_WORKER_INTERVAL: float = Field(
+        default=30.0,
+        description="Interval in seconds for background worker to process pending evaluations"
+    )
+    TRULENS_MAX_QUEUE_SIZE: int = Field(
+        default=1000,
+        description="Maximum size of evaluation queue before dropping oldest"
+    )
+
+    # Evaluation Metrics Configuration
+    TRULENS_EVAL_GROUNDEDNESS: bool = Field(
+        default=True,
+        description="Evaluate groundedness (is response supported by context?)"
+    )
+    TRULENS_EVAL_RELEVANCE: bool = Field(
+        default=True,
+        description="Evaluate answer relevance (does it answer the question?)"
+    )
+    TRULENS_EVAL_CONTEXT_RELEVANCE: bool = Field(
+        default=True,
+        description="Evaluate context relevance (are retrieved docs useful?)"
+    )
+    TRULENS_EVAL_COHERENCE: bool = Field(
+        default=False,
+        description="Evaluate response coherence (is it well-structured?)"
+    )
+    TRULENS_EVAL_CLIMATE_ACCURACY: bool = Field(
+        default=True,
+        description="Custom: Evaluate climate-specific accuracy"
+    )
+    TRULENS_EVAL_STP_RELEVANCE: bool = Field(
+        default=True,
+        description="Custom: Evaluate Social Tipping Point relevance"
+    )
+
+    # TruLens Thresholds for Alerts
+    TRULENS_GROUNDEDNESS_THRESHOLD: float = Field(
+        default=0.7,
+        description="Minimum acceptable groundedness score"
+    )
+    TRULENS_RELEVANCE_THRESHOLD: float = Field(
+        default=0.7,
+        description="Minimum acceptable relevance score"
+    )
+    TRULENS_ALERT_ON_LOW_SCORE: bool = Field(
+        default=True,
+        description="Log warnings when scores fall below thresholds"
+    )
+
+    # TruLens Dashboard
+    TRULENS_DASHBOARD_ENABLED: bool = Field(
+        default=False,
+        description="Enable TruLens dashboard (requires separate process)"
+    )
+    TRULENS_DASHBOARD_PORT: int = Field(
+        default=8501,
+        description="Port for TruLens dashboard"
+    )
+
+    # Langfuse Integration for TruLens scores
+    TRULENS_PUSH_TO_LANGFUSE: bool = Field(
+        default=True,
+        description="Push TruLens scores to Langfuse traces"
+    )
+
+    # =============================================================================
     # Email Configuration (from .env)
     # =============================================================================
 
@@ -313,12 +427,20 @@ class IntegrationsConfig(BaseSettings):
     # Validators
     # =============================================================================
 
-    @field_validator("LANGFUSE_SAMPLE_RATE")
+    @field_validator("LANGFUSE_SAMPLE_RATE", "TRULENS_SAMPLE_RATE")
     @classmethod
     def validate_sample_rate(cls, v: float) -> float:
         if not 0.0 <= v <= 1.0:
-            raise ValueError("LANGFUSE_SAMPLE_RATE must be between 0.0 and 1.0")
+            raise ValueError("Sample rate must be between 0.0 and 1.0")
         return v
+
+    @field_validator("TRULENS_PROVIDER")
+    @classmethod
+    def validate_trulens_provider(cls, v: str) -> str:
+        valid_providers = ["ollama", "openai", "litellm"]
+        if v.lower() not in valid_providers:
+            raise ValueError(f"TRULENS_PROVIDER must be one of {valid_providers}")
+        return v.lower()
 
     @field_validator("MINIO_SHAREABLE_URL_EXPIRY_MINUTES")
     @classmethod
@@ -417,6 +539,23 @@ class IntegrationsConfig(BaseSettings):
     def stp_full_url(self) -> str:
         """Get full STP service URL."""
         return f"{self.STP_SERVICE_URL.rstrip('/')}{self.STP_SERVICE_ENDPOINT}"
+
+    @property
+    def trulens_is_configured(self) -> bool:
+        """Check if TruLens is properly configured."""
+        if not self.TRULENS_ENABLED:
+            return False
+        # For OpenAI provider, API key is required
+        if self.TRULENS_PROVIDER == "openai" and not self.TRULENS_OPENAI_API_KEY:
+            return False
+        return True
+
+    @property
+    def trulens_database_path(self) -> str:
+        """Get TruLens database path."""
+        if self.TRULENS_DATABASE_URL:
+            return self.TRULENS_DATABASE_URL
+        return "sqlite:///trulens_evaluations.db"
 
     class Config:
         env_file = ".env"
