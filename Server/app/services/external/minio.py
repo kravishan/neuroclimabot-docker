@@ -84,47 +84,57 @@ class MinIOClient:
             except S3Error as e:
                 logger.warning(f"Could not check bucket {bucket_name}: {e}")
     
-    async def generate_shareable_reference_url(self, doc_name: str, bucket_source: str) -> Optional[str]:
+    async def generate_shareable_reference_url(self, doc_name: str, bucket_source: str = "") -> Optional[str]:
         """
         Generate public shareable URL for references with 30-minute expiry.
         Handles folder structures and provides URLs that work without authentication.
+        Searches across multiple buckets if document not found in specified bucket.
 
         Args:
             doc_name: Document filename (may or may not include folder path)
             bucket_source: Source bucket type (policy, researchpapers, scientificdata, news)
+                          If empty or not found, searches across all buckets.
 
         Returns:
             Public shareable URL with 30-minute expiry, or None if document not found
         """
         try:
-            # Get bucket name from mapping
-            bucket_name = self.bucket_mapping.get(bucket_source.lower())
+            # Define search order for buckets
+            # If bucket_source is specified and valid, try it first
+            buckets_to_search = []
 
-            if not bucket_name:
-                logger.warning(f"Unknown bucket source: {bucket_source}")
-                return None
+            if bucket_source and bucket_source.lower() in self.bucket_mapping:
+                # Add specified bucket first
+                buckets_to_search.append(self.bucket_mapping[bucket_source.lower()])
 
-            # Check if bucket exists
-            if not self.client.bucket_exists(bucket_name):
-                logger.warning(f"Bucket {bucket_name} does not exist")
-                return None
+            # Add remaining buckets for fallback search
+            for bucket_name in self.bucket_mapping.values():
+                if bucket_name not in buckets_to_search:
+                    buckets_to_search.append(bucket_name)
 
-            # Find the actual file path (handles folders)
-            actual_file_path = await self._find_document_path(doc_name, bucket_name)
+            # Search through buckets in order
+            for bucket_name in buckets_to_search:
+                # Check if bucket exists
+                if not self.client.bucket_exists(bucket_name):
+                    continue
 
-            if not actual_file_path:
-                logger.warning(f"Document {doc_name} not found in bucket {bucket_name}")
-                return None
+                # Find the actual file path (handles folders)
+                actual_file_path = await self._find_document_path(doc_name, bucket_name)
 
-            # Generate public shareable presigned URL with 30-minute expiry
-            presigned_url = self.client.presigned_get_object(
-                bucket_name,
-                actual_file_path,
-                expires=self.presigned_url_expiry
-            )
+                if actual_file_path:
+                    # Generate public shareable presigned URL with 30-minute expiry
+                    presigned_url = self.client.presigned_get_object(
+                        bucket_name,
+                        actual_file_path,
+                        expires=self.presigned_url_expiry
+                    )
 
-            logger.debug(f"Generated 30min shareable URL for {doc_name} -> {actual_file_path}")
-            return presigned_url
+                    logger.debug(f"Generated 30min shareable URL for {doc_name} in bucket {bucket_name}")
+                    return presigned_url
+
+            # Document not found in any bucket
+            logger.warning(f"Document {doc_name} not found in any bucket")
+            return None
 
         except Exception as e:
             logger.error(f"Failed to generate shareable URL for {doc_name}: {e}")
@@ -187,11 +197,11 @@ class MinIOClient:
                         
                         return object_name
                 
-                logger.warning(f"Document {doc_name} not found in bucket {bucket_name}")
+                # Return None silently - parent function handles multi-bucket search logging
                 return None
-                
+
         except Exception as e:
-            logger.error(f"Error searching for document {doc_name}: {e}")
+            logger.debug(f"Error searching for document {doc_name} in {bucket_name}: {e}")
             return None
     
     

@@ -356,44 +356,65 @@ class STPSearchService:
             return False
 
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding for search query"""
+        """Generate embedding for search query using local Ollama (separate from GraphRAG)"""
         import requests
+        import os
         from config import config
 
         try:
             ollama_config = config.get('ollama')
 
-            logger.info(f"🔗 Calling embedding API: {ollama_config['embedding_url']}")
-            logger.info(f"📦 Using model: all-minilm:l6-v2")
+            # STP uses LOCAL Ollama with sentence-transformers/all-MiniLM-L6-v2
+            # This is SEPARATE from GraphRAG which uses remote API endpoints
+            # Use STP-specific config if set, otherwise default to local Ollama
+            stp_api_base = os.getenv('STP_EMBEDDING_API_BASE', 'http://localhost:11434')
+            # STP_EMBEDDING_MODEL from .env (use Ollama model name format: all-minilm:l6-v2)
+            stp_model = os.getenv('STP_EMBEDDING_MODEL', 'all-minilm:l6-v2')
+
+            # Use Ollama native API format for local embeddings
+            embedding_url = f"{stp_api_base.rstrip('/')}/api/embeddings"
+
+            logger.info(f"🔗 [STP] Calling local embedding API: {embedding_url}")
+            logger.info(f"📦 [STP] Using model: {stp_model}")
 
             response = requests.post(
-                ollama_config['embedding_url'],
+                embedding_url,
                 json={
-                    "model": "all-minilm:l6-v2",
+                    "model": stp_model,
                     "prompt": text[:4000]
                 },
-                timeout=float(ollama_config['timeout'])
+                timeout=float(ollama_config.get('timeout', 120))
             )
 
             if response.status_code == 200:
                 result = response.json()
-                embedding = result.get("embedding", [])
 
+                # Handle both OpenAI-compatible format and Ollama native format
+                if "data" in result and len(result["data"]) > 0:
+                    # OpenAI-compatible format: {"data": [{"embedding": [...]}]}
+                    embedding = result["data"][0].get("embedding", [])
+                else:
+                    # Ollama native format: {"embedding": [...]}
+                    embedding = result.get("embedding", [])
+
+                if not embedding:
+                    logger.error("❌ [STP] No embedding returned from API")
+                    return [0.0] * self.embedding_dim
+
+                # Handle embedding dimension mismatch dynamically
                 if len(embedding) != self.embedding_dim:
-                    logger.warning(f"⚠️ Embedding dimension mismatch: got {len(embedding)}, expected {self.embedding_dim}")
-                    if len(embedding) < self.embedding_dim:
-                        embedding = embedding + [0.0] * (self.embedding_dim - len(embedding))
-                    else:
-                        embedding = embedding[:self.embedding_dim]
+                    logger.info(f"📊 [STP] Embedding dimension: {len(embedding)} (expected {self.embedding_dim})")
+                    # Update expected dimension if this is first successful embedding
+                    self.embedding_dim = len(embedding)
 
                 return embedding
             else:
-                logger.error(f"❌ Embedding API error: {response.status_code}")
-                logger.error(f"❌ Response: {response.text}")
+                logger.error(f"❌ [STP] Embedding API error: {response.status_code}")
+                logger.error(f"❌ [STP] Response: {response.text[:500]}")
                 return [0.0] * self.embedding_dim
 
         except Exception as e:
-            logger.error(f"❌ Embedding generation failed: {e}")
+            logger.error(f"❌ [STP] Embedding generation failed: {e}")
             return [0.0] * self.embedding_dim
 
     async def search(self, query_text: str, top_k: int = 5, include_metadata: bool = True,
