@@ -368,7 +368,8 @@ class STPSearchService:
             # This is SEPARATE from GraphRAG which uses remote API endpoints
             # Use STP-specific config if set, otherwise default to local Ollama
             stp_api_base = os.getenv('STP_EMBEDDING_API_BASE', 'http://localhost:11434')
-            stp_model = os.getenv('STP_EMBEDDING_MODEL_NAME', 'all-minilm:l6-v2')
+            # STP_EMBEDDING_MODEL from .env (use Ollama model name format: all-minilm:l6-v2)
+            stp_model = os.getenv('STP_EMBEDDING_MODEL', 'all-minilm:l6-v2')
 
             # Use Ollama native API format for local embeddings
             embedding_url = f"{stp_api_base.rstrip('/')}/api/embeddings"
