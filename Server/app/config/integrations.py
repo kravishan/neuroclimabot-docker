@@ -54,11 +54,6 @@ class IntegrationsConfig(BaseSettings):
     GRAPHRAG_SERVER_URL: str  # From .env
     GRAPHRAG_API_TIMEOUT: float  # From .env
 
-    # GraphRAG LLM Configuration (from .env)
-    GRAPHRAG_LLM_API_BASE: Optional[str] = None  # OpenAI-compatible API base URL
-    GRAPHRAG_LLM_API_KEY: Optional[str] = None  # API key for GraphRAG LLM
-    GRAPHRAG_LLM_MODEL: str = "mistral.mistral-7b-instruct-v0:2"  # Model for GraphRAG queries
-
     # GraphRAG API Performance Settings
     GRAPHRAG_API_MAX_RETRIES: int = 3
     GRAPHRAG_API_RETRY_DELAY: float = 1.0
