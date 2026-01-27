@@ -307,12 +307,12 @@ async def _extract_reference_from_graph_document_with_shareable_url(
         if not document_name or document_name.lower() in ['unknown', 'test', '']:
             return None
         
-        # Get bucket information
+        # Get bucket information (empty string triggers multi-bucket search in MinIO)
         bucket_source = (
             graph_doc.get("bucket") or
             graph_doc.get("metadata", {}).get("bucket") or
             graph_doc.get("metadata", {}).get("bucket_source") or
-            "researchpapers"
+            ""
         )
 
         # Check if document_name is a URL (news article)
