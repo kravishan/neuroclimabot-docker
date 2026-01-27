@@ -356,7 +356,7 @@ class STPSearchService:
             return False
 
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding for search query using configurable API"""
+        """Generate embedding for search query using local Ollama (separate from GraphRAG)"""
         import requests
         import os
         from config import config
@@ -364,36 +364,25 @@ class STPSearchService:
         try:
             ollama_config = config.get('ollama')
 
-            # Use STP-specific embedding config, fallback to GRAPHRAG query embedding, then to OLLAMA
-            embedding_api_base = os.getenv('STP_EMBEDDING_API_BASE',
-                                          os.getenv('GRAPHRAG_QUERY_EMBEDDING_MODEL_API_BASE',
-                                                   ollama_config.get('openai_url', 'http://localhost:11434/v1')))
-            embedding_model = os.getenv('STP_EMBEDDING_MODEL_NAME',
-                                       os.getenv('GRAPHRAG_QUERY_EMBEDDING_MODEL',
-                                                os.getenv('OLLAMA_EMBEDDING_MODEL', 'all-minilm:l6-v2')))
-            embedding_api_key = os.getenv('STP_EMBEDDING_API_KEY',
-                                         os.getenv('GRAPHRAG_QUERY_EMBEDDING_MODEL_API_KEY', 'ollama'))
+            # STP uses LOCAL Ollama with sentence-transformers/all-MiniLM-L6-v2
+            # This is SEPARATE from GraphRAG which uses remote API endpoints
+            # Use STP-specific config if set, otherwise default to local Ollama
+            stp_api_base = os.getenv('STP_EMBEDDING_API_BASE', 'http://localhost:11434')
+            stp_model = os.getenv('STP_EMBEDDING_MODEL_NAME', 'all-minilm:l6-v2')
 
-            # Build the embedding API URL - use OpenAI-compatible format
-            embedding_url = f"{embedding_api_base.rstrip('/')}/embeddings"
+            # Use Ollama native API format for local embeddings
+            embedding_url = f"{stp_api_base.rstrip('/')}/api/embeddings"
 
-            logger.info(f"🔗 Calling embedding API: {embedding_url}")
-            logger.info(f"📦 Using model: {embedding_model}")
-
-            # Use OpenAI-compatible API format
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {embedding_api_key}"
-            }
+            logger.info(f"🔗 [STP] Calling local embedding API: {embedding_url}")
+            logger.info(f"📦 [STP] Using model: {stp_model}")
 
             response = requests.post(
                 embedding_url,
-                headers=headers,
                 json={
-                    "model": embedding_model,
-                    "input": text[:4000]
+                    "model": stp_model,
+                    "prompt": text[:4000]
                 },
-                timeout=float(ollama_config['timeout'])
+                timeout=float(ollama_config.get('timeout', 120))
             )
 
             if response.status_code == 200:
@@ -408,23 +397,23 @@ class STPSearchService:
                     embedding = result.get("embedding", [])
 
                 if not embedding:
-                    logger.error("❌ No embedding returned from API")
+                    logger.error("❌ [STP] No embedding returned from API")
                     return [0.0] * self.embedding_dim
 
                 # Handle embedding dimension mismatch dynamically
                 if len(embedding) != self.embedding_dim:
-                    logger.info(f"📊 Embedding dimension: {len(embedding)} (expected {self.embedding_dim})")
+                    logger.info(f"📊 [STP] Embedding dimension: {len(embedding)} (expected {self.embedding_dim})")
                     # Update expected dimension if this is first successful embedding
                     self.embedding_dim = len(embedding)
 
                 return embedding
             else:
-                logger.error(f"❌ Embedding API error: {response.status_code}")
-                logger.error(f"❌ Response: {response.text[:500]}")
+                logger.error(f"❌ [STP] Embedding API error: {response.status_code}")
+                logger.error(f"❌ [STP] Response: {response.text[:500]}")
                 return [0.0] * self.embedding_dim
 
         except Exception as e:
-            logger.error(f"❌ Embedding generation failed: {e}")
+            logger.error(f"❌ [STP] Embedding generation failed: {e}")
             return [0.0] * self.embedding_dim
 
     async def search(self, query_text: str, top_k: int = 5, include_metadata: bool = True,
