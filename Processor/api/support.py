@@ -356,40 +356,71 @@ class STPSearchService:
             return False
 
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding for search query"""
+        """Generate embedding for search query using configurable API"""
         import requests
+        import os
         from config import config
 
         try:
             ollama_config = config.get('ollama')
 
-            logger.info(f"🔗 Calling embedding API: {ollama_config['embedding_url']}")
-            logger.info(f"📦 Using model: all-minilm:l6-v2")
+            # Use STP-specific embedding config, fallback to GRAPHRAG query embedding, then to OLLAMA
+            embedding_api_base = os.getenv('STP_EMBEDDING_API_BASE',
+                                          os.getenv('GRAPHRAG_QUERY_EMBEDDING_MODEL_API_BASE',
+                                                   ollama_config.get('openai_url', 'http://localhost:11434/v1')))
+            embedding_model = os.getenv('STP_EMBEDDING_MODEL_NAME',
+                                       os.getenv('GRAPHRAG_QUERY_EMBEDDING_MODEL',
+                                                os.getenv('OLLAMA_EMBEDDING_MODEL', 'all-minilm:l6-v2')))
+            embedding_api_key = os.getenv('STP_EMBEDDING_API_KEY',
+                                         os.getenv('GRAPHRAG_QUERY_EMBEDDING_MODEL_API_KEY', 'ollama'))
+
+            # Build the embedding API URL - use OpenAI-compatible format
+            embedding_url = f"{embedding_api_base.rstrip('/')}/embeddings"
+
+            logger.info(f"🔗 Calling embedding API: {embedding_url}")
+            logger.info(f"📦 Using model: {embedding_model}")
+
+            # Use OpenAI-compatible API format
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {embedding_api_key}"
+            }
 
             response = requests.post(
-                ollama_config['embedding_url'],
+                embedding_url,
+                headers=headers,
                 json={
-                    "model": "all-minilm:l6-v2",
-                    "prompt": text[:4000]
+                    "model": embedding_model,
+                    "input": text[:4000]
                 },
                 timeout=float(ollama_config['timeout'])
             )
 
             if response.status_code == 200:
                 result = response.json()
-                embedding = result.get("embedding", [])
 
+                # Handle both OpenAI-compatible format and Ollama native format
+                if "data" in result and len(result["data"]) > 0:
+                    # OpenAI-compatible format: {"data": [{"embedding": [...]}]}
+                    embedding = result["data"][0].get("embedding", [])
+                else:
+                    # Ollama native format: {"embedding": [...]}
+                    embedding = result.get("embedding", [])
+
+                if not embedding:
+                    logger.error("❌ No embedding returned from API")
+                    return [0.0] * self.embedding_dim
+
+                # Handle embedding dimension mismatch dynamically
                 if len(embedding) != self.embedding_dim:
-                    logger.warning(f"⚠️ Embedding dimension mismatch: got {len(embedding)}, expected {self.embedding_dim}")
-                    if len(embedding) < self.embedding_dim:
-                        embedding = embedding + [0.0] * (self.embedding_dim - len(embedding))
-                    else:
-                        embedding = embedding[:self.embedding_dim]
+                    logger.info(f"📊 Embedding dimension: {len(embedding)} (expected {self.embedding_dim})")
+                    # Update expected dimension if this is first successful embedding
+                    self.embedding_dim = len(embedding)
 
                 return embedding
             else:
                 logger.error(f"❌ Embedding API error: {response.status_code}")
-                logger.error(f"❌ Response: {response.text}")
+                logger.error(f"❌ Response: {response.text[:500]}")
                 return [0.0] * self.embedding_dim
 
         except Exception as e:
