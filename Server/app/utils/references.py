@@ -297,30 +297,39 @@ async def _extract_reference_from_graph_document_with_shareable_url(
     """Extract clean reference from a GraphRAG document with MinIO shareable URL generation."""
 
     try:
-        # Get document name from graph document
-        document_name = (
-            graph_doc.get("document_name") or
-            graph_doc.get("metadata", {}).get("document_name") or
-            graph_doc.get("doc_name")
-        )
+        # Get document_names array from metadata (preferred) or fall back to document_name string
+        doc_candidates = []
+        metadata = graph_doc.get("metadata", {})
 
-        if not document_name or document_name.lower() in ['unknown', 'test', '']:
+        # First try to get document_names array from metadata (this is the actual array from GraphRAG)
+        document_names_array = metadata.get("document_names", [])
+
+        if document_names_array and isinstance(document_names_array, list):
+            doc_candidates = [d.strip() if isinstance(d, str) else str(d) for d in document_names_array]
+        else:
+            # Fall back to document_name string (may be comma-separated)
+            document_name = (
+                graph_doc.get("document_name") or
+                metadata.get("document_name") or
+                graph_doc.get("doc_name") or
+                ""
+            )
+            if document_name:
+                if ", " in document_name:
+                    doc_candidates = [d.strip() for d in document_name.split(", ")]
+                else:
+                    doc_candidates = [document_name]
+
+        if not doc_candidates:
             return None
 
         # Get bucket information (empty string triggers multi-bucket search in MinIO)
         bucket_source = (
             graph_doc.get("bucket") or
-            graph_doc.get("metadata", {}).get("bucket") or
-            graph_doc.get("metadata", {}).get("bucket_source") or
+            metadata.get("bucket") or
+            metadata.get("bucket_source") or
             ""
         )
-
-        # Handle comma-separated document names (GraphRAG combines multiple sources)
-        # Split and try each document individually
-        if ", " in document_name:
-            doc_candidates = [d.strip() for d in document_name.split(", ")]
-        else:
-            doc_candidates = [document_name]
 
         # Try to find a valid document from the candidates
         for candidate in doc_candidates:
