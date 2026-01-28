@@ -233,7 +233,6 @@ export function PrivacyPolicy() {
           <ul>
             <li><strong>Email:</strong> info@bot.neuroclima.eu</li>
             <li><strong>Response Time:</strong> Within 1 month (extensible to 3 months for complex requests)</li>
-            <li><strong>Free of Charge:</strong> First request is free; excessive requests may incur reasonable fees</li>
             <li><strong>Identity Verification:</strong> We may request proof of identity to protect your privacy</li>
           </ul>
 
@@ -274,8 +273,8 @@ export function PrivacyPolicy() {
           <h3>9.1 Retention Periods</h3>
           <ul>
             <li><strong>Session Data:</strong> Deleted when session ends (browser storage only)</li>
-            <li><strong>Analytics Traces:</strong> Retained for model improvement, typically 12-24 months</li>
-            <li><strong>Consent Records:</strong> Maintained for compliance demonstration (up to 3 years)</li>
+            <li><strong>Analytics Traces:</strong> Retained for model improvement</li>
+            <li><strong>Consent Records:</strong> Maintained for compliance demonstration</li>
           </ul>
 
           <h3>9.2 Automated Deletion</h3>

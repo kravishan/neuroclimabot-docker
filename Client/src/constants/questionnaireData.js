@@ -508,11 +508,11 @@ export const CONSENT_INFORMATION = {
   institution: 'University of Oulu Research Team',
   purpose: `This research evaluates how people interact with an AI-powered climate information chatbot. Your feedback will help us improve the system and contribute to research on climate communication and information retrieval.`,
   procedures: `You will:
-1. Provide basic demographic information (2 min)
-2. Answer questions about your recent experience using the chatbot (3 min)
-3. Complete questionnaires evaluating task success and user experience (15 min)
-4. Provide feedback on specific features (5 min)
-Total time: Approximately 25 minutes`,
+1. Provide basic demographic information
+2. Answer questions about your recent experience using the chatbot
+3. Complete questionnaires evaluating task success and user experience
+4. Provide feedback on specific features
+Total time: Approximately 5 minutes`,
   data_collected: `We collect:
 - Your responses to questionnaires (demographics, task success, user experience ratings)
 - Interaction patterns (what you used the bot for, task types)
