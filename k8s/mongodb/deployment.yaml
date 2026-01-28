@@ -1,0 +1,86 @@
+# ============================================================================
+# MongoDB Deployment for NeuroClima
+# ============================================================================
+# Persistent document storage for multi-replica support
+# Stores: processing_tracker, questionnaires, feedback, session_stats
+#
+# All Processor and Server replicas connect to this single MongoDB instance
+# to ensure data consistency across the cluster.
+# ============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuroclima-mongodb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: mongodb
+spec:
+  replicas: 1  # Single replica for data consistency
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: mongodb
+  strategy:
+    type: Recreate  # Ensure clean shutdown before starting new pod
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+          name: mongodb
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MONGODB_USERNAME
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MONGODB_PASSWORD
+        - name: MONGO_INITDB_DATABASE
+          value: "neuroclima"
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        # Liveness probe
+        livenessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        # Readiness probe
+        readinessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: mongodb-data
+        persistentVolumeClaim:
+          claimName: mongodb-data-pvc

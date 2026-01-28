@@ -139,6 +139,23 @@ spec:
             secretKeyRef:
               name: neuroclima-secrets
               key: MINIO_SECRET_KEY
+        # MongoDB configuration for document tracking
+        - name: MONGODB_HOST
+          value: "neuroclima-mongodb"
+        - name: MONGODB_PORT
+          value: "27017"
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MONGODB_USERNAME
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MONGODB_PASSWORD
+        - name: MONGODB_DATABASE
+          value: "neuroclima"
         envFrom:
         - configMapRef:
             name: processor-config
@@ -154,6 +171,11 @@ spec:
           subPath: settings.yaml
         - name: graphrag-prompts
           mountPath: /app/graphrag/prompts
+        # emptyDir for temporary processing files (company recommendation)
+        - name: temp-storage
+          mountPath: /tmp
+        - name: cache-storage
+          mountPath: /app/cache
         # Readiness probe: Check if processor is ready to accept requests
         # Increased delays to allow time for loading 6 translation models at startup
         readinessProbe:
@@ -198,3 +220,11 @@ spec:
       - name: graphrag-prompts
         configMap:
           name: graphrag-prompts
+      # emptyDir volumes for temporary storage (company recommendation)
+      # These are isolated per-pod and automatically cleaned up
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 5Gi
+      - name: cache-storage
+        emptyDir:
+          sizeLimit: 2Gi

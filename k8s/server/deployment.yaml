@@ -25,6 +25,8 @@ spec:
         - redis-server
         - --requirepass
         - $(REDIS_PASSWORD)
+        - --appendonly
+        - "no"
         ports:
         - containerPort: 6379
           name: redis
@@ -35,6 +37,9 @@ spec:
               name: neuroclima-secrets
               key: REDIS_PASSWORD
         volumeMounts:
+        # Use emptyDir for Redis cache/session data (temporary storage)
+        # Auth tokens and session data are now stored in Redis with TTL
+        # Data is ephemeral but can be rebuilt - perfect for cache/sessions
         - name: redis-data
           mountPath: /data
         resources:
@@ -45,9 +50,11 @@ spec:
             memory: "1Gi"
             cpu: "500m"
       volumes:
+      # emptyDir for Redis - as recommended for temporary cache/session storage
+      # This follows the company's recommendation to use emptyDir instead of node SSD
       - name: redis-data
-        persistentVolumeClaim:
-          claimName: redis-data-pvc
+        emptyDir:
+          sizeLimit: 2Gi
 ---
 # ============================================================================
 # NeuroClima Server Deployment - Production Configuration
@@ -222,12 +229,32 @@ spec:
             secretKeyRef:
               name: neuroclima-secrets
               key: OPENAI_API_KEY
+        # MongoDB configuration for persistent data
+        - name: MONGODB_HOST
+          value: "neuroclima-mongodb"
+        - name: MONGODB_PORT
+          value: "27017"
+        - name: MONGODB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MONGODB_USERNAME
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neuroclima-secrets
+              key: MONGODB_PASSWORD
+        - name: MONGODB_DATABASE
+          value: "neuroclima"
         envFrom:
         - configMapRef:
             name: server-config
         volumeMounts:
         - name: server-data
           mountPath: /app/data
+        # emptyDir for temporary files (company recommendation)
+        - name: temp-storage
+          mountPath: /tmp
         # Readiness probe: Check if server is ready to serve requests
         # Temporarily disabled until correct health endpoint path is determined
         # readinessProbe:
@@ -261,3 +288,7 @@ spec:
       - name: server-data
         persistentVolumeClaim:
           claimName: server-data-pvc
+      # emptyDir for temporary files (company recommendation)
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 2Gi

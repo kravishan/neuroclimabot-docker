@@ -1,6 +1,31 @@
 services:
   # ============================================================================
-  # PROCESSOR SERVICES (Start First)
+  # DATABASE SERVICES (Start First)
+  # ============================================================================
+
+  # MongoDB - Persistent data storage for multi-replica support
+  mongodb:
+    image: mongo:7.0
+    container_name: neuroclima-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USERNAME:-neuroclima}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-neuroclima123}
+      - MONGO_INITDB_DATABASE=neuroclima
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - neuroclima-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================================
+  # PROCESSOR SERVICES (Start After MongoDB)
   # ============================================================================
 
   # Unstructured API - Document extraction service
@@ -25,10 +50,18 @@ services:
       - ./Processor/.env
     environment:
       - UNSTRUCTURED_API_URL=http://unstructured:8000
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_USERNAME=${MONGODB_USERNAME:-neuroclima}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD:-neuroclima123}
+      - MONGODB_DATABASE=neuroclima
     volumes:
       - processor_data:/app/data
       - graphrag_data:/app/graphrag
       - lancedb_data:/app/lancedb
+    depends_on:
+      mongodb:
+        condition: service_healthy
     networks:
       - neuroclima-network
     restart: unless-stopped
@@ -67,11 +100,17 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - DOCUMENT_PROCESSOR_URL=http://processor:5000
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - MONGODB_USERNAME=${MONGODB_USERNAME:-neuroclima}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD:-neuroclima123}
+      - MONGODB_DATABASE=neuroclima
     volumes:
       - server_data:/app/data
     depends_on:
       - redis
       - processor
+      - mongodb
     networks:
       - neuroclima-network
     restart: unless-stopped
@@ -104,6 +143,9 @@ services:
 # VOLUMES
 # ============================================================================
 volumes:
+  # Database volumes
+  mongodb_data:
+
   # Processor volumes
   processor_data:
   graphrag_data:

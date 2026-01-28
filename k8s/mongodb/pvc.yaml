@@ -1,0 +1,23 @@
+# ============================================================================
+# MongoDB PersistentVolumeClaim for NeuroClima
+# ============================================================================
+# Stores all permanent data:
+# - Document processing tracker (replaces processing_tracker.db)
+# - Questionnaire responses (replaces questionnaire.db)
+# - Feedback entries and statistics (replaces stats.db)
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-data-pvc
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: mongodb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: do-block-storage

@@ -1,0 +1,21 @@
+# ============================================================================
+# MongoDB Service for NeuroClima
+# ============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: neuroclima-mongodb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: mongodb
+spec:
+  type: ClusterIP
+  ports:
+  - port: 27017
+    targetPort: 27017
+    protocol: TCP
+    name: mongodb
+  selector:
+    app: neuroclima
+    component: mongodb

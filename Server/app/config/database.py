@@ -159,28 +159,74 @@ class RedisConfig(BaseSettings):
         env_prefix = "REDIS_"
         extra = "ignore"
 
+class MongoDBConfig(BaseSettings):
+    """MongoDB configuration for persistent data storage."""
+
+    # Connection Settings (from .env - SECURITY: Never hardcode credentials!)
+    HOST: str = "mongodb"  # From .env (MONGODB_HOST)
+    PORT: int = 27017  # From .env (MONGODB_PORT)
+    USERNAME: Optional[str] = None  # From .env (MONGODB_USERNAME)
+    PASSWORD: Optional[str] = None  # From .env (MONGODB_PASSWORD)
+    DATABASE: str = "neuroclima"  # From .env (MONGODB_DATABASE)
+
+    # Connection pool settings
+    MAX_POOL_SIZE: int = 50
+    MIN_POOL_SIZE: int = 10
+    MAX_IDLE_TIME_MS: int = 30000
+
+    # Collection names
+    COLLECTION_DOCUMENT_STATUS: str = "document_status"
+    COLLECTION_NEWS_ARTICLES: str = "news_articles_status"
+    COLLECTION_QUESTIONNAIRES: str = "questionnaires"
+    COLLECTION_FEEDBACK: str = "feedback"
+    COLLECTION_FEEDBACK_STATS: str = "feedback_stats"
+    COLLECTION_SESSION_STATS: str = "session_stats"
+
+    @property
+    def connection_uri(self) -> str:
+        """Get MongoDB connection URI."""
+        if self.USERNAME and self.PASSWORD:
+            return f"mongodb://{self.USERNAME}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DATABASE}?authSource=admin"
+        return f"mongodb://{self.HOST}:{self.PORT}/{self.DATABASE}"
+
+    @property
+    def connection_kwargs(self) -> Dict[str, Any]:
+        """Get connection kwargs for MongoDB client."""
+        return {
+            "host": self.connection_uri,
+            "maxPoolSize": self.MAX_POOL_SIZE,
+            "minPoolSize": self.MIN_POOL_SIZE,
+            "maxIdleTimeMS": self.MAX_IDLE_TIME_MS,
+        }
+
+    class Config:
+        env_file = ".env"
+        env_prefix = "MONGODB_"
+        extra = "ignore"
+
+
 class AnalyticsConfig(BaseSettings):
     """TimescaleDB configuration for analytics"""
-    
+
     # TimescaleDB connection
     TIMESCALE_HOST: str = "localhost"
     TIMESCALE_PORT: int = 5432
     TIMESCALE_DATABASE: str = "neuroclima_analytics"
     TIMESCALE_USER: str = "postgres"
     TIMESCALE_PASSWORD: str = "password"
-    
+
     # Redis analytics configuration
     REDIS_ANALYTICS_DB: int = 2  # Separate Redis DB for analytics
     ANALYTICS_RETENTION_DAYS: int = 90
-    
+
     # Batch processing
     BATCH_SIZE: int = 1000
     BATCH_INTERVAL_MINUTES: int = 5
-    
+
     @property
     def timescale_url(self) -> str:
         return f"postgresql+asyncpg://{self.TIMESCALE_USER}:{self.TIMESCALE_PASSWORD}@{self.TIMESCALE_HOST}:{self.TIMESCALE_PORT}/{self.TIMESCALE_DATABASE}"
-    
+
     class Config:
         env_file = ".env"
         extra = "ignore"     
@@ -229,12 +275,13 @@ class MinIOConfig(BaseSettings):
 
 class DatabaseConfig:
     """Centralized database configuration container."""
-    
+
     def __init__(self):
         self.milvus = MilvusConfig()
         self.redis = RedisConfig()
         self.minio = MinIOConfig()
-    
+        self.mongodb = MongoDBConfig()
+
     def get_all_configs(self) -> Dict[str, Any]:
         """Get all database configurations."""
         return {
@@ -261,15 +308,21 @@ class DatabaseConfig:
                     "documents": self.minio.BUCKET_DOCUMENTS,
                     "temp": self.minio.BUCKET_TEMP
                 }
+            },
+            "mongodb": {
+                "host": self.mongodb.HOST,
+                "port": self.mongodb.PORT,
+                "database": self.mongodb.DATABASE
             }
         }
-    
+
     def health_check_info(self) -> Dict[str, str]:
         """Get health check information for all databases."""
         return {
             "milvus": self.milvus.uri,
             "redis": self.redis.URL,
-            "minio": self.minio.url
+            "minio": self.minio.url,
+            "mongodb": self.mongodb.connection_uri
         }
 
 
@@ -296,6 +349,11 @@ def get_redis_config() -> RedisConfig:
 def get_minio_config() -> MinIOConfig:
     """Get MinIO configuration."""
     return db_config.minio
+
+
+def get_mongodb_config() -> MongoDBConfig:
+    """Get MongoDB configuration."""
+    return db_config.mongodb
 
 
 # Backward compatibility helpers
