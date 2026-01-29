@@ -30,13 +30,11 @@ class MilvusStorage(VectorStorageBackend):
         self.chunks_database = self.config.get('chunks_database', 'chunk_test5')
         self.summaries_database = self.config.get('summaries_database', 'summary_test5')
         self.collections = {}
-        # Chunk embedding dimension (Qwen3-Embedding-0.6B: 1024)
-        self.chunk_embedding_dim = config.get('ollama.chunk_embedding_dim', 1024)
-        # Summary embedding dimension (nomic-embed-text: 768)
-        self.summary_embedding_dim = 768
+        # Embedding dimension (Qwen3-Embedding-0.6B: 1024)
+        self.embedding_dim = config.get('ollama.embedding_dim', 1024)
         self._pymilvus_available = False
 
-        logger.info(f"📊 Milvus embedding dims - Chunks: {self.chunk_embedding_dim}, Summaries: {self.summary_embedding_dim}")
+        logger.info(f"📊 Milvus embedding dimension: {self.embedding_dim}")
 
     def connect(self) -> None:
         """Connect to Milvus and initialize collections"""
@@ -195,12 +193,9 @@ class MilvusStorage(VectorStorageBackend):
 
         from pymilvus import Collection, CollectionSchema, FieldSchema, DataType
 
-        # Use appropriate embedding dimension based on data type
-        embedding_dim = self.chunk_embedding_dim if data_type == "chunks" else self.summary_embedding_dim
-
         # Common fields
         common_fields = [
-            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=embedding_dim),
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.embedding_dim),
             FieldSchema(name="bucket_source", dtype=DataType.VARCHAR, max_length=100),
             FieldSchema(name="processing_timestamp", dtype=DataType.VARCHAR, max_length=100)
         ]
@@ -374,7 +369,7 @@ class MilvusStorage(VectorStorageBackend):
             [chunk.get("chunk_text", "") for chunk in chunks_data],
             [chunk.get("chunk_index", 0) for chunk in chunks_data],
             [chunk.get("token_count", 0) for chunk in chunks_data],
-            [chunk.get("embedding", [0.0] * self.chunk_embedding_dim) for chunk in chunks_data],
+            [chunk.get("embedding", [0.0] * self.embedding_dim) for chunk in chunks_data],
             [chunk.get("bucket_source", bucket) for chunk in chunks_data],
             [chunk.get("processing_timestamp", datetime.now().isoformat()) for chunk in chunks_data]
         ]
@@ -394,7 +389,7 @@ class MilvusStorage(VectorStorageBackend):
             [summary.get("document_type", "unknown") for summary in summaries_data],
             [summary.get("abstractive_summary", "") for summary in summaries_data],
             [summary.get("title", "") for summary in summaries_data],
-            [summary.get("embedding", [0.0] * self.summary_embedding_dim) for summary in summaries_data],
+            [summary.get("embedding", [0.0] * self.embedding_dim) for summary in summaries_data],
             [summary.get("bucket_source", bucket) for summary in summaries_data],
             [summary.get("processing_timestamp", datetime.now().isoformat()) for summary in summaries_data]
         ]
@@ -479,8 +474,7 @@ class MilvusStorage(VectorStorageBackend):
         stats = {
             "connected": self.connected,
             "pymilvus_available": self._pymilvus_available,
-            "chunk_embedding_dimension": self.chunk_embedding_dim,
-            "summary_embedding_dimension": self.summary_embedding_dim,
+            "embedding_dimension": self.embedding_dim,
             "collections": {},
             "databases": {
                 "chunks_database": self.chunks_database,
