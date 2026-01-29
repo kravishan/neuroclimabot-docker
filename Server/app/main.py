@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
 from app.config import get_settings
-from app.config.database import get_database_config, get_milvus_config, get_redis_config, get_minio_config
+from app.config.database import get_database_config, get_milvus_config, get_redis_config, get_minio_config, get_mongodb_config
 from app.core.exceptions import setup_exception_handlers
 from app.core.middleware import (
     LoggingMiddleware,
@@ -420,15 +420,18 @@ async def perform_health_check() -> Dict:
         },
         "redis": {
             "url": get_redis_config().URL,
-            "db": get_redis_config().DB
+            "db": get_redis_config().DB,
+            "purpose": "auth_tokens, sessions, cache"
+        },
+        "mongodb": {
+            "host": get_mongodb_config().HOST,
+            "port": get_mongodb_config().PORT,
+            "database": get_mongodb_config().DATABASE,
+            "purpose": "stats, feedback, questionnaires"
         },
         "minio": {
             "endpoint": get_minio_config().ENDPOINT,
             "secure": get_minio_config().SECURE
-        },
-        "auth": {
-            "database": "SQLite",
-            "file": "auth_tokens.db"
         }
     }
     

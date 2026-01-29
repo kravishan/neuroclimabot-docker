@@ -430,7 +430,28 @@ class DocumentTracker(DocumentTrackerBackend):
 
 
 
-# Global instance
-tracker = DocumentTracker()
+# Global instance - uses MongoDB if MONGODB_HOST is set, otherwise SQLite
+def _create_tracker():
+    """Create tracker based on environment configuration."""
+    import os
+    mongodb_host = os.getenv("MONGODB_HOST")
 
+    if mongodb_host:
+        logger.info("🔄 Using MongoDB document tracker (MONGODB_HOST is set)")
+        try:
+            from storage.mongodb_tracker import MongoDBDocumentTracker
+            mongo_tracker = MongoDBDocumentTracker()
+            mongo_tracker.connect()
+            logger.info("✅ MongoDB document tracker initialized")
+            return mongo_tracker
+        except Exception as e:
+            logger.warning(f"⚠️ MongoDB tracker failed, falling back to SQLite: {e}")
+            sqlite_tracker = DocumentTracker()
+            return sqlite_tracker
+    else:
+        logger.info("🔄 Using SQLite document tracker (MONGODB_HOST not set)")
+        return DocumentTracker()
+
+
+tracker = _create_tracker()
 logger.info("✅ Document tracker loaded")
