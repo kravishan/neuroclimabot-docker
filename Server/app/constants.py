@@ -129,7 +129,7 @@ PROCESSING_BATCH_SIZE = 5               # Batch size for document processing
 
 DEFAULT_SIMILARITY_THRESHOLD = 0.1      # Minimum similarity score for results
 DEFAULT_GRAPH_MIN_RELEVANCE_SCORE = 0.1 # Minimum relevance for graph data
-EMBEDDING_DIMENSION = 768               # nomic-embed-text-v1 dimension
+EMBEDDING_DIMENSION = 1024              # Qwen3-Embedding-0.6B dimension
 CHUNK_SIZE = 800                        # Text chunk size
 CHUNK_OVERLAP = 150                     # Overlap between chunks
 NLIST = 512                             # Milvus index parameter

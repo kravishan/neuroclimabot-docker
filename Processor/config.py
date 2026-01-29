@@ -102,7 +102,9 @@ class Config:
             'embedding_url': f"{base_url}/api/embeddings",
             'openai_url': f"{base_url}/v1",
             'model': os.getenv('OLLAMA_MODEL', 'mistral:7b'),
-            'embedding_model': os.getenv('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
+            # Embedding model (Qwen3-Embedding-0.6B: 1024 dimensions)
+            'embedding_model': os.getenv('OLLAMA_EMBEDDING_MODEL', 'qwen3-embedding:0.6b'),
+            'embedding_dim': int(os.getenv('OLLAMA_EMBEDDING_DIM', '1024')),
             'timeout': timeout_seconds,
             'max_retries': 3,
             'headers': {"Content-Type": "application/json"}

@@ -29,8 +29,8 @@ class MilvusConfig(BaseSettings):
     COLLECTION_SCIENTIFIC_DATA: str = "Scientific_Data"
     
     # Vector Settings
-    EMBEDDING_MODEL: str = "nomic-ai/nomic-embed-text-v1"
-    EMBEDDING_DIMENSION: int = 768  # nomic-embed-text produces 768D embeddings
+    EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"  # Qwen3-Embedding-0.6B
+    EMBEDDING_DIMENSION: int = 1024  # Qwen3-Embedding-0.6B produces 1024D embeddings
     CHUNK_SIZE: int = 800
     CHUNK_OVERLAP: int = 150
     
