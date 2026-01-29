@@ -41,8 +41,17 @@ spec:
         app: neuroclima
         component: client
     spec:
-      # Pod anti-affinity: Spread replicas across different nodes for HA
+      # Node affinity: Schedule on memory-optimized nodes
       affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: doks.digitalocean.com/node-pool
+                  operator: In
+                  values:
+                    - memory-optimized-pool
+        # Pod anti-affinity: Spread replicas across different nodes for HA
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -54,6 +63,12 @@ spec:
                   values:
                   - client
               topologyKey: kubernetes.io/hostname
+      # Tolerations: Allow scheduling on memory-optimized nodes
+      tolerations:
+        - key: "type"
+          operator: "Equal"
+          value: "memory-optimized"
+          effect: "NoSchedule"
       containers:
       - name: client
         image: docker.io/raviyah/neuroclima-client:latest
