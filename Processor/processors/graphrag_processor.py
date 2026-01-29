@@ -452,7 +452,7 @@ class GraphRAGProcessor:
                     cmd,
                     capture_output=True,
                     text=True,
-                    timeout=7200,  # 2 hours
+                    timeout=18000, # Updated to 5 hours
                     env=env,
                     encoding='utf-8',
                     errors='replace'
@@ -464,7 +464,7 @@ class GraphRAGProcessor:
                     cmd,
                     capture_output=True,
                     text=True,
-                    timeout=7200,
+                    timeout=18000, # Updated to 5 hours
                     env=env,
                     encoding='utf-8',
                     errors='ignore'
