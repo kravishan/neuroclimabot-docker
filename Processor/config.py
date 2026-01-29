@@ -103,6 +103,9 @@ class Config:
             'openai_url': f"{base_url}/v1",
             'model': os.getenv('OLLAMA_MODEL', 'mistral:7b'),
             'embedding_model': os.getenv('OLLAMA_EMBEDDING_MODEL', 'nomic-embed-text'),
+            # Chunk-specific embedding model (Qwen3-Embedding-0.6B for document chunks)
+            'chunk_embedding_model': os.getenv('OLLAMA_CHUNK_EMBEDDING_MODEL', 'qwen3-embedding:0.6b'),
+            'chunk_embedding_dim': int(os.getenv('OLLAMA_CHUNK_EMBEDDING_DIM', '1024')),
             'timeout': timeout_seconds,
             'max_retries': 3,
             'headers': {"Content-Type": "application/json"}

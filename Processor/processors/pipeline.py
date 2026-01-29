@@ -820,13 +820,18 @@ class AsyncDocumentProcessor:
 
 class AsyncEmbeddingProcessor:
     """Async embedding generation with concurrent processing"""
-    
+
     def __init__(self):
         self.embedding_url = config.get('ollama.embedding_url')
         self.model = config.get('ollama.embedding_model')
+        # Chunk-specific embedding model (Qwen3-Embedding-0.6B)
+        self.chunk_model = config.get('ollama.chunk_embedding_model')
+        self.chunk_embedding_dim = config.get('ollama.chunk_embedding_dim')
         self.timeout = config.get('ollama.timeout')
         self.headers = config.get('ollama.headers')
         self._session = None
+
+        logger.info(f"📊 Embedding config - Chunks: {self.chunk_model} ({self.chunk_embedding_dim}D), Summaries: {self.model}")
     
     async def _get_session(self):
         """Get or create aiohttp session"""
@@ -836,32 +841,60 @@ class AsyncEmbeddingProcessor:
         return self._session
     
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding for text - async"""
+        """Generate embedding for text using default model (for summaries) - async"""
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
-        
+
         cleaned_text = text.strip()[:4000]
-        
+
         payload = {"model": self.model, "prompt": cleaned_text}
-        
+
         try:
             session = await self._get_session()
-            
+
             async with session.post(self.embedding_url, json=payload) as response:
                 if response.status != 200:
                     raise Exception(f"Embedding API error: {response.status}")
-                
+
                 result = await response.json()
                 embedding = result.get("embedding", [])
-                
+
                 if not embedding:
                     raise Exception("Empty embedding returned")
-                
+
                 return embedding
-                
+
         except Exception as e:
             logger.error(f"Embedding generation failed: {e}")
             return [0.0] * 768
+
+    async def generate_chunk_embedding(self, text: str) -> List[float]:
+        """Generate embedding for chunk text using Qwen3-Embedding model - async"""
+        if not text or not text.strip():
+            raise ValueError("Text cannot be empty")
+
+        cleaned_text = text.strip()[:4000]
+
+        payload = {"model": self.chunk_model, "prompt": cleaned_text}
+
+        try:
+            session = await self._get_session()
+
+            async with session.post(self.embedding_url, json=payload) as response:
+                if response.status != 200:
+                    raise Exception(f"Chunk embedding API error: {response.status}")
+
+                result = await response.json()
+                embedding = result.get("embedding", [])
+
+                if not embedding:
+                    raise Exception("Empty chunk embedding returned")
+
+                return embedding
+
+        except Exception as e:
+            logger.error(f"Chunk embedding generation failed: {e}")
+            return [0.0] * self.chunk_embedding_dim
     
     async def process_chunks(self, chunks: List[ChunkData]) -> List[Dict[str, Any]]:
         """Process chunks with embeddings - async with concurrency"""
@@ -890,9 +923,9 @@ class AsyncEmbeddingProcessor:
         return enriched_chunks
     
     async def _process_single_chunk(self, chunk: ChunkData) -> Dict[str, Any]:
-        """Process single chunk with embedding"""
-        embedding = await self.generate_embedding(chunk.chunk_text)
-        
+        """Process single chunk with embedding using Qwen3-Embedding model"""
+        embedding = await self.generate_chunk_embedding(chunk.chunk_text)
+
         enriched_chunk = {
             "chunk_id": chunk.chunk_id,
             "bucket_source": chunk.bucket_source,
@@ -902,17 +935,17 @@ class AsyncEmbeddingProcessor:
             "processing_timestamp": chunk.processing_timestamp,
             "embedding": embedding
         }
-        
+
         if chunk.bucket_source == "news":
             source_url = chunk.chunk_metadata.get("source_url") if chunk.chunk_metadata else chunk.doc_name
             enriched_chunk["source_url"] = source_url
         else:
             enriched_chunk["doc_name"] = chunk.doc_name
-        
+
         return enriched_chunk
     
     def _create_fallback_chunk(self, chunk: ChunkData) -> Dict[str, Any]:
-        """Create fallback chunk with zero embedding"""
+        """Create fallback chunk with zero embedding using chunk embedding dimension"""
         fallback_chunk = {
             "chunk_id": chunk.chunk_id,
             "bucket_source": chunk.bucket_source,
@@ -920,15 +953,15 @@ class AsyncEmbeddingProcessor:
             "chunk_index": chunk.chunk_index,
             "token_count": chunk.token_count,
             "processing_timestamp": chunk.processing_timestamp,
-            "embedding": [0.0] * 768
+            "embedding": [0.0] * self.chunk_embedding_dim
         }
-        
+
         if chunk.bucket_source == "news":
             source_url = chunk.chunk_metadata.get("source_url") if chunk.chunk_metadata else chunk.doc_name
             fallback_chunk["source_url"] = source_url
         else:
             fallback_chunk["doc_name"] = chunk.doc_name
-        
+
         return fallback_chunk
     
     async def process_summary(self, summary_data: SummaryData) -> Dict[str, Any]:
