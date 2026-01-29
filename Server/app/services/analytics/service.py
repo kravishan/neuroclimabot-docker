@@ -71,6 +71,7 @@ class RedisAnalyticsService:
                 self._redis_client = redis.from_url(
                     redis_config.URL,
                     db=redis_config.ANALYTICS_DB,
+                    password=redis_config.PASSWORD,
                     decode_responses=True,
                     socket_timeout=redis_config.SOCKET_TIMEOUT,
                     socket_connect_timeout=redis_config.CONNECTION_TIMEOUT
