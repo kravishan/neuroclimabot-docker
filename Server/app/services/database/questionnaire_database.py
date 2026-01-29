@@ -1,133 +1,72 @@
-"""SQLite database for research questionnaire storage."""
+"""MongoDB database for research questionnaire storage."""
 
-import sqlite3
-import json
 import asyncio
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from pathlib import Path
+
+from pymongo import MongoClient, DESCENDING
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from bson import ObjectId
 
 from app.utils.logger import get_logger
+from app.config.database import get_mongodb_config
 
 logger = get_logger(__name__)
 
 
 class QuestionnaireDatabase:
-    """Persistent storage for research questionnaire responses."""
+    """Persistent storage for research questionnaire responses using MongoDB."""
 
-    def __init__(self, db_path: str = "data/questionnaire.db"):
+    def __init__(self):
         """Initialize database connection."""
-        self.db_path = db_path
-        self.connection: Optional[sqlite3.Connection] = None
+        self._client: Optional[MongoClient] = None
+        self._db = None
+        self._collection = None
         self._lock = asyncio.Lock()
+        self.connected = False
 
     async def initialize(self):
-        """Initialize database and create tables."""
+        """Initialize MongoDB connection and create indexes."""
         try:
-            # Ensure directory exists
-            db_dir = Path(self.db_path).parent
-            db_dir.mkdir(parents=True, exist_ok=True)
+            mongodb_config = get_mongodb_config()
 
-            # Create connection
-            self.connection = sqlite3.connect(self.db_path, check_same_thread=False)
-            self.connection.row_factory = sqlite3.Row
+            # Create MongoDB client with connection pooling
+            self._client = MongoClient(
+                mongodb_config.connection_uri,
+                maxPoolSize=mongodb_config.MAX_POOL_SIZE,
+                minPoolSize=mongodb_config.MIN_POOL_SIZE,
+                serverSelectionTimeoutMS=mongodb_config.SERVER_SELECTION_TIMEOUT,
+                connectTimeoutMS=mongodb_config.CONNECT_TIMEOUT,
+            )
 
-            # Create tables
-            await self._create_tables()
+            # Test connection
+            self._client.admin.command('ping')
 
-            logger.info(f"✅ Questionnaire database initialized at {self.db_path}")
+            # Get database and collection
+            self._db = self._client[mongodb_config.DATABASE]
+            self._collection = self._db['questionnaire_responses']
 
+            # Create indexes
+            self._collection.create_index([("created_at", DESCENDING)], name="idx_created_at")
+            self._collection.create_index([("participant_id", DESCENDING)], name="idx_participant_id")
+            self._collection.create_index([("email", DESCENDING)], name="idx_email")
+
+            self.connected = True
+            logger.info(f"✅ Questionnaire database initialized: MongoDB {mongodb_config.HOST}:{mongodb_config.PORT}/{mongodb_config.DATABASE}")
+
+        except (ConnectionFailure, ServerSelectionTimeoutError) as e:
+            logger.error(f"Failed to connect to MongoDB: {e}")
+            raise
         except Exception as e:
             logger.error(f"Failed to initialize questionnaire database: {e}")
             raise
 
-    async def _create_tables(self):
-        """Create database tables if they don't exist."""
-        async with self._lock:
-            cursor = self.connection.cursor()
-
-            # Questionnaire responses table - stores all questionnaire data as JSON for flexibility
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS questionnaire_responses (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-                    -- Participant Information
-                    participant_id TEXT,
-                    email TEXT,
-
-                    -- Demographics (simple fields)
-                    age_range TEXT,
-                    education_level TEXT,
-                    country TEXT,
-                    native_language TEXT,
-                    prior_climate_knowledge INTEGER,
-                    prior_ai_experience INTEGER,
-
-                    -- Consent
-                    consent_all INTEGER NOT NULL,
-
-                    -- Section 1: Your Recent Experience
-                    primary_purpose TEXT,
-                    other_purpose TEXT,
-                    task_type TEXT,  -- JSON array
-
-                    -- Section 2: Task Success & Completion (JSON)
-                    task_success TEXT,  -- JSON object
-                    info_finding TEXT,  -- JSON object
-
-                    -- Section 3: Document & Source Quality (JSON)
-                    doc_quality TEXT,  -- JSON object
-                    info_adequacy TEXT,  -- JSON object
-
-                    -- Section 2: Effectiveness & Quality - UEQ-S (JSON)
-                    ueq_s TEXT,  -- JSON object with 8 items
-
-                    -- Section 3: Overall Rating - Trust Scale (JSON)
-                    trust_scale TEXT,  -- JSON object with 8 items (streamlined)
-
-                    -- Section 3: Overall Rating - NASA-TLX (JSON)
-                    nasa_tlx TEXT,  -- JSON object with 5 subscales (streamlined)
-
-                    -- Section 3: Overall Rating - Conversational Quality (JSON)
-                    conversational_quality TEXT,  -- JSON object with 3 items (streamlined)
-
-                    -- Section 3: Overall Rating - Feature-Specific Evaluations (JSON)
-                    stp_evaluation TEXT,  -- JSON object with 4 items
-                    kg_visualization TEXT,  -- JSON object with 3 items (conditional)
-                    multilingual TEXT,  -- JSON object with 3 items (conditional)
-                    used_kg_viz INTEGER,
-                    used_non_english INTEGER,
-
-                    -- Removed sections (kept for backward compatibility)
-                    rag_transparency TEXT,  -- JSON object (deprecated)
-                    behavioral_intentions TEXT,  -- JSON object (deprecated)
-
-                    -- Section 3: Overall Rating - Additional Feedback
-                    most_useful_features TEXT,  -- Deprecated
-                    suggested_improvements TEXT,  -- Deprecated
-                    additional_comments TEXT,  -- Only this field is used now
-
-                    -- Metadata
-                    submission_date TEXT,
-                    time_started TEXT,
-                    time_per_section TEXT,  -- JSON object
-                    total_time_seconds REAL,
-
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            self.connection.commit()
-            logger.info("✅ Questionnaire tables created successfully")
-
-    async def save_questionnaire(self, questionnaire_data: Dict[str, Any]) -> int:
+    async def save_questionnaire(self, questionnaire_data: Dict[str, Any]) -> str:
         """Save a research questionnaire response."""
         async with self._lock:
-            cursor = self.connection.cursor()
-
             try:
-                # Extract and prepare fields
-                fields = {
+                # Prepare document - MongoDB stores nested objects natively
+                document = {
                     # Participant Information
                     'participant_id': questionnaire_data.get('participant_id'),
                     'email': questionnaire_data.get('email'),
@@ -140,44 +79,44 @@ class QuestionnaireDatabase:
                     'prior_climate_knowledge': questionnaire_data.get('prior_climate_knowledge'),
                     'prior_ai_experience': questionnaire_data.get('prior_ai_experience'),
 
-                    # Consent (convert boolean to int)
-                    'consent_all': 1 if questionnaire_data.get('consent_all') else 0,
+                    # Consent
+                    'consent_all': questionnaire_data.get('consent_all', False),
 
                     # Section 1: Your Recent Experience
                     'primary_purpose': questionnaire_data.get('primary_purpose'),
                     'other_purpose': questionnaire_data.get('other_purpose'),
-                    'task_type': json.dumps(questionnaire_data.get('task_type', [])),
+                    'task_type': questionnaire_data.get('task_type', []),
 
                     # Section 2: Task Success & Completion
-                    'task_success': json.dumps(questionnaire_data.get('task_success', {})),
-                    'info_finding': json.dumps(questionnaire_data.get('info_finding', {})),
+                    'task_success': questionnaire_data.get('task_success', {}),
+                    'info_finding': questionnaire_data.get('info_finding', {}),
 
                     # Section 3: Document & Source Quality
-                    'doc_quality': json.dumps(questionnaire_data.get('doc_quality', {})),
-                    'info_adequacy': json.dumps(questionnaire_data.get('info_adequacy', {})),
+                    'doc_quality': questionnaire_data.get('doc_quality', {}),
+                    'info_adequacy': questionnaire_data.get('info_adequacy', {}),
 
                     # Section 4: UEQ-S
-                    'ueq_s': json.dumps(questionnaire_data.get('ueq_s', {})),
+                    'ueq_s': questionnaire_data.get('ueq_s', {}),
 
                     # Section 5: Trust Scale
-                    'trust_scale': json.dumps(questionnaire_data.get('trust_scale', {})),
+                    'trust_scale': questionnaire_data.get('trust_scale', {}),
 
                     # Section 6: NASA-TLX
-                    'nasa_tlx': json.dumps(questionnaire_data.get('nasa_tlx', {})),
+                    'nasa_tlx': questionnaire_data.get('nasa_tlx', {}),
 
                     # Section 7: Conversational Quality
-                    'conversational_quality': json.dumps(questionnaire_data.get('conversational_quality', {})),
+                    'conversational_quality': questionnaire_data.get('conversational_quality', {}),
 
                     # Section 8: Feature-Specific Evaluations
-                    'stp_evaluation': json.dumps(questionnaire_data.get('stp_evaluation', {})),
-                    'kg_visualization': json.dumps(questionnaire_data.get('kg_visualization', {})),
-                    'multilingual': json.dumps(questionnaire_data.get('multilingual', {})),
-                    'used_kg_viz': 1 if questionnaire_data.get('used_kg_viz') else 0,
-                    'used_non_english': 1 if questionnaire_data.get('used_non_english') else 0,
+                    'stp_evaluation': questionnaire_data.get('stp_evaluation', {}),
+                    'kg_visualization': questionnaire_data.get('kg_visualization', {}),
+                    'multilingual': questionnaire_data.get('multilingual', {}),
+                    'used_kg_viz': questionnaire_data.get('used_kg_viz', False),
+                    'used_non_english': questionnaire_data.get('used_non_english', False),
 
-                    # Section 9: RAG Transparency & Behavioral Intentions
-                    'rag_transparency': json.dumps(questionnaire_data.get('rag_transparency', {})),
-                    'behavioral_intentions': json.dumps(questionnaire_data.get('behavioral_intentions', {})),
+                    # Section 9: RAG Transparency & Behavioral Intentions (deprecated but kept)
+                    'rag_transparency': questionnaire_data.get('rag_transparency', {}),
+                    'behavioral_intentions': questionnaire_data.get('behavioral_intentions', {}),
 
                     # Section 10: Open-Ended Feedback
                     'most_useful_features': questionnaire_data.get('most_useful_features'),
@@ -187,22 +126,14 @@ class QuestionnaireDatabase:
                     # Metadata
                     'submission_date': questionnaire_data.get('submission_date'),
                     'time_started': questionnaire_data.get('time_started'),
-                    'time_per_section': json.dumps(questionnaire_data.get('time_per_section', {})),
+                    'time_per_section': questionnaire_data.get('time_per_section', {}),
                     'total_time_seconds': questionnaire_data.get('total_time_seconds'),
+
+                    'created_at': datetime.utcnow(),
                 }
 
-                # Build SQL query
-                field_names = ', '.join(fields.keys())
-                placeholders = ', '.join(['?'] * len(fields))
-                values = tuple(fields.values())
-
-                cursor.execute(f"""
-                    INSERT INTO questionnaire_responses ({field_names})
-                    VALUES ({placeholders})
-                """, values)
-
-                self.connection.commit()
-                questionnaire_id = cursor.lastrowid
+                result = self._collection.insert_one(document)
+                questionnaire_id = str(result.inserted_id)
                 logger.info(f"✅ Questionnaire saved successfully with ID: {questionnaire_id}")
                 return questionnaire_id
 
@@ -213,97 +144,65 @@ class QuestionnaireDatabase:
     async def get_questionnaires(self, limit: int = 100) -> List[Dict[str, Any]]:
         """Get all questionnaire responses."""
         async with self._lock:
-            cursor = self.connection.cursor()
-            cursor.execute("""
-                SELECT * FROM questionnaire_responses
-                ORDER BY created_at DESC
-                LIMIT ?
-            """, (limit,))
+            cursor = self._collection.find().sort("created_at", DESCENDING).limit(limit)
 
-            rows = cursor.fetchall()
-
-            # Convert rows to dicts and parse JSON fields
             results = []
-            for row in rows:
-                row_dict = dict(row)
-
-                # Parse JSON fields
-                json_fields = [
-                    'task_type', 'task_success', 'info_finding', 'doc_quality',
-                    'info_adequacy', 'ueq_s', 'trust_scale', 'nasa_tlx',
-                    'conversational_quality', 'stp_evaluation', 'kg_visualization',
-                    'multilingual', 'rag_transparency', 'behavioral_intentions',
-                    'time_per_section'
-                ]
-
-                for field in json_fields:
-                    if row_dict.get(field):
-                        try:
-                            row_dict[field] = json.loads(row_dict[field])
-                        except:
-                            row_dict[field] = {}
-
-                results.append(row_dict)
+            for doc in cursor:
+                # Convert ObjectId to string for JSON serialization
+                doc['id'] = str(doc.pop('_id'))
+                # Convert datetime to ISO string
+                if doc.get('created_at'):
+                    doc['created_at'] = doc['created_at'].isoformat()
+                results.append(doc)
 
             return results
 
-    async def get_questionnaire_by_id(self, questionnaire_id: int) -> Optional[Dict[str, Any]]:
+    async def get_questionnaire_by_id(self, questionnaire_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific questionnaire response by ID."""
         async with self._lock:
-            cursor = self.connection.cursor()
-            cursor.execute("""
-                SELECT * FROM questionnaire_responses
-                WHERE id = ?
-            """, (questionnaire_id,))
-
-            row = cursor.fetchone()
-            if row:
-                row_dict = dict(row)
-
-                # Parse JSON fields
-                json_fields = [
-                    'task_type', 'task_success', 'info_finding', 'doc_quality',
-                    'info_adequacy', 'ueq_s', 'trust_scale', 'nasa_tlx',
-                    'conversational_quality', 'stp_evaluation', 'kg_visualization',
-                    'multilingual', 'rag_transparency', 'behavioral_intentions',
-                    'time_per_section'
-                ]
-
-                for field in json_fields:
-                    if row_dict.get(field):
-                        try:
-                            row_dict[field] = json.loads(row_dict[field])
-                        except:
-                            row_dict[field] = {}
-
-                return row_dict
-            return None
+            try:
+                doc = self._collection.find_one({"_id": ObjectId(questionnaire_id)})
+                if doc:
+                    doc['id'] = str(doc.pop('_id'))
+                    if doc.get('created_at'):
+                        doc['created_at'] = doc['created_at'].isoformat()
+                    return doc
+                return None
+            except Exception as e:
+                logger.error(f"Error getting questionnaire by ID: {e}")
+                return None
 
     async def get_questionnaire_count(self) -> int:
         """Get total count of questionnaire responses."""
         async with self._lock:
-            cursor = self.connection.cursor()
-            cursor.execute("SELECT COUNT(*) as count FROM questionnaire_responses")
-            return cursor.fetchone()['count']
+            return self._collection.count_documents({})
 
     async def close(self):
         """Close database connection."""
-        if self.connection:
-            self.connection.close()
+        if self._client:
+            self._client.close()
+            self._client = None
+            self._db = None
+            self._collection = None
+            self.connected = False
             logger.info("✅ Questionnaire database connection closed")
 
     async def health_check(self) -> bool:
         """Check database health."""
         try:
-            if not self.connection:
+            if not self._client:
                 return False
-
-            cursor = self.connection.cursor()
-            cursor.execute("SELECT 1")
+            self._client.admin.command('ping')
             return True
         except Exception as e:
             logger.error(f"Questionnaire database health check failed: {e}")
             return False
+
+    # Property for backward compatibility
+    @property
+    def connection(self):
+        """Backward compatibility property."""
+        return self._client
 
 
 # Global instance
@@ -312,6 +211,6 @@ questionnaire_database = QuestionnaireDatabase()
 
 async def get_questionnaire_database() -> QuestionnaireDatabase:
     """Get the questionnaire database instance."""
-    if not questionnaire_database.connection:
+    if not questionnaire_database.connected:
         await questionnaire_database.initialize()
     return questionnaire_database

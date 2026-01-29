@@ -7,6 +7,46 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
+class MongoDBConfig(BaseSettings):
+    """MongoDB configuration for persistent data storage (questionnaires, feedback, stats)."""
+
+    # Connection Settings (from .env)
+    HOST: str = "localhost"
+    PORT: int = 27017
+    DATABASE: str = "neuroclima"
+    USERNAME: str = ""
+    PASSWORD: str = ""
+
+    # Connection pool settings for multi-replica support
+    MAX_POOL_SIZE: int = 100
+    MIN_POOL_SIZE: int = 10
+    SERVER_SELECTION_TIMEOUT: int = 5000
+    CONNECT_TIMEOUT: int = 10000
+
+    @property
+    def connection_uri(self) -> str:
+        """Get MongoDB connection URI."""
+        if self.USERNAME and self.PASSWORD:
+            return f"mongodb://{self.USERNAME}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DATABASE}?authSource=admin"
+        return f"mongodb://{self.HOST}:{self.PORT}"
+
+    @property
+    def connection_kwargs(self) -> Dict[str, Any]:
+        """Get connection kwargs for MongoDB client."""
+        return {
+            "host": self.connection_uri,
+            "maxPoolSize": self.MAX_POOL_SIZE,
+            "minPoolSize": self.MIN_POOL_SIZE,
+            "serverSelectionTimeoutMS": self.SERVER_SELECTION_TIMEOUT,
+            "connectTimeoutMS": self.CONNECT_TIMEOUT,
+        }
+
+    class Config:
+        env_file = ".env"
+        env_prefix = "MONGODB_"
+        extra = "ignore"
+
+
 class MilvusConfig(BaseSettings):
     """Milvus vector database configuration for new structure."""
 
@@ -229,12 +269,13 @@ class MinIOConfig(BaseSettings):
 
 class DatabaseConfig:
     """Centralized database configuration container."""
-    
+
     def __init__(self):
         self.milvus = MilvusConfig()
         self.redis = RedisConfig()
         self.minio = MinIOConfig()
-    
+        self.mongodb = MongoDBConfig()
+
     def get_all_configs(self) -> Dict[str, Any]:
         """Get all database configurations."""
         return {
@@ -261,15 +302,21 @@ class DatabaseConfig:
                     "documents": self.minio.BUCKET_DOCUMENTS,
                     "temp": self.minio.BUCKET_TEMP
                 }
+            },
+            "mongodb": {
+                "host": self.mongodb.HOST,
+                "port": self.mongodb.PORT,
+                "database": self.mongodb.DATABASE
             }
         }
-    
+
     def health_check_info(self) -> Dict[str, str]:
         """Get health check information for all databases."""
         return {
             "milvus": self.milvus.uri,
             "redis": self.redis.URL,
-            "minio": self.minio.url
+            "minio": self.minio.url,
+            "mongodb": self.mongodb.connection_uri
         }
 
 
@@ -296,6 +343,11 @@ def get_redis_config() -> RedisConfig:
 def get_minio_config() -> MinIOConfig:
     """Get MinIO configuration."""
     return db_config.minio
+
+
+def get_mongodb_config() -> MongoDBConfig:
+    """Get MongoDB configuration."""
+    return db_config.mongodb
 
 
 # Backward compatibility helpers
