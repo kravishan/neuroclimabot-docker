@@ -59,7 +59,7 @@ async def initialize_services() -> ServiceContainer:
 
     This function sets up the complete service infrastructure including:
     - MinIO object storage client
-    - SQLite document tracker
+    - MongoDB document tracker (multi-replica support)
     - Milvus vector storage
     - Async batch processor
     - Processing queue

@@ -244,7 +244,7 @@ Ensure these services are running before starting the processor:
 
 Processor data is persisted in Docker volumes:
 
-- `processor_data` - SQLite database and application data
+- `processor_data` - Application data and cache
 - `graphrag_data` - GraphRAG knowledge graphs
 - `lancedb_data` - LanceDB storage
 

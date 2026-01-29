@@ -4,12 +4,9 @@ processors/__pycache__/
 __pycache__/
 .env
 __pycache__/
-processing_tracker.db
 cache/
 lancedb_graphrag/
 test.py
-processing_tracker.db-shm
-processing_tracker.db-wal
 venv/
 
 testing-graphrag/
@@ -18,7 +15,6 @@ workspaces/
 testing_graphrag2/
 test_graphrag/
 models/
-processing_tracker.zip
 lancedb_graphrag.zip
 graphrag/output/
 doc-final.zip

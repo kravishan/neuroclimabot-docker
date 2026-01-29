@@ -26,11 +26,13 @@ from app.config.database import (
     MilvusConfig,
     RedisConfig,
     MinIOConfig,
+    MongoDBConfig,
     AnalyticsConfig,
     get_database_config,
     get_milvus_config,
     get_redis_config,
     get_minio_config,
+    get_mongodb_config,
 )
 
 
@@ -111,9 +113,11 @@ __all__ = [
     "MilvusConfig",
     "RedisConfig",
     "MinIOConfig",
+    "MongoDBConfig",
     "AnalyticsConfig",
     "get_database_config",
     "get_milvus_config",
     "get_redis_config",
     "get_minio_config",
+    "get_mongodb_config",
 ]

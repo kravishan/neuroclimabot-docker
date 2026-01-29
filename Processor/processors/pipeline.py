@@ -242,19 +242,29 @@ class AsyncDocumentProcessor:
                 for i in range(0, len(articles), batch_size):
                     batch = articles[i:i + batch_size]
                     batch_tasks = []
-                    
+
                     for article in batch:
                         task = self._create_article_chunks_async(article, bucket)
                         batch_tasks.append(task)
-                    
+
                     batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-                    
+
                     for j, chunks in enumerate(batch_results):
+                        article = batch[j]
                         if isinstance(chunks, Exception):
                             logger.error(f"  Article {i+j+1}: chunking failed: {chunks}")
                             continue
                         all_chunks.extend(chunks)
                         logger.info(f"  Article {i+j+1}: {len(chunks)} chunks created")
+
+                        # Track individual news article chunks
+                        if chunks:
+                            tracker.mark_done("chunks", filename, bucket,
+                                count=len(chunks),
+                                source_url=article["source_url"],
+                                article_title=article["title"],
+                                row_index=article["row_index"]
+                            )
                 
                 if all_chunks:
                     logger.info(f"🧮 Generating embeddings for {len(all_chunks)} chunks")
@@ -283,20 +293,28 @@ class AsyncDocumentProcessor:
                 for i in range(0, len(articles), batch_size):
                     batch = articles[i:i + batch_size]
                     batch_tasks = []
-                    
+
                     for article in batch:
                         task = self._create_article_summary_async(article, bucket)
                         batch_tasks.append(task)
-                    
+
                     batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-                    
+
                     for j, summary_data in enumerate(batch_results):
+                        article = batch[j]
                         if isinstance(summary_data, Exception):
                             logger.error(f"  Article {i+j+1}: summarization failed: {summary_data}")
                             continue
                         if summary_data:
                             all_summaries.append(summary_data)
                             logger.info(f"  Article {i+j+1}: Summary created")
+
+                            # Track individual news article summary
+                            tracker.mark_done("summary", filename, bucket,
+                                source_url=article["source_url"],
+                                article_title=article["title"],
+                                row_index=article["row_index"]
+                            )
                         else:
                             logger.warning(f"  Article {i+j+1}: Summary creation failed")
                 
@@ -411,27 +429,39 @@ class AsyncDocumentProcessor:
                 for i in range(0, len(articles), batch_size):
                     batch = articles[i:i + batch_size]
                     batch_tasks = []
-                    
+
                     for article in batch:
                         # Pass article content directly to STP processor
                         task = self._process_article_stp_async(article, bucket)
                         batch_tasks.append(task)
-                    
+
                     batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-                    
+
                     for j, stp_result in enumerate(batch_results):
+                        article = batch[j]
                         article_num = i + j + 1
                         if isinstance(stp_result, Exception):
                             logger.error(f"  Article {article_num}: STP failed: {stp_result}")
                             failed_stp += 1
                             continue
-                        
+
                         if stp_result and stp_result.get("status") == "success":
                             stp_results.append(stp_result)
                             successful_stp += 1
-                            total_stp_chunks += stp_result.get("stp_chunks", 0)
-                            total_non_stp_chunks += stp_result.get("non_stp_chunks", 0)
-                            logger.info(f"  Article {article_num}: STP completed - {stp_result.get('stp_chunks', 0)} STP chunks")
+                            article_stp_chunks = stp_result.get("stp_chunks", 0)
+                            article_non_stp_chunks = stp_result.get("non_stp_chunks", 0)
+                            total_stp_chunks += article_stp_chunks
+                            total_non_stp_chunks += article_non_stp_chunks
+                            logger.info(f"  Article {article_num}: STP completed - {article_stp_chunks} STP chunks")
+
+                            # Track individual news article STP
+                            tracker.mark_done("stp", filename, bucket,
+                                total_chunks=article_stp_chunks + article_non_stp_chunks,
+                                stp_count=article_stp_chunks,
+                                source_url=article["source_url"],
+                                article_title=article["title"],
+                                row_index=article["row_index"]
+                            )
                         else:
                             failed_stp += 1
                             logger.warning(f"  Article {article_num}: STP failed")

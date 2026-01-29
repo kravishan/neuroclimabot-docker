@@ -42,12 +42,12 @@ class SecurityConfig(BaseSettings):
     ADMIN_RATE_LIMIT: int = 50
 
     # Authentication (from .env)
+    # Note: Auth tokens are now stored in Redis with TTL-based auto-expiration
     AUTH_ENABLED: bool = Field(
         default=True,
         description="Enable/disable authentication. If False, app works without auth."
     )
     AUTH_TOKEN_EXPIRY_DAYS: int  # From .env
-    AUTH_DATABASE_URL: str = "sqlite:///./auth_tokens.db"  # Default database path
 
     # Admin Dashboard Authentication
     ADMIN_USERNAME: str = Field(
