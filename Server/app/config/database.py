@@ -155,7 +155,7 @@ class MilvusConfig(BaseSettings):
 
 
 class RedisConfig(BaseSettings):
-    """Redis configuration for session management and caching."""
+    """Redis configuration for session management, caching, and auth tokens."""
 
     # Connection Settings (from .env - SECURITY: Never hardcode credentials!)
     URL: str  # From .env (REDIS_URL)
@@ -164,17 +164,21 @@ class RedisConfig(BaseSettings):
     MAX_CONNECTIONS: int = 20
     CONNECTION_TIMEOUT: int = 10
     SOCKET_TIMEOUT: int = 10
-    
+
     # Session Configuration (from .env)
     SESSION_TIMEOUT_MINUTES: int = Field(default=10)  # From .env (REDIS_SESSION_TIMEOUT_MINUTES)
     SESSION_WARNING_MINUTES: int = Field(default=1)  # From .env (REDIS_SESSION_WARNING_MINUTES) - Warning appears when remaining time ≤ this value
     MAX_CONVERSATION_HISTORY: int = 30
     MEMORY_WINDOW_SIZE: int = 6
-    
+
     # Cache Configuration
     CACHE_TTL_SECONDS: int = 300
     EMBEDDING_CACHE_SIZE: int = 1000
     QUERY_CACHE_SIZE: int = 500
+
+    # Auth Token Configuration
+    AUTH_TOKEN_PREFIX: str = "auth_token:"  # Redis key prefix for auth tokens
+    AUTH_DB: int = 1  # Separate Redis DB for auth tokens (keeps them isolated)
     
     @property
     def connection_kwargs(self) -> Dict[str, Any]:
@@ -188,12 +192,30 @@ class RedisConfig(BaseSettings):
             "decode_responses": True,
             "encoding": "utf-8"
         }
-        
+
         if self.PASSWORD:
             kwargs["password"] = self.PASSWORD
-            
+
         return kwargs
-    
+
+    @property
+    def auth_connection_kwargs(self) -> Dict[str, Any]:
+        """Get connection kwargs for Redis auth token client."""
+        kwargs = {
+            "url": self.URL,
+            "db": self.AUTH_DB,
+            "max_connections": self.MAX_CONNECTIONS,
+            "socket_timeout": self.SOCKET_TIMEOUT,
+            "socket_connect_timeout": self.CONNECTION_TIMEOUT,
+            "decode_responses": True,
+            "encoding": "utf-8"
+        }
+
+        if self.PASSWORD:
+            kwargs["password"] = self.PASSWORD
+
+        return kwargs
+
     class Config:
         env_file = ".env"
         env_prefix = "REDIS_"

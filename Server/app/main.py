@@ -39,8 +39,8 @@ db_config = get_database_config()
 # Setup logging with the corrected function
 logger = setup_logging(settings)
 
-# Global background task handles
-cleanup_task = None
+# Auth service reference for proper shutdown
+_auth_service_instance = None
 
 
 @asynccontextmanager
@@ -67,21 +67,21 @@ async def lifespan(app: FastAPI):
 
 async def startup_event():
     """Application startup event with Langfuse, authentication, and parallel processing setup."""
-    global cleanup_task
+    global _auth_service_instance
 
     tasks = []
-    
+
     # Initialize Langfuse service first (non-blocking)
     tasks.append(initialize_langfuse_service())
-    
-    # Initialize authentication service
+
+    # Initialize authentication service (Redis-based with auto-expiration)
     tasks.append(initialize_auth_service())
-    
+
     # Initialize vector database
     milvus_config = get_milvus_config()
     if milvus_config.HOST:
         tasks.append(initialize_milvus())
-    
+
     # Initialize object storage
     minio_config = get_minio_config()
     if minio_config.ENDPOINT:
@@ -89,7 +89,7 @@ async def startup_event():
 
     # Initialize RAG service
     tasks.append(initialize_rag_service())
-    
+
     # Initialize session manager
     redis_config = get_redis_config()
     if redis_config.URL:
@@ -110,25 +110,12 @@ async def startup_event():
         if isinstance(result, Exception):
             task_name = task_names[i] if i < len(task_names) else f"task_{i}"
             logger.warning(f"Service {task_name} initialization failed: {result}")
-    
-    # Start weekly cleanup task for auth tokens
-    cleanup_task = asyncio.create_task(weekly_token_cleanup())
 
 
 async def shutdown_event():
     """Application shutdown event with Langfuse cleanup and auth cleanup."""
-    global cleanup_task
-
     logger.info("Shutting down services...")
 
-    # Cancel cleanup tasks
-    if cleanup_task and not cleanup_task.done():
-        cleanup_task.cancel()
-        try:
-            await cleanup_task
-        except asyncio.CancelledError:
-            pass
-    
     # Shutdown Langfuse service first to flush any pending traces
     try:
         from app.services.tracing.langfuse_service import get_langfuse_service
@@ -137,7 +124,15 @@ async def shutdown_event():
             await langfuse_service.shutdown()
     except Exception as e:
         logger.warning(f"Error shutting down Langfuse service: {e}")
-    
+
+    # Close auth service Redis connection
+    try:
+        from app.services.auth.auth_service import get_auth_service
+        auth_service = get_auth_service()
+        await auth_service.close()
+    except Exception as e:
+        logger.warning(f"Error shutting down auth service: {e}")
+
     # Close other connections
     if hasattr(milvus_client, 'close'):
         await milvus_client.close()
@@ -149,33 +144,12 @@ async def shutdown_event():
         await stats_database.close()
 
 
-async def weekly_token_cleanup():
-    """Background task to cleanup expired tokens weekly."""
-    while True:
-        try:
-            # Wait 7 days (604800 seconds)
-            await asyncio.sleep(7 * 24 * 60 * 60)
-
-            # Cleanup expired tokens
-            from app.services.auth.auth_service import get_auth_service
-            auth_service = get_auth_service()
-            deleted_count = await auth_service.cleanup_expired_tokens()
-            logger.info(f"Weekly cleanup: removed {deleted_count} expired tokens")
-
-        except asyncio.CancelledError:
-            logger.info("Token cleanup task cancelled")
-            break
-        except Exception as e:
-            logger.error(f"Error in weekly token cleanup: {e}")
-            # Continue the loop even if cleanup fails
-
-
 async def initialize_auth_service():
-    """Initialize authentication service."""
+    """Initialize authentication service with Redis backend."""
     try:
-        from app.services.auth.auth_service import get_auth_service
-        auth_service = get_auth_service()
-        logger.info("✅ Authentication service initialized")
+        from app.services.auth.auth_service import initialize_auth_service as init_auth
+        await init_auth()
+        logger.info("✅ Authentication service initialized (Redis with auto-expiration)")
 
     except Exception as e:
         logger.error(f"❌ Failed to initialize authentication service: {e}")
@@ -388,12 +362,12 @@ async def perform_health_check() -> Dict:
         services["redis"] = "unhealthy"
         status = "degraded"
     
-    # Check Auth service
+    # Check Auth service (Redis-based)
     try:
         from app.services.auth.auth_service import get_auth_service
         auth_service = get_auth_service()
-        auth_stats = await auth_service.get_token_stats()
-        services["auth"] = "healthy" if auth_stats["total"] >= 0 else "unhealthy"
+        auth_healthy = await auth_service.health_check()
+        services["auth"] = "healthy" if auth_healthy else "unhealthy"
     except Exception:
         services["auth"] = "unhealthy"
         status = "degraded"
@@ -427,8 +401,9 @@ async def perform_health_check() -> Dict:
             "secure": get_minio_config().SECURE
         },
         "auth": {
-            "database": "SQLite",
-            "file": "auth_tokens.db"
+            "database": "Redis",
+            "db": get_redis_config().AUTH_DB,
+            "auto_expiration": True
         }
     }
     
