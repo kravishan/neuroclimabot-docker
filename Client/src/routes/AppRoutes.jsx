@@ -6,7 +6,6 @@ import { ROUTES } from '@/constants/routes'
 // Page Components
 import HomePage from '@/pages/HomePage'
 import ResponsePage from '@/pages/ResponsePage'
-import VoiceModelPage from '@/pages/VoiceModelPage'
 import ExplorePage from '@/pages/ExplorePage'
 import QuestionnairePage from '@/pages/QuestionnairePage'
 import DashboardPage from '@/pages/DashboardPage'
@@ -14,7 +13,7 @@ import AdminDashboard from '@/pages/AdminDashboard'
 import { PrivacyPolicy, Disclaimer, TermsOfUse, LearnMore } from '@/pages/LegalPages'
 import NotFoundPage from '@/pages/NotFoundPage'
 
-const AppRoutes = ({ selectedLanguage, difficultyLevel, isVoiceSettingsOpen, updateVoiceSettingsOpen }) => {
+const AppRoutes = ({ selectedLanguage, difficultyLevel }) => {
   const { t } = useTranslation()
 
   return (
@@ -28,19 +27,9 @@ const AppRoutes = ({ selectedLanguage, difficultyLevel, isVoiceSettingsOpen, upd
           />
         }
       />
-      
+
       <Route path={ROUTES.RESPONSE} element={<ResponsePage />} />
-      
-      <Route 
-        path={ROUTES.VOICE_MODEL} 
-        element={
-          <VoiceModelPage 
-            isSettingsOpen={isVoiceSettingsOpen}
-            updateVoiceSettingsOpen={updateVoiceSettingsOpen}
-          />
-        } 
-      />
-      
+
       <Route path={ROUTES.EXPLORE} element={<ExplorePage />} />
       <Route path={ROUTES.QUESTIONNAIRE} element={<QuestionnairePage />} />
       <Route path="/dashboard" element={<DashboardPage />} />

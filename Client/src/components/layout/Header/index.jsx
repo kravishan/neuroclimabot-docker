@@ -12,7 +12,6 @@ const Header = ({
   changeLanguage,
   difficultyLevel,
   setDifficultyLevel,
-  onVoiceSettingsOpen,
   onPrivacySettingsOpen,
   sessionStatus,
   countdownDisplay
@@ -25,7 +24,6 @@ const Header = ({
   const location = useLocation()
 
   const isIndexPage = location.pathname === '/'
-  const isVoiceModelPage = location.pathname === '/voice-model'
   const isResponsePage = location.pathname.includes('/response/')
   const isDashboardPage = location.pathname === '/dashboard'
 
@@ -140,17 +138,6 @@ const Header = ({
           <span className="button-text">Privacy</span>
         </button>
 
-        {isVoiceModelPage && (
-          <button 
-            className="voice-settings-button" 
-            onClick={onVoiceSettingsOpen}
-            aria-label="Voice Settings"
-          >
-            <SettingsIcon size={18} />
-            <span className="button-text">{t('voiceSettings')}</span>
-          </button>
-        )}
-        
         {/* Show Admin button when on dashboard page, otherwise show Dashboard button */}
         {isDashboardPage ? (
           <button className="dashboard-button" onClick={handleAdminClick}>

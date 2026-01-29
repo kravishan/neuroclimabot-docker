@@ -45,7 +45,6 @@ export const SESSION_CONFIG = {
 }
 
 export const FEATURE_FLAGS = {
-  VOICE_MODEL: import.meta.env.VITE_ENABLE_VOICE_MODEL === 'true',
   GRAPH_VISUALIZATION: import.meta.env.VITE_ENABLE_GRAPH_VISUALIZATION === 'true',
   ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
   ADMIN_DASHBOARD: import.meta.env.VITE_ENABLE_ADMIN_DASHBOARD !== 'false'

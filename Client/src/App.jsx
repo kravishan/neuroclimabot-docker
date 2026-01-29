@@ -13,7 +13,6 @@ import PrivacySettingsModal from '@/components/consent/PrivacySettingsModal/Priv
 function AppContent() {
   const { selectedLanguage, changeLanguage } = useLanguage()
   const [difficultyLevel, setDifficultyLevel] = useState('low')
-  const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false)
   const [isPrivacySettingsOpen, setIsPrivacySettingsOpen] = useState(false)
 
   const location = useLocation()
@@ -43,14 +42,6 @@ function AppContent() {
       document.body.classList.remove('index-page')
     }
   }, [isHomePage])
-  
-  const handleVoiceSettingsOpen = () => {
-    setIsVoiceSettingsOpen(true)
-  }
-
-  const updateVoiceSettingsOpen = (isOpen) => {
-    setIsVoiceSettingsOpen(isOpen)
-  }
 
   const handlePrivacySettingsOpen = () => {
     setIsPrivacySettingsOpen(true)
@@ -65,11 +56,9 @@ function AppContent() {
     return (
       <div className="app-container">
         <main className="main-content">
-          <AppRoutes 
+          <AppRoutes
             selectedLanguage={selectedLanguage}
             difficultyLevel={difficultyLevel}
-            isVoiceSettingsOpen={isVoiceSettingsOpen}
-            updateVoiceSettingsOpen={updateVoiceSettingsOpen}
           />
         </main>
       </div>
@@ -92,7 +81,6 @@ function AppContent() {
         changeLanguage={changeLanguage}
         difficultyLevel={difficultyLevel}
         setDifficultyLevel={setDifficultyLevel}
-        onVoiceSettingsOpen={handleVoiceSettingsOpen}
         onPrivacySettingsOpen={handlePrivacySettingsOpen}
         sessionStatus={sessionStatus}
         countdownDisplay={countdownDisplay}
@@ -102,8 +90,6 @@ function AppContent() {
         <AppRoutes
           selectedLanguage={selectedLanguage}
           difficultyLevel={difficultyLevel}
-          isVoiceSettingsOpen={isVoiceSettingsOpen}
-          updateVoiceSettingsOpen={updateVoiceSettingsOpen}
         />
       </main>
 
