@@ -6,7 +6,7 @@ in the NeuroClima Document Processor. It provides a unified abstraction layer fo
 
 - Vector storage (Milvus) for chunks and summaries
 - Graph storage (LanceDB) for GraphRAG knowledge graphs
-- Document tracking (SQLite) for processing state management
+- Document tracking (MongoDB) for processing state management (multi-replica support)
 - Embedding generation (Ollama) for vector creation
 
 All storage implementations must inherit from these base classes to ensure
@@ -26,7 +26,7 @@ class BaseStorage(ABC):
     """
     Abstract base class for all storage backends.
 
-    All storage implementations (Milvus, LanceDB, SQLite) inherit from this class
+    All storage implementations (Milvus, LanceDB, MongoDB) inherit from this class
     and must implement the required abstract methods for connection management,
     health checking, and statistics reporting.
 

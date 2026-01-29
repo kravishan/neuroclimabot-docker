@@ -1,122 +1,130 @@
 """
 Document Processing Tracker
-SQLite-based tracking for document processing status across all pipelines
+MongoDB-based tracking for document processing status across all pipelines
+Supports multi-replica deployments in Kubernetes environments
 """
 
 import logging
-import sqlite3
-import threading
 from typing import Dict, Any, List
-from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from pymongo import MongoClient, ASCENDING, DESCENDING
+from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 
 from storage.base import DocumentTrackerBackend
+from config import config
 
 logger = logging.getLogger(__name__)
 
 
 class DocumentTracker(DocumentTrackerBackend):
     """
-    SQLite-based document processing tracker
+    MongoDB-based document processing tracker
     Tracks status for chunks, summaries, GraphRAG, and STP processing
+    Designed for multi-replica Kubernetes deployments
     """
 
-    def __init__(self, db_path: str = "./processing_tracker.db"):
+    def __init__(self):
         super().__init__()
-        self.db_path = Path(db_path)
-        self._local = threading.local()
+        self._client = None
+        self._db = None
+        self._document_status = None
+        self._news_articles_status = None
         self.connect()
 
-    def _get_connection(self):
-        """Get thread-local database connection"""
-        if not hasattr(self._local, 'connection'):
-            self._local.connection = sqlite3.connect(str(self.db_path), check_same_thread=False)
-            self._local.connection.execute("PRAGMA journal_mode=WAL")
-        return self._local.connection
+    def _get_client(self) -> MongoClient:
+        """Get or create MongoDB client with connection pooling"""
+        if self._client is None:
+            mongodb_config = config.get_mongodb_config()
+
+            self._client = MongoClient(
+                mongodb_config['connection_uri'],
+                maxPoolSize=mongodb_config.get('max_pool_size', 100),
+                minPoolSize=mongodb_config.get('min_pool_size', 10),
+                serverSelectionTimeoutMS=mongodb_config.get('server_selection_timeout_ms', 5000),
+                connectTimeoutMS=mongodb_config.get('connect_timeout_ms', 10000),
+            )
+
+            # Get database
+            self._db = self._client[mongodb_config['database']]
+
+            # Get collections
+            self._document_status = self._db[mongodb_config['collections']['document_status']]
+            self._news_articles_status = self._db[mongodb_config['collections']['news_articles_status']]
+
+        return self._client
 
     def connect(self) -> None:
-        """Initialize tracking database with all required tables"""
+        """Initialize MongoDB connection and create indexes"""
         try:
-            # Ensure parent directory exists
-            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            mongodb_config = config.get_mongodb_config()
 
-            with sqlite3.connect(str(self.db_path)) as conn:
-                conn.execute("PRAGMA journal_mode=WAL")
+            # Initialize client
+            self._get_client()
 
-                # Main document status table
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS document_status (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        doc_name TEXT NOT NULL,
-                        bucket_source TEXT NOT NULL,
-                        chunks_done BOOLEAN DEFAULT FALSE,
-                        chunks_count INTEGER DEFAULT 0,
-                        summary_done BOOLEAN DEFAULT FALSE,
-                        graphrag_done BOOLEAN DEFAULT FALSE,
-                        graphrag_entities_count INTEGER DEFAULT 0,
-                        graphrag_relationships_count INTEGER DEFAULT 0,
-                        graphrag_communities_count INTEGER DEFAULT 0,
-                        stp_done BOOLEAN DEFAULT FALSE,
-                        stp_chunks_count INTEGER DEFAULT 0,
-                        stp_stp_count INTEGER DEFAULT 0,
-                        stp_non_stp_count INTEGER DEFAULT 0,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(doc_name, bucket_source)
-                    )
-                """)
+            # Test connection
+            self._client.admin.command('ping')
 
-                # News articles tracking table
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS news_articles_status (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        source_url TEXT NOT NULL,
-                        original_file TEXT NOT NULL,
-                        bucket_source TEXT NOT NULL,
-                        article_title TEXT,
-                        row_index INTEGER,
-                        chunks_done BOOLEAN DEFAULT FALSE,
-                        chunks_count INTEGER DEFAULT 0,
-                        summary_done BOOLEAN DEFAULT FALSE,
-                        stp_done BOOLEAN DEFAULT FALSE,
-                        stp_chunks_count INTEGER DEFAULT 0,
-                        stp_stp_count INTEGER DEFAULT 0,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(source_url, original_file, bucket_source)
-                    )
-                """)
+            # Create indexes for document_status collection
+            self._document_status.create_index(
+                [("doc_name", ASCENDING), ("bucket_source", ASCENDING)],
+                unique=True,
+                name="idx_doc_bucket"
+            )
+            self._document_status.create_index(
+                [("stp_done", ASCENDING)],
+                name="idx_stp_status"
+            )
+            self._document_status.create_index(
+                [("bucket_source", ASCENDING)],
+                name="idx_bucket"
+            )
+            self._document_status.create_index(
+                [("updated_at", DESCENDING)],
+                name="idx_updated_at"
+            )
 
-                # Create indexes for performance
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_doc_bucket ON document_status(doc_name, bucket_source)")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_news_source ON news_articles_status(source_url, original_file)")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_stp_status ON document_status(stp_done)")
-                conn.execute("CREATE INDEX IF NOT EXISTS idx_bucket ON document_status(bucket_source)")
-
-                conn.commit()
+            # Create indexes for news_articles_status collection
+            self._news_articles_status.create_index(
+                [("source_url", ASCENDING), ("original_file", ASCENDING), ("bucket_source", ASCENDING)],
+                unique=True,
+                name="idx_news_source"
+            )
+            self._news_articles_status.create_index(
+                [("original_file", ASCENDING), ("bucket_source", ASCENDING)],
+                name="idx_original_file"
+            )
 
             self.connected = True
-            logger.info(f"✅ Document tracker initialized: {self.db_path}")
+            logger.info(f"MongoDB tracker initialized: {mongodb_config['host']}:{mongodb_config['port']}/{mongodb_config['database']}")
 
+        except (ConnectionFailure, ServerSelectionTimeoutError) as e:
+            logger.error(f"Failed to connect to MongoDB: {e}")
+            raise
         except Exception as e:
-            logger.error(f"❌ Failed to initialize document tracker: {e}")
+            logger.error(f"Failed to initialize MongoDB tracker: {e}")
             raise
 
     def disconnect(self) -> None:
-        """Close database connections"""
+        """Close MongoDB connection"""
         try:
-            if hasattr(self._local, 'connection'):
-                self._local.connection.close()
+            if self._client:
+                self._client.close()
+                self._client = None
+                self._db = None
+                self._document_status = None
+                self._news_articles_status = None
             self.connected = False
-            logger.info("✅ Document tracker disconnected")
+            logger.info("MongoDB tracker disconnected")
         except Exception as e:
-            logger.error(f"❌ Disconnect error: {e}")
+            logger.error(f"Disconnect error: {e}")
 
     def health_check(self) -> bool:
-        """Check database health"""
+        """Check MongoDB connection health"""
         try:
-            conn = self._get_connection()
-            conn.execute("SELECT 1").fetchone()
+            if self._client is None:
+                return False
+            self._client.admin.command('ping')
             return True
         except Exception:
             return False
@@ -132,101 +140,124 @@ class DocumentTracker(DocumentTrackerBackend):
             **kwargs: Additional process-specific data
         """
         try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
+            now = datetime.utcnow()
 
             # Handle news articles separately if source_url provided
             if bucket == "news" and "source_url" in kwargs:
-                self._mark_news_article_done(cursor, process_type, kwargs, doc_name, bucket)
+                self._mark_news_article_done(process_type, kwargs, doc_name, bucket, now)
 
             # Always track at document level
-            cursor.execute(
-                "INSERT OR IGNORE INTO document_status (doc_name, bucket_source) VALUES (?, ?)",
-                (doc_name, bucket)
+            # Build update document based on process type
+            update_fields = {"updated_at": now}
+
+            if process_type == "chunks":
+                update_fields["chunks_done"] = True
+                update_fields["chunks_count"] = kwargs.get('count', 0)
+            elif process_type == "summary":
+                update_fields["summary_done"] = True
+            elif process_type == "graphrag":
+                update_fields["graphrag_done"] = True
+                update_fields["graphrag_entities_count"] = kwargs.get('entities', 0)
+                update_fields["graphrag_relationships_count"] = kwargs.get('relationships', 0)
+                update_fields["graphrag_communities_count"] = kwargs.get('communities', 0)
+            elif process_type == "stp":
+                update_fields["stp_done"] = True
+                update_fields["stp_chunks_count"] = kwargs.get('total_chunks', 0)
+                update_fields["stp_stp_count"] = kwargs.get('stp_count', 0)
+                update_fields["stp_non_stp_count"] = kwargs.get('non_stp_count', 0)
+
+            # Upsert document status
+            self._document_status.update_one(
+                {"doc_name": doc_name, "bucket_source": bucket},
+                {
+                    "$set": update_fields,
+                    "$setOnInsert": {
+                        "doc_name": doc_name,
+                        "bucket_source": bucket,
+                        "chunks_done": process_type == "chunks",
+                        "chunks_count": kwargs.get('count', 0) if process_type == "chunks" else 0,
+                        "summary_done": process_type == "summary",
+                        "graphrag_done": process_type == "graphrag",
+                        "graphrag_entities_count": kwargs.get('entities', 0) if process_type == "graphrag" else 0,
+                        "graphrag_relationships_count": kwargs.get('relationships', 0) if process_type == "graphrag" else 0,
+                        "graphrag_communities_count": kwargs.get('communities', 0) if process_type == "graphrag" else 0,
+                        "stp_done": process_type == "stp",
+                        "stp_chunks_count": kwargs.get('total_chunks', 0) if process_type == "stp" else 0,
+                        "stp_stp_count": kwargs.get('stp_count', 0) if process_type == "stp" else 0,
+                        "stp_non_stp_count": kwargs.get('non_stp_count', 0) if process_type == "stp" else 0,
+                        "created_at": now,
+                    }
+                },
+                upsert=True
             )
 
-            # Update based on process type
-            if process_type == "chunks":
-                cursor.execute(
-                    "UPDATE document_status SET chunks_done = TRUE, chunks_count = ?, updated_at = CURRENT_TIMESTAMP WHERE doc_name = ? AND bucket_source = ?",
-                    (kwargs.get('count', 0), doc_name, bucket)
-                )
-            elif process_type == "summary":
-                cursor.execute(
-                    "UPDATE document_status SET summary_done = TRUE, updated_at = CURRENT_TIMESTAMP WHERE doc_name = ? AND bucket_source = ?",
-                    (doc_name, bucket)
-                )
-            elif process_type == "graphrag":
-                cursor.execute(
-                    "UPDATE document_status SET graphrag_done = TRUE, graphrag_entities_count = ?, graphrag_relationships_count = ?, graphrag_communities_count = ?, updated_at = CURRENT_TIMESTAMP WHERE doc_name = ? AND bucket_source = ?",
-                    (kwargs.get('entities', 0), kwargs.get('relationships', 0), kwargs.get('communities', 0), doc_name, bucket)
-                )
-            elif process_type == "stp":
-                cursor.execute(
-                    "UPDATE document_status SET stp_done = TRUE, stp_chunks_count = ?, stp_stp_count = ?, stp_non_stp_count = ?, updated_at = CURRENT_TIMESTAMP WHERE doc_name = ? AND bucket_source = ?",
-                    (kwargs.get('total_chunks', 0), kwargs.get('stp_count', 0), kwargs.get('non_stp_count', 0), doc_name, bucket)
-                )
-
-            conn.commit()
-            logger.info(f"✅ Marked {process_type} done for {doc_name}")
+            logger.info(f"Marked {process_type} done for {doc_name}")
 
         except Exception as e:
-            logger.error(f"❌ Failed to mark {process_type} done for {doc_name}: {e}")
-            conn.rollback()
+            logger.error(f"Failed to mark {process_type} done for {doc_name}: {e}")
             raise
 
-    def _mark_news_article_done(self, cursor, process_type: str, kwargs: Dict[str, Any], doc_name: str, bucket: str) -> None:
+    def _mark_news_article_done(self, process_type: str, kwargs: Dict[str, Any],
+                                 doc_name: str, bucket: str, now: datetime) -> None:
         """Mark individual news article as done"""
         try:
             source_url = kwargs.get('source_url', '')
             article_title = kwargs.get('article_title', '')
             row_index = kwargs.get('row_index', 0)
 
-            # Ensure news article record exists
-            cursor.execute("""
-                INSERT OR IGNORE INTO news_articles_status
-                (source_url, original_file, bucket_source, article_title, row_index)
-                VALUES (?, ?, ?, ?, ?)
-            """, (source_url, doc_name, bucket, article_title, row_index))
+            update_fields = {"updated_at": now}
 
-            # Update based on process type
             if process_type == "chunks":
-                cursor.execute("""
-                    UPDATE news_articles_status
-                    SET chunks_done = TRUE, chunks_count = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE source_url = ? AND original_file = ? AND bucket_source = ?
-                """, (kwargs.get('count', 0), source_url, doc_name, bucket))
+                update_fields["chunks_done"] = True
+                update_fields["chunks_count"] = kwargs.get('count', 0)
             elif process_type == "summary":
-                cursor.execute("""
-                    UPDATE news_articles_status
-                    SET summary_done = TRUE, updated_at = CURRENT_TIMESTAMP
-                    WHERE source_url = ? AND original_file = ? AND bucket_source = ?
-                """, (source_url, doc_name, bucket))
+                update_fields["summary_done"] = True
             elif process_type == "stp":
-                cursor.execute("""
-                    UPDATE news_articles_status
-                    SET stp_done = TRUE, stp_chunks_count = ?, stp_stp_count = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE source_url = ? AND original_file = ? AND bucket_source = ?
-                """, (kwargs.get('total_chunks', 0), kwargs.get('stp_count', 0), source_url, doc_name, bucket))
+                update_fields["stp_done"] = True
+                update_fields["stp_chunks_count"] = kwargs.get('total_chunks', 0)
+                update_fields["stp_stp_count"] = kwargs.get('stp_count', 0)
 
-            logger.info(f"✅ Marked {process_type} done for news article: {source_url}")
+            # Upsert news article status
+            self._news_articles_status.update_one(
+                {
+                    "source_url": source_url,
+                    "original_file": doc_name,
+                    "bucket_source": bucket
+                },
+                {
+                    "$set": update_fields,
+                    "$setOnInsert": {
+                        "source_url": source_url,
+                        "original_file": doc_name,
+                        "bucket_source": bucket,
+                        "article_title": article_title,
+                        "row_index": row_index,
+                        "chunks_done": process_type == "chunks",
+                        "chunks_count": kwargs.get('count', 0) if process_type == "chunks" else 0,
+                        "summary_done": process_type == "summary",
+                        "stp_done": process_type == "stp",
+                        "stp_chunks_count": kwargs.get('total_chunks', 0) if process_type == "stp" else 0,
+                        "stp_stp_count": kwargs.get('stp_count', 0) if process_type == "stp" else 0,
+                        "created_at": now,
+                    }
+                },
+                upsert=True
+            )
+
+            logger.info(f"Marked {process_type} done for news article: {source_url}")
 
         except Exception as e:
-            logger.error(f"❌ Failed to mark news article {process_type} done: {e}")
+            logger.error(f"Failed to mark news article {process_type} done: {e}")
             raise
 
     def get_status(self, doc_name: str, bucket: str) -> Dict[str, Any]:
         """Get processing status for a document"""
         try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
+            doc = self._document_status.find_one(
+                {"doc_name": doc_name, "bucket_source": bucket}
+            )
 
-            row = cursor.execute(
-                "SELECT * FROM document_status WHERE doc_name = ? AND bucket_source = ?",
-                (doc_name, bucket)
-            ).fetchone()
-
-            if not row:
+            if not doc:
                 return {
                     "doc_name": doc_name,
                     "bucket_source": bucket,
@@ -234,94 +265,114 @@ class DocumentTracker(DocumentTrackerBackend):
                     "status": "not_found"
                 }
 
-            # Column mapping
-            columns = ['id', 'doc_name', 'bucket_source', 'chunks_done', 'chunks_count',
-                      'summary_done', 'graphrag_done', 'graphrag_entities_count',
-                      'graphrag_relationships_count', 'graphrag_communities_count',
-                      'stp_done', 'stp_chunks_count', 'stp_stp_count', 'stp_non_stp_count',
-                      'created_at', 'updated_at']
+            # Build status response
+            status = {
+                "id": str(doc.get("_id", "")),
+                "doc_name": doc.get("doc_name"),
+                "bucket_source": doc.get("bucket_source"),
+                "chunks_done": doc.get("chunks_done", False),
+                "chunks_count": doc.get("chunks_count", 0),
+                "summary_done": doc.get("summary_done", False),
+                "graphrag_done": doc.get("graphrag_done", False),
+                "graphrag_entities_count": doc.get("graphrag_entities_count", 0),
+                "graphrag_relationships_count": doc.get("graphrag_relationships_count", 0),
+                "graphrag_communities_count": doc.get("graphrag_communities_count", 0),
+                "stp_done": doc.get("stp_done", False),
+                "stp_chunks_count": doc.get("stp_chunks_count", 0),
+                "stp_stp_count": doc.get("stp_stp_count", 0),
+                "stp_non_stp_count": doc.get("stp_non_stp_count", 0),
+                "created_at": doc.get("created_at", "").isoformat() if doc.get("created_at") else None,
+                "updated_at": doc.get("updated_at", "").isoformat() if doc.get("updated_at") else None,
+            }
 
-            status = dict(zip(columns, row))
-            status['is_complete'] = (status['chunks_done'] and status['summary_done'] and
-                                    status['graphrag_done'] and status['stp_done'])
+            status['is_complete'] = (
+                status['chunks_done'] and
+                status['summary_done'] and
+                status['graphrag_done'] and
+                status['stp_done']
+            )
 
             # For news bucket, include article-level status
             if bucket == "news":
-                news_articles = cursor.execute("""
-                    SELECT source_url, article_title, row_index, chunks_done, chunks_count,
-                           summary_done, stp_done, stp_chunks_count, stp_stp_count
-                    FROM news_articles_status
-                    WHERE original_file = ? AND bucket_source = ?
-                    ORDER BY row_index
-                """, (doc_name, bucket)).fetchall()
+                news_articles = list(self._news_articles_status.find(
+                    {"original_file": doc_name, "bucket_source": bucket}
+                ).sort("row_index", ASCENDING))
 
                 status['news_articles'] = []
-                for article_row in news_articles:
+                for article in news_articles:
                     status['news_articles'].append({
-                        'source_url': article_row[0],
-                        'article_title': article_row[1],
-                        'row_index': article_row[2],
-                        'chunks_done': bool(article_row[3]),
-                        'chunks_count': article_row[4],
-                        'summary_done': bool(article_row[5]),
-                        'stp_done': bool(article_row[6]),
-                        'stp_chunks_count': article_row[7],
-                        'stp_stp_count': article_row[8]
+                        'source_url': article.get('source_url'),
+                        'article_title': article.get('article_title'),
+                        'row_index': article.get('row_index'),
+                        'chunks_done': article.get('chunks_done', False),
+                        'chunks_count': article.get('chunks_count', 0),
+                        'summary_done': article.get('summary_done', False),
+                        'stp_done': article.get('stp_done', False),
+                        'stp_chunks_count': article.get('stp_chunks_count', 0),
+                        'stp_stp_count': article.get('stp_stp_count', 0)
                     })
 
             return status
 
         except Exception as e:
-            logger.error(f"❌ Failed to get status for {doc_name}: {e}")
+            logger.error(f"Failed to get status for {doc_name}: {e}")
             return {"doc_name": doc_name, "bucket_source": bucket, "is_complete": False, "status": "error"}
 
     def get_all_documents(self, bucket_filter: str = None) -> List[Dict[str, Any]]:
         """Get all tracked documents"""
         try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
-
-            query = "SELECT * FROM document_status"
-            params = []
-
+            query = {}
             if bucket_filter:
-                query += " WHERE bucket_source = ?"
-                params.append(bucket_filter)
+                query["bucket_source"] = bucket_filter
 
-            query += " ORDER BY updated_at DESC"
-
-            rows = cursor.execute(query, params).fetchall()
-
-            columns = ['id', 'doc_name', 'bucket_source', 'chunks_done', 'chunks_count',
-                      'summary_done', 'graphrag_done', 'graphrag_entities_count',
-                      'graphrag_relationships_count', 'graphrag_communities_count',
-                      'stp_done', 'stp_chunks_count', 'stp_stp_count', 'stp_non_stp_count',
-                      'created_at', 'updated_at']
+            docs = list(self._document_status.find(query).sort("updated_at", DESCENDING))
 
             documents = []
-            for row in rows:
-                doc = dict(zip(columns, row))
-                doc['is_complete'] = (doc['chunks_done'] and doc['summary_done'] and
-                                     doc['graphrag_done'] and doc['stp_done'])
+            for doc in docs:
+                document = {
+                    "id": str(doc.get("_id", "")),
+                    "doc_name": doc.get("doc_name"),
+                    "bucket_source": doc.get("bucket_source"),
+                    "chunks_done": doc.get("chunks_done", False),
+                    "chunks_count": doc.get("chunks_count", 0),
+                    "summary_done": doc.get("summary_done", False),
+                    "graphrag_done": doc.get("graphrag_done", False),
+                    "graphrag_entities_count": doc.get("graphrag_entities_count", 0),
+                    "graphrag_relationships_count": doc.get("graphrag_relationships_count", 0),
+                    "graphrag_communities_count": doc.get("graphrag_communities_count", 0),
+                    "stp_done": doc.get("stp_done", False),
+                    "stp_chunks_count": doc.get("stp_chunks_count", 0),
+                    "stp_stp_count": doc.get("stp_stp_count", 0),
+                    "stp_non_stp_count": doc.get("stp_non_stp_count", 0),
+                    "created_at": doc.get("created_at", "").isoformat() if doc.get("created_at") else None,
+                    "updated_at": doc.get("updated_at", "").isoformat() if doc.get("updated_at") else None,
+                }
+
+                document['is_complete'] = (
+                    document['chunks_done'] and
+                    document['summary_done'] and
+                    document['graphrag_done'] and
+                    document['stp_done']
+                )
 
                 # For news documents, add article count
-                if doc['bucket_source'] == "news":
+                if document['bucket_source'] == "news":
                     try:
-                        article_count = cursor.execute("""
-                            SELECT COUNT(*) FROM news_articles_status
-                            WHERE original_file = ? AND bucket_source = ?
-                        """, (doc['doc_name'], doc['bucket_source'])).fetchone()[0]
-                        doc['article_count'] = article_count
+                        article_count = self._news_articles_status.count_documents({
+                            "original_file": document['doc_name'],
+                            "bucket_source": document['bucket_source']
+                        })
+                        document['article_count'] = article_count
                     except Exception as e:
-                        logger.warning(f"⚠️ Could not fetch article count for {doc['doc_name']}: {e}")
-                        doc['article_count'] = 0
+                        logger.warning(f"Could not fetch article count for {document['doc_name']}: {e}")
+                        document['article_count'] = 0
 
-                documents.append(doc)
+                documents.append(document)
 
             return documents
 
         except Exception as e:
-            logger.error(f"❌ Failed to get all documents: {e}")
+            logger.error(f"Failed to get all documents: {e}")
             return []
 
     def is_processed(self, doc_name: str, bucket: str, process_type: str) -> bool:
@@ -346,34 +397,47 @@ class DocumentTracker(DocumentTrackerBackend):
     def get_stats(self) -> Dict[str, Any]:
         """Get comprehensive processing statistics"""
         try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
+            # Document-level stats using aggregation
+            total = self._document_status.count_documents({})
 
-            # Document-level stats
-            total = cursor.execute("SELECT COUNT(*) FROM document_status").fetchone()[0]
-            completed = cursor.execute("""
-                SELECT COUNT(*) FROM document_status
-                WHERE chunks_done = 1 AND summary_done = 1 AND graphrag_done = 1 AND stp_done = 1
-            """).fetchone()[0]
-            chunks_done = cursor.execute("SELECT COUNT(*) FROM document_status WHERE chunks_done = 1").fetchone()[0]
-            summary_done = cursor.execute("SELECT COUNT(*) FROM document_status WHERE summary_done = 1").fetchone()[0]
-            graphrag_done = cursor.execute("SELECT COUNT(*) FROM document_status WHERE graphrag_done = 1").fetchone()[0]
-            stp_done = cursor.execute("SELECT COUNT(*) FROM document_status WHERE stp_done = 1").fetchone()[0]
+            completed = self._document_status.count_documents({
+                "chunks_done": True,
+                "summary_done": True,
+                "graphrag_done": True,
+                "stp_done": True
+            })
 
-            # STP-specific stats
-            total_stp_chunks = cursor.execute("SELECT SUM(stp_stp_count) FROM document_status").fetchone()[0] or 0
-            total_non_stp_chunks = cursor.execute("SELECT SUM(stp_non_stp_count) FROM document_status").fetchone()[0] or 0
+            chunks_done = self._document_status.count_documents({"chunks_done": True})
+            summary_done = self._document_status.count_documents({"summary_done": True})
+            graphrag_done = self._document_status.count_documents({"graphrag_done": True})
+            stp_done = self._document_status.count_documents({"stp_done": True})
+
+            # STP-specific stats using aggregation
+            stp_pipeline = [
+                {"$group": {
+                    "_id": None,
+                    "total_stp_chunks": {"$sum": "$stp_stp_count"},
+                    "total_non_stp_chunks": {"$sum": "$stp_non_stp_count"}
+                }}
+            ]
+            stp_result = list(self._document_status.aggregate(stp_pipeline))
+            total_stp_chunks = stp_result[0].get("total_stp_chunks", 0) if stp_result else 0
+            total_non_stp_chunks = stp_result[0].get("total_non_stp_chunks", 0) if stp_result else 0
 
             # News-specific stats
-            news_articles_total = cursor.execute("SELECT COUNT(*) FROM news_articles_status").fetchone()[0]
-            news_articles_completed = cursor.execute("""
-                SELECT COUNT(*) FROM news_articles_status
-                WHERE chunks_done = 1 AND summary_done = 1 AND stp_done = 1
-            """).fetchone()[0]
+            news_articles_total = self._news_articles_status.count_documents({})
+            news_articles_completed = self._news_articles_status.count_documents({
+                "chunks_done": True,
+                "summary_done": True,
+                "stp_done": True
+            })
 
-            # Bucket distribution
-            cursor.execute("SELECT bucket_source, COUNT(*) FROM document_status GROUP BY bucket_source")
-            bucket_stats = {row[0]: row[1] for row in cursor.fetchall()}
+            # Bucket distribution using aggregation
+            bucket_pipeline = [
+                {"$group": {"_id": "$bucket_source", "count": {"$sum": 1}}}
+            ]
+            bucket_result = list(self._document_status.aggregate(bucket_pipeline))
+            bucket_stats = {item["_id"]: item["count"] for item in bucket_result}
 
             return {
                 "total_documents": total,
@@ -395,42 +459,45 @@ class DocumentTracker(DocumentTrackerBackend):
                     "completed_articles": news_articles_completed,
                     "completion_rate": f"{(news_articles_completed/news_articles_total)*100:.1f}%" if news_articles_total > 0 else "0%"
                 },
-                "bucket_distribution": bucket_stats
+                "bucket_distribution": bucket_stats,
+                "storage_backend": "mongodb"
             }
 
         except Exception as e:
-            logger.error(f"❌ Failed to get stats: {e}")
+            logger.error(f"Failed to get stats: {e}")
             return {
                 "total_documents": 0,
                 "completed_documents": 0,
                 "completion_rate": "0%",
-                "error": str(e)
+                "error": str(e),
+                "storage_backend": "mongodb"
             }
 
     def cleanup_old_records(self, days: int = 90) -> int:
         """Remove tracking records older than specified days"""
         try:
-            conn = self._get_connection()
-            cursor = conn.cursor()
+            cutoff_date = datetime.utcnow() - timedelta(days=days)
 
-            cursor.execute(f"""
-                DELETE FROM document_status
-                WHERE updated_at < datetime('now', '-{days} days')
-            """)
+            # Delete old document status records
+            doc_result = self._document_status.delete_many({
+                "updated_at": {"$lt": cutoff_date}
+            })
 
-            deleted_count = cursor.rowcount
-            conn.commit()
+            # Delete old news article status records
+            news_result = self._news_articles_status.delete_many({
+                "updated_at": {"$lt": cutoff_date}
+            })
 
-            logger.info(f"🗑️ Cleaned up {deleted_count} old tracking records")
-            return deleted_count
+            total_deleted = doc_result.deleted_count + news_result.deleted_count
+            logger.info(f"Cleaned up {total_deleted} old tracking records (docs: {doc_result.deleted_count}, news: {news_result.deleted_count})")
+            return total_deleted
 
         except Exception as e:
-            logger.error(f"❌ Cleanup failed: {e}")
+            logger.error(f"Cleanup failed: {e}")
             return 0
-
 
 
 # Global instance
 tracker = DocumentTracker()
 
-logger.info("✅ Document tracker loaded")
+logger.info("MongoDB document tracker loaded")

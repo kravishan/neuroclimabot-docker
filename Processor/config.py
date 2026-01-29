@@ -49,6 +49,7 @@ class Config:
             'ollama': self._load_ollama(),
             'minio': self._load_minio(),
             'milvus': self._load_milvus(),
+            'mongodb': self._load_mongodb(),
             'lancedb': self._load_lancedb(),
             'unstructured': self._load_unstructured(),
             'processing': self._load_processing(),
@@ -142,7 +143,41 @@ class Config:
                 }
             }
         }
-    
+
+    def _load_mongodb(self) -> Dict[str, Any]:
+        """Load MongoDB configuration for document tracking (replaces SQLite)"""
+        host = os.getenv('MONGODB_HOST', 'localhost')
+        port = int(os.getenv('MONGODB_PORT', '27017'))
+        database = os.getenv('MONGODB_DATABASE', 'neuroclimabot')
+        username = os.getenv('MONGODB_USERNAME', '')
+        password = os.getenv('MONGODB_PASSWORD', '')
+
+        # Build connection URI
+        if username and password:
+            # Authenticated connection (production/Kubernetes)
+            connection_uri = f"mongodb://{username}:{password}@{host}:{port}/{database}?authSource=admin"
+        else:
+            # No authentication (local development)
+            connection_uri = f"mongodb://{host}:{port}"
+
+        return {
+            'host': host,
+            'port': port,
+            'database': database,
+            'username': username,
+            'password': password,
+            'connection_uri': connection_uri,
+            'collections': {
+                'document_status': 'document_status',
+                'news_articles_status': 'news_articles_status'
+            },
+            # Connection pool settings for multi-replica support
+            'max_pool_size': int(os.getenv('MONGODB_MAX_POOL_SIZE', '100')),
+            'min_pool_size': int(os.getenv('MONGODB_MIN_POOL_SIZE', '10')),
+            'server_selection_timeout_ms': int(os.getenv('MONGODB_SERVER_SELECTION_TIMEOUT', '5000')),
+            'connect_timeout_ms': int(os.getenv('MONGODB_CONNECT_TIMEOUT', '10000')),
+        }
+
     def _load_lancedb(self) -> Dict[str, Any]:
         return {
             'db_path': os.getenv('LANCEDB_PATH', './lancedb_graphrag'),
@@ -487,6 +522,10 @@ class Config:
     def get_summarization_config(self, bucket: str) -> Dict[str, Any]:
         """Get summarization configuration for bucket"""
         return self.get(f'summarization.{bucket}', self.get('summarization.default'))
+
+    def get_mongodb_config(self) -> Dict[str, Any]:
+        """Get MongoDB configuration for document tracking"""
+        return self.get('mongodb', {})
 
     def get_graphrag_config(self) -> Dict[str, Any]:
         """Get Microsoft GraphRAG configuration"""

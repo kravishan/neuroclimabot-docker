@@ -133,6 +133,7 @@ Pygments==2.19.2
 PyJWT==2.10.1
 pylance==0.20.0
 pymilvus==2.5.14
+pymongo==4.10.1
 pynndescent==0.5.13
 pyparsing==3.2.5
 pyreadline3==3.5.4
