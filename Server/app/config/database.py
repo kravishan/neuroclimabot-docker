@@ -19,8 +19,8 @@ class MilvusConfig(BaseSettings):
     SEARCH_TIMEOUT: int = 5
     
     # Database Configuration
-    DB_CHUNKS: str = "mvp_chunks"
-    DB_SUMMARIES: str = "mvp_summaries"
+    DB_CHUNKS: str = "bot_chunks"
+    DB_SUMMARIES: str = "bot_summary"
     
     # Collection Configuration (4 collections in each database)
     COLLECTION_NEWS: str = "News"
