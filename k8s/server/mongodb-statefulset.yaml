@@ -1,0 +1,123 @@
+# ============================================================================
+# MongoDB StatefulSet - Persistent Database for Multi-Replica Architecture
+# ============================================================================
+# Provides centralized persistent storage for:
+#   - Questionnaires (ENABLE_ANALYTICS)
+#   - Feedback (ENABLE_FEEDBACK)
+#   - Session statistics
+#
+# Architecture:
+#   - Single StatefulSet with persistent SSD storage
+#   - All Server replicas connect to this single MongoDB instance
+#   - Data persists across pod restarts
+#   - Uses node SSD for high-performance storage
+# ============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: neuroclima-mongodb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: mongodb
+spec:
+  ports:
+  - port: 27017
+    name: mongodb
+  clusterIP: None  # Headless service for StatefulSet
+  selector:
+    app: neuroclima
+    component: mongodb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neuroclima-mongodb
+  namespace: uoulu
+  labels:
+    app: neuroclima
+    component: mongodb
+spec:
+  serviceName: neuroclima-mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neuroclima
+      component: mongodb
+  template:
+    metadata:
+      labels:
+        app: neuroclima
+        component: mongodb
+    spec:
+      # Node affinity: Schedule on memory-optimized nodes
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: doks.digitalocean.com/node-pool
+                  operator: In
+                  values:
+                    - memory-optimized-pool
+      # Tolerations: Allow scheduling on memory-optimized nodes
+      tolerations:
+        - key: "type"
+          operator: "Equal"
+          value: "memory-optimized"
+          effect: "NoSchedule"
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        ports:
+        - containerPort: 27017
+          name: mongodb
+        env:
+        # MongoDB without authentication for initial setup
+        # Add MONGO_INITDB_ROOT_USERNAME and MONGO_INITDB_ROOT_PASSWORD for production
+        - name: MONGO_INITDB_DATABASE
+          value: "neuroclima"
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        # Liveness probe: Check if MongoDB is alive
+        livenessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        # Readiness probe: Check if MongoDB is ready
+        readinessProbe:
+          exec:
+            command:
+            - mongosh
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+  # Persistent volume claim for MongoDB data (uses node SSD)
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi

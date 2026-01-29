@@ -18,6 +18,22 @@ spec:
         app: neuroclima
         component: redis
     spec:
+      # Node affinity: Schedule on memory-optimized nodes
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: doks.digitalocean.com/node-pool
+                  operator: In
+                  values:
+                    - memory-optimized-pool
+      # Tolerations: Allow scheduling on memory-optimized nodes
+      tolerations:
+        - key: "type"
+          operator: "Equal"
+          value: "memory-optimized"
+          effect: "NoSchedule"
       containers:
       - name: redis
         image: redis:7-alpine
@@ -46,8 +62,7 @@ spec:
             cpu: "500m"
       volumes:
       - name: redis-data
-        persistentVolumeClaim:
-          claimName: redis-data-pvc
+        emptyDir: {}  # Temporary storage - data is lost on pod restart
 ---
 # ============================================================================
 # NeuroClima Server Deployment - Production Configuration
@@ -80,8 +95,17 @@ spec:
         app: neuroclima
         component: server
     spec:
-      # Pod anti-affinity: Spread replicas across different nodes for HA
+      # Node affinity: Schedule on memory-optimized nodes
       affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: doks.digitalocean.com/node-pool
+                  operator: In
+                  values:
+                    - memory-optimized-pool
+        # Pod anti-affinity: Spread replicas across different nodes for HA
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -93,6 +117,12 @@ spec:
                   values:
                   - server
               topologyKey: kubernetes.io/hostname
+      # Tolerations: Allow scheduling on memory-optimized nodes
+      tolerations:
+        - key: "type"
+          operator: "Equal"
+          value: "memory-optimized"
+          effect: "NoSchedule"
       containers:
       - name: server
         image: docker.io/raviyah/neuroclima-server:latest
@@ -113,6 +143,18 @@ spec:
           value: "6379"
         - name: DOCUMENT_PROCESSOR_URL
           value: "http://neuroclima-processor:5000"
+        # MongoDB configuration (persistent storage for analytics, feedback, session stats)
+        - name: MONGODB_HOST
+          value: "neuroclima-mongodb-0.neuroclima-mongodb.uoulu.svc.cluster.local"
+        - name: MONGODB_PORT
+          value: "27017"
+        - name: MONGODB_DATABASE
+          value: "neuroclima"
+        # MongoDB credentials (empty for no auth - can be configured later via secrets)
+        - name: MONGODB_USERNAME
+          value: ""
+        - name: MONGODB_PASSWORD
+          value: ""
         # Milvus from shared config and secrets
         - name: MILVUS_HOST
           valueFrom:

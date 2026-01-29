@@ -18,6 +18,22 @@ spec:
         app: neuroclima
         component: unstructured
     spec:
+      # Node affinity: Schedule on memory-optimized nodes
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: doks.digitalocean.com/node-pool
+                  operator: In
+                  values:
+                    - memory-optimized-pool
+      # Tolerations: Allow scheduling on memory-optimized nodes
+      tolerations:
+        - key: "type"
+          operator: "Equal"
+          value: "memory-optimized"
+          effect: "NoSchedule"
       containers:
       - name: unstructured
         image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
@@ -66,8 +82,17 @@ spec:
         app: neuroclima
         component: processor
     spec:
-      # Pod anti-affinity: Spread replicas across different nodes when scaling
+      # Node affinity: Schedule on memory-optimized nodes
       affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: doks.digitalocean.com/node-pool
+                  operator: In
+                  values:
+                    - memory-optimized-pool
+        # Pod anti-affinity: Spread replicas across different nodes when scaling
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
@@ -79,6 +104,12 @@ spec:
                   values:
                   - processor
               topologyKey: kubernetes.io/hostname
+      # Tolerations: Allow scheduling on memory-optimized nodes
+      tolerations:
+        - key: "type"
+          operator: "Equal"
+          value: "memory-optimized"
+          effect: "NoSchedule"
       # Init container: Copy GraphRAG data from image to PVC if PVC is empty
       initContainers:
       - name: init-graphrag-data
