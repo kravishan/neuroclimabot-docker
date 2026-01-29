@@ -17,8 +17,8 @@ class LLMConfig(BaseSettings):
     # Embedding Model Configuration (from .env)
     EMBEDDING_API_URL: str = "https://lex.itml.space/v1/embeddings"
     EMBEDDING_API_TOKEN: Optional[str] = None  # Optional: Only needed if API requires auth
-    EMBEDDING_MODEL: str = "nomic-embed-text"
-    EMBEDDING_DIMENSION: int = 768
+    EMBEDDING_MODEL: str = "qwen3-embedding:0.6b"  # Qwen3-Embedding-0.6B
+    EMBEDDING_DIMENSION: int = 1024  # Qwen3-Embedding-0.6B dimension
     EMBEDDING_TIMEOUT: int = 30
 
     # OpenAI-Compatible API Configuration (from .env)
