@@ -179,6 +179,13 @@ class RedisConfig(BaseSettings):
     # Auth Token Configuration
     AUTH_TOKEN_PREFIX: str = "auth_token:"  # Redis key prefix for auth tokens
     AUTH_DB: int = 1  # Separate Redis DB for auth tokens (keeps them isolated)
+
+    # Analytics Configuration
+    ANALYTICS_DB: int = 2  # Separate Redis DB for analytics data
+    ANALYTICS_PREFIX: str = "analytics:"  # Redis key prefix for analytics
+    POPULAR_QUERIES_LIMIT: int = 10  # Max number of popular queries to store/return
+    POPULAR_DOCUMENTS_LIMIT: int = 10  # Max number of popular documents to store/return
+    TRENDING_KEYWORDS_LIMIT: int = 20  # Max number of trending keywords to store/return
     
     @property
     def connection_kwargs(self) -> Dict[str, Any]:
@@ -204,6 +211,24 @@ class RedisConfig(BaseSettings):
         kwargs = {
             "url": self.URL,
             "db": self.AUTH_DB,
+            "max_connections": self.MAX_CONNECTIONS,
+            "socket_timeout": self.SOCKET_TIMEOUT,
+            "socket_connect_timeout": self.CONNECTION_TIMEOUT,
+            "decode_responses": True,
+            "encoding": "utf-8"
+        }
+
+        if self.PASSWORD:
+            kwargs["password"] = self.PASSWORD
+
+        return kwargs
+
+    @property
+    def analytics_connection_kwargs(self) -> Dict[str, Any]:
+        """Get connection kwargs for Redis analytics client."""
+        kwargs = {
+            "url": self.URL,
+            "db": self.ANALYTICS_DB,
             "max_connections": self.MAX_CONNECTIONS,
             "socket_timeout": self.SOCKET_TIMEOUT,
             "socket_connect_timeout": self.CONNECTION_TIMEOUT,

@@ -98,6 +98,9 @@ async def startup_event():
     # Initialize stats database
     tasks.append(initialize_stats_database())
 
+    # Initialize analytics service (Redis-based)
+    tasks.append(initialize_analytics_service())
+
     # Initialize GraphRAG (optional)
     tasks.append(initialize_graphrag())
 
@@ -105,7 +108,7 @@ async def startup_event():
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     # Log results
-    task_names = ["langfuse", "auth", "milvus", "minio", "rag", "session_manager", "stats_database", "graphrag"]
+    task_names = ["langfuse", "auth", "milvus", "minio", "rag", "session_manager", "stats_database", "analytics", "graphrag"]
     for i, result in enumerate(results):
         if isinstance(result, Exception):
             task_name = task_names[i] if i < len(task_names) else f"task_{i}"
@@ -133,6 +136,14 @@ async def shutdown_event():
     except Exception as e:
         logger.warning(f"Error shutting down auth service: {e}")
 
+    # Close analytics service Redis connection
+    try:
+        from app.services.analytics.service import get_analytics_service
+        analytics_service = await get_analytics_service()
+        await analytics_service.close()
+    except Exception as e:
+        logger.warning(f"Error shutting down analytics service: {e}")
+
     # Close other connections
     if hasattr(milvus_client, 'close'):
         await milvus_client.close()
@@ -153,6 +164,18 @@ async def initialize_auth_service():
 
     except Exception as e:
         logger.error(f"❌ Failed to initialize authentication service: {e}")
+        raise
+
+
+async def initialize_analytics_service():
+    """Initialize analytics service with Redis backend."""
+    try:
+        from app.services.analytics.service import initialize_analytics_service as init_analytics
+        await init_analytics()
+        logger.info("✅ Analytics service initialized (Redis persistence)")
+
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize analytics service: {e}")
         raise
 
 
@@ -371,7 +394,17 @@ async def perform_health_check() -> Dict:
     except Exception:
         services["auth"] = "unhealthy"
         status = "degraded"
-    
+
+    # Check Analytics service (Redis-based)
+    try:
+        from app.services.analytics.service import get_analytics_service
+        analytics_service = await get_analytics_service()
+        analytics_healthy = await analytics_service.health_check()
+        services["analytics"] = "healthy" if analytics_healthy else "unhealthy"
+    except Exception:
+        services["analytics"] = "unhealthy"
+        status = "degraded"
+
     # Check Langfuse (optional)
     try:
         from app.services.tracing.langfuse_service import get_langfuse_service
@@ -384,7 +417,7 @@ async def perform_health_check() -> Dict:
     except Exception as e:
         services["langfuse"] = "error"
         logger.debug(f"Langfuse health check failed: {e}")
-    
+
     # Add database configuration info
     db_info = {
         "milvus": {
@@ -404,6 +437,15 @@ async def perform_health_check() -> Dict:
             "database": "Redis",
             "db": get_redis_config().AUTH_DB,
             "auto_expiration": True
+        },
+        "analytics": {
+            "database": "Redis",
+            "db": get_redis_config().ANALYTICS_DB,
+            "limits": {
+                "popular_queries": get_redis_config().POPULAR_QUERIES_LIMIT,
+                "popular_documents": get_redis_config().POPULAR_DOCUMENTS_LIMIT,
+                "trending_keywords": get_redis_config().TRENDING_KEYWORDS_LIMIT
+            }
         }
     }
     
