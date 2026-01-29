@@ -166,27 +166,36 @@ class DocumentTracker(DocumentTrackerBackend):
                 update_fields["stp_stp_count"] = kwargs.get('stp_count', 0)
                 update_fields["stp_non_stp_count"] = kwargs.get('non_stp_count', 0)
 
+            # Build $setOnInsert with ONLY fields NOT in update_fields to avoid conflict
+            set_on_insert = {
+                "doc_name": doc_name,
+                "bucket_source": bucket,
+                "created_at": now,
+            }
+
+            # Add default values only for fields not being updated
+            if process_type != "chunks":
+                set_on_insert["chunks_done"] = False
+                set_on_insert["chunks_count"] = 0
+            if process_type != "summary":
+                set_on_insert["summary_done"] = False
+            if process_type != "graphrag":
+                set_on_insert["graphrag_done"] = False
+                set_on_insert["graphrag_entities_count"] = 0
+                set_on_insert["graphrag_relationships_count"] = 0
+                set_on_insert["graphrag_communities_count"] = 0
+            if process_type != "stp":
+                set_on_insert["stp_done"] = False
+                set_on_insert["stp_chunks_count"] = 0
+                set_on_insert["stp_stp_count"] = 0
+                set_on_insert["stp_non_stp_count"] = 0
+
             # Upsert document status
             self._document_status.update_one(
                 {"doc_name": doc_name, "bucket_source": bucket},
                 {
                     "$set": update_fields,
-                    "$setOnInsert": {
-                        "doc_name": doc_name,
-                        "bucket_source": bucket,
-                        "chunks_done": process_type == "chunks",
-                        "chunks_count": kwargs.get('count', 0) if process_type == "chunks" else 0,
-                        "summary_done": process_type == "summary",
-                        "graphrag_done": process_type == "graphrag",
-                        "graphrag_entities_count": kwargs.get('entities', 0) if process_type == "graphrag" else 0,
-                        "graphrag_relationships_count": kwargs.get('relationships', 0) if process_type == "graphrag" else 0,
-                        "graphrag_communities_count": kwargs.get('communities', 0) if process_type == "graphrag" else 0,
-                        "stp_done": process_type == "stp",
-                        "stp_chunks_count": kwargs.get('total_chunks', 0) if process_type == "stp" else 0,
-                        "stp_stp_count": kwargs.get('stp_count', 0) if process_type == "stp" else 0,
-                        "stp_non_stp_count": kwargs.get('non_stp_count', 0) if process_type == "stp" else 0,
-                        "created_at": now,
-                    }
+                    "$setOnInsert": set_on_insert
                 },
                 upsert=True
             )
@@ -217,6 +226,27 @@ class DocumentTracker(DocumentTrackerBackend):
                 update_fields["stp_chunks_count"] = kwargs.get('total_chunks', 0)
                 update_fields["stp_stp_count"] = kwargs.get('stp_count', 0)
 
+            # Build $setOnInsert with ONLY fields NOT in update_fields to avoid conflict
+            set_on_insert = {
+                "source_url": source_url,
+                "original_file": doc_name,
+                "bucket_source": bucket,
+                "article_title": article_title,
+                "row_index": row_index,
+                "created_at": now,
+            }
+
+            # Add default values only for fields not being updated
+            if process_type != "chunks":
+                set_on_insert["chunks_done"] = False
+                set_on_insert["chunks_count"] = 0
+            if process_type != "summary":
+                set_on_insert["summary_done"] = False
+            if process_type != "stp":
+                set_on_insert["stp_done"] = False
+                set_on_insert["stp_chunks_count"] = 0
+                set_on_insert["stp_stp_count"] = 0
+
             # Upsert news article status
             self._news_articles_status.update_one(
                 {
@@ -226,20 +256,7 @@ class DocumentTracker(DocumentTrackerBackend):
                 },
                 {
                     "$set": update_fields,
-                    "$setOnInsert": {
-                        "source_url": source_url,
-                        "original_file": doc_name,
-                        "bucket_source": bucket,
-                        "article_title": article_title,
-                        "row_index": row_index,
-                        "chunks_done": process_type == "chunks",
-                        "chunks_count": kwargs.get('count', 0) if process_type == "chunks" else 0,
-                        "summary_done": process_type == "summary",
-                        "stp_done": process_type == "stp",
-                        "stp_chunks_count": kwargs.get('total_chunks', 0) if process_type == "stp" else 0,
-                        "stp_stp_count": kwargs.get('stp_count', 0) if process_type == "stp" else 0,
-                        "created_at": now,
-                    }
+                    "$setOnInsert": set_on_insert
                 },
                 upsert=True
             )
