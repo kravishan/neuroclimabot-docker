@@ -1,13 +1,12 @@
 """
 Local Embedding Service for Processor
 Loads embedding models locally at startup for fast batch processing
-Uses HuggingFace sentence-transformers library
+Supports both sentence-transformers and native transformers models
 """
 
 import logging
 from typing import List, Dict, Any, Optional
 import torch
-from sentence_transformers import SentenceTransformer
 import numpy as np
 
 logger = logging.getLogger(__name__)
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 class LocalEmbeddingService:
     """
     Local embedding service that loads models at startup.
-    Supports both Qwen3-Embedding and sentence-transformers models.
+    Supports sentence-transformers models and native transformers models (like Qwen3).
     """
 
     def __init__(
@@ -25,7 +24,8 @@ class LocalEmbeddingService:
         embedding_dim: int,
         batch_size: int = 32,
         max_seq_length: Optional[int] = None,
-        device: Optional[str] = None
+        device: Optional[str] = None,
+        use_sentence_transformers: Optional[bool] = None
     ):
         """
         Initialize local embedding service.
@@ -36,15 +36,25 @@ class LocalEmbeddingService:
             batch_size: Batch size for encoding
             max_seq_length: Maximum sequence length (None = use model default)
             device: Device to use ('cuda', 'cpu', or None for auto-detect)
+            use_sentence_transformers: Force sentence-transformers (True) or transformers (False), None=auto-detect
         """
         self.model_name = model_name
         self.embedding_dim = embedding_dim
         self.batch_size = batch_size
-        self.max_seq_length = max_seq_length
+        self.max_seq_length = max_seq_length or 512
         self.model = None
+        self.tokenizer = None
         self.device = device or self._get_device()
 
+        # Auto-detect model type if not specified
+        if use_sentence_transformers is None:
+            # Models known to NOT work with sentence-transformers
+            use_sentence_transformers = not any(x in model_name.lower() for x in ['qwen', 'qwen2', 'qwen3'])
+
+        self.use_sentence_transformers = use_sentence_transformers
+
         logger.info(f"🔧 Initializing LocalEmbeddingService with {model_name}")
+        logger.info(f"   Using: {'sentence-transformers' if use_sentence_transformers else 'transformers (native)'}")
 
     def _get_device(self) -> str:
         """Detect available device (GPU or CPU)"""
@@ -63,35 +73,56 @@ class LocalEmbeddingService:
         logger.info(f"🎯 Target device: {self.device}")
 
         try:
-            # Load the model
-            self.model = SentenceTransformer(self.model_name)
+            if self.use_sentence_transformers:
+                # Use sentence-transformers for compatible models
+                from sentence_transformers import SentenceTransformer
 
-            # Set max sequence length if specified
-            if self.max_seq_length:
+                self.model = SentenceTransformer(self.model_name)
                 self.model.max_seq_length = self.max_seq_length
-                logger.info(f"📏 Max sequence length set to: {self.max_seq_length}")
 
-            # Move to device
-            if self.device == 'cuda':
-                self.model = self.model.to('cuda')
-                logger.info(f"🚀 Model loaded on GPU (CUDA)")
-                logger.info(f"💾 GPU Memory allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+                if self.device == 'cuda':
+                    self.model = self.model.to('cuda')
+                    logger.info(f"🚀 Model loaded on GPU (CUDA)")
+                    logger.info(f"💾 GPU Memory allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+                else:
+                    logger.info(f"💻 Model loaded on CPU")
+
+                # Get actual embedding dimension
+                actual_dim = self.model.get_sentence_embedding_dimension()
+                if actual_dim != self.embedding_dim:
+                    logger.warning(
+                        f"⚠️  Model dimension ({actual_dim}) differs from configured dimension ({self.embedding_dim})"
+                    )
+                    self.embedding_dim = actual_dim
+
             else:
-                logger.info(f"💻 Model loaded on CPU")
+                # Use native transformers for models like Qwen3
+                from transformers import AutoTokenizer, AutoModel
 
-            # Get actual embedding dimension
-            actual_dim = self.model.get_sentence_embedding_dimension()
-            if actual_dim != self.embedding_dim:
-                logger.warning(
-                    f"⚠️  Model dimension ({actual_dim}) differs from configured dimension ({self.embedding_dim})"
-                )
-                self.embedding_dim = actual_dim
+                self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
+                self.model = AutoModel.from_pretrained(self.model_name, trust_remote_code=True)
+
+                # Move to device
+                self.model = self.model.to(self.device)
+                self.model.eval()  # Set to evaluation mode
+
+                if self.device == 'cuda':
+                    logger.info(f"🚀 Model loaded on GPU (CUDA)")
+                    logger.info(f"💾 GPU Memory allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+                else:
+                    logger.info(f"💻 Model loaded on CPU")
 
             logger.info(f"✅ Model loaded successfully: {self.model_name} ({self.embedding_dim}D)")
 
         except Exception as e:
             logger.error(f"❌ Failed to load embedding model {self.model_name}: {e}")
             raise
+
+    def _mean_pooling(self, model_output, attention_mask):
+        """Mean pooling for transformers models"""
+        token_embeddings = model_output[0]  # First element contains token embeddings
+        input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+        return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
 
     def encode(self, texts: List[str], show_progress: bool = False) -> List[List[float]]:
         """
@@ -123,22 +154,51 @@ class LocalEmbeddingService:
             return [[0.0] * self.embedding_dim] * len(texts)
 
         try:
-            # Encode in batches
             logger.debug(f"🔄 Encoding {len(valid_texts)} texts in batches of {self.batch_size}")
 
-            embeddings = self.model.encode(
-                valid_texts,
-                batch_size=self.batch_size,
-                show_progress_bar=show_progress,
-                convert_to_tensor=True,
-                normalize_embeddings=False  # Don't normalize by default
-            )
+            if self.use_sentence_transformers:
+                # Use sentence-transformers encode method
+                embeddings = self.model.encode(
+                    valid_texts,
+                    batch_size=self.batch_size,
+                    show_progress_bar=show_progress,
+                    convert_to_tensor=True,
+                    normalize_embeddings=False
+                )
 
-            # Convert to list and ensure correct shape
-            if isinstance(embeddings, torch.Tensor):
-                embeddings = embeddings.cpu().numpy()
+                # Convert to list
+                if isinstance(embeddings, torch.Tensor):
+                    embeddings = embeddings.cpu().numpy()
+                embeddings_list = embeddings.tolist()
 
-            embeddings_list = embeddings.tolist()
+            else:
+                # Use native transformers with manual encoding
+                embeddings_list = []
+
+                for i in range(0, len(valid_texts), self.batch_size):
+                    batch_texts = valid_texts[i:i + self.batch_size]
+
+                    # Tokenize
+                    encoded = self.tokenizer(
+                        batch_texts,
+                        padding=True,
+                        truncation=True,
+                        max_length=self.max_seq_length,
+                        return_tensors='pt'
+                    )
+
+                    # Move to device
+                    encoded = {k: v.to(self.device) for k, v in encoded.items()}
+
+                    # Generate embeddings
+                    with torch.no_grad():
+                        model_output = self.model(**encoded)
+                        # Use mean pooling
+                        batch_embeddings = self._mean_pooling(model_output, encoded['attention_mask'])
+
+                    # Convert to list
+                    batch_embeddings = batch_embeddings.cpu().numpy().tolist()
+                    embeddings_list.extend(batch_embeddings)
 
             # Create result array with zero embeddings for invalid texts
             result = [[0.0] * self.embedding_dim] * len(texts)
@@ -149,6 +209,8 @@ class LocalEmbeddingService:
 
         except Exception as e:
             logger.error(f"❌ Encoding failed: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             # Return zero embeddings as fallback
             return [[0.0] * self.embedding_dim] * len(texts)
 
@@ -180,10 +242,11 @@ class LocalEmbeddingService:
         return {
             "loaded": True,
             "model_name": self.model_name,
+            "model_type": "sentence-transformers" if self.use_sentence_transformers else "transformers (native)",
             "embedding_dim": self.embedding_dim,
             "device": self.device,
             "batch_size": self.batch_size,
-            "max_seq_length": self.model.max_seq_length if self.model else None,
+            "max_seq_length": self.max_seq_length,
         }
 
     def unload_model(self):
@@ -192,9 +255,12 @@ class LocalEmbeddingService:
             logger.info(f"🔄 Unloading model {self.model_name}")
             del self.model
             self.model = None
-            if self.device == 'cuda':
-                torch.cuda.empty_cache()
-                logger.info("🧹 CUDA cache cleared")
+        if self.tokenizer is not None:
+            del self.tokenizer
+            self.tokenizer = None
+        if self.device == 'cuda':
+            torch.cuda.empty_cache()
+            logger.info("🧹 CUDA cache cleared")
 
 
 class EmbeddingModelManager:
