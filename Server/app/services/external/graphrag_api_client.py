@@ -690,11 +690,14 @@ class GraphRAGAPIClient:
             claims = context.get("claims", [])
             sources = context.get("sources", [])
 
+            # Enhanced logging to debug filtering issues
+            logger.info(f"🔍 STARTING FILTERING: Query='{original_query[:50]}', Entities={len(entities)}, Relationships={len(relationships)}, Reports={len(reports)}, Sources={len(sources)}")
+
             # Get titles from top level
             titles = local_search_response.get("titles", [])
 
             logger.debug(f"📊 Processing: {len(entities)} entities, {len(relationships)} relationships, {len(reports)} reports, {len(sources)} sources")
-            logger.debug(f"🎯 Similarity threshold: {self.min_relevance_threshold}")
+            logger.info(f"🎯 RELEVANCE THRESHOLD: {self.min_relevance_threshold} (items with score < {self.min_relevance_threshold} will be filtered out)")
 
             # Generate query embedding if not provided
             if query_embedding is None:
@@ -725,7 +728,7 @@ class GraphRAGAPIClient:
                     entity_embedding = await self._get_text_embedding(entity_content)
                     if entity_embedding is not None:
                         relevance_score = self._calculate_cosine_similarity(query_embedding, entity_embedding)
-                        logger.debug(f"🔢 Entity '{entity_name[:30]}': semantic_sim={relevance_score:.3f}")
+                        logger.info(f"🔢 Entity '{entity_name[:30]}': semantic_sim={relevance_score:.3f}")
                     else:
                         # Fallback to heuristic scoring
                         try:
@@ -733,7 +736,7 @@ class GraphRAGAPIClient:
                             relevance_score = min(rel_count / 20.0, 1.0) if rel_count > 0 else 0.5
                         except:
                             relevance_score = 0.5
-                        logger.debug(f"🔢 Entity '{entity_name[:30]}': heuristic={relevance_score:.3f} (embedding failed)")
+                        logger.info(f"🔢 Entity '{entity_name[:30]}': heuristic={relevance_score:.3f} (embedding failed)")
                 else:
                     # Fallback to heuristic scoring
                     try:
@@ -741,18 +744,18 @@ class GraphRAGAPIClient:
                         relevance_score = min(rel_count / 20.0, 1.0) if rel_count > 0 else 0.5
                     except:
                         relevance_score = 0.5
-                    logger.debug(f"🔢 Entity '{entity_name[:30]}': heuristic={relevance_score:.3f} (no query embedding)")
+                    logger.info(f"🔢 Entity '{entity_name[:30]}': heuristic={relevance_score:.3f} (no query embedding)")
 
                 # Small boost if in_context (but don't override semantic similarity completely)
                 original_score = relevance_score
                 if in_context:
                     relevance_score = min(relevance_score * 1.1, 1.0)
                     if original_score != relevance_score:
-                        logger.debug(f"  ↗️ Boosted by 10% (in_context): {original_score:.3f} → {relevance_score:.3f}")
+                        logger.info(f"  ↗️ Boosted by 10% (in_context): {original_score:.3f} → {relevance_score:.3f}")
 
                 if relevance_score >= self.min_relevance_threshold:
                     entities_passed += 1
-                    logger.debug(f"  ✅ PASSED (score={relevance_score:.3f} >= {self.min_relevance_threshold})")
+                    logger.info(f"  ✅ PASSED (score={relevance_score:.3f} >= {self.min_relevance_threshold})")
                     graph_item = {
                         "doc_name": f"Graph Entity: {entity_name}",
                         "content": entity_content,
@@ -776,7 +779,7 @@ class GraphRAGAPIClient:
                     graph_items.append(graph_item)
                 else:
                     entities_filtered += 1
-                    logger.debug(f"  ❌ FILTERED (score={relevance_score:.3f} < {self.min_relevance_threshold})")
+                    logger.info(f"  ❌ FILTERED (score={relevance_score:.3f} < {self.min_relevance_threshold})")
                     self.performance_stats["relevance_filtered"] += 1
 
             # Process relationships - NEW FIELD NAMES: source (not source_entity), target (not target_entity), id (not relationship_id)

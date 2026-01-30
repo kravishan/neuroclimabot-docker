@@ -111,7 +111,7 @@ class IntegrationsConfig(BaseSettings):
 
     # GraphRAG Relevance Scoring Configuration
     GRAPH_MIN_RELEVANCE_SCORE: float = Field(
-        default=0.6,
+        default=0.2,
         description="Minimum relevance score threshold for graph data (0.0-1.0)"
     )
     GRAPH_RETRIEVAL_LIMIT: int = Field(
