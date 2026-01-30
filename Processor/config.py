@@ -47,6 +47,7 @@ class Config:
         self._cache = {
             'app': self._load_app(),
             'ollama': self._load_ollama(),
+            'local_embeddings': self._load_local_embeddings(),
             'minio': self._load_minio(),
             'milvus': self._load_milvus(),
             'mongodb': self._load_mongodb(),
@@ -106,11 +107,31 @@ class Config:
             # Embedding model (Qwen3-Embedding-0.6B: 1024 dimensions)
             'embedding_model': os.getenv('OLLAMA_EMBEDDING_MODEL', 'qwen3-embedding:0.6b'),
             'embedding_dim': int(os.getenv('OLLAMA_EMBEDDING_DIM', '1024')),
+            'embedding_batch_size': int(os.getenv('OLLAMA_EMBEDDING_BATCH_SIZE', '32')),
             'timeout': timeout_seconds,
             'max_retries': 3,
             'headers': {"Content-Type": "application/json"}
         }
-    
+
+    def _load_local_embeddings(self) -> Dict[str, Any]:
+        """Configuration for local embedding models loaded at startup"""
+        return {
+            'main_embedding': {
+                'model_name': os.getenv('LOCAL_EMBEDDING_MODEL', 'Qwen/Qwen3-Embedding-0.6B'),
+                'embedding_dim': int(os.getenv('LOCAL_EMBEDDING_DIM', '1024')),
+                'batch_size': int(os.getenv('LOCAL_EMBEDDING_BATCH_SIZE', '32')),
+                'max_seq_length': int(os.getenv('LOCAL_EMBEDDING_MAX_SEQ_LENGTH', '512')),
+                'device': os.getenv('LOCAL_EMBEDDING_DEVICE', None),  # None = auto-detect
+            },
+            'stp_embedding': {
+                'model_name': os.getenv('STP_LOCAL_EMBEDDING_MODEL', 'sentence-transformers/all-MiniLM-L6-v2'),
+                'embedding_dim': int(os.getenv('STP_EMBEDDING_DIM', '384')),
+                'batch_size': int(os.getenv('STP_EMBEDDING_BATCH_SIZE', '32')),
+                'max_seq_length': int(os.getenv('STP_EMBEDDING_MAX_SEQ_LENGTH', '256')),
+                'device': os.getenv('STP_EMBEDDING_DEVICE', None),  # None = auto-detect
+            }
+        }
+
     def _load_minio(self) -> Dict[str, Any]:
         return {
             'endpoint': os.getenv('MINIO_ENDPOINT', 'localhost:9000'),

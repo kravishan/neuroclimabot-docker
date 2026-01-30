@@ -367,6 +367,33 @@ async def lifespan(app: FastAPI):
     try:
         await initialize_services()
 
+        # Initialize local embedding models at startup
+        logger.info("🤖 Initializing local embedding models...")
+        try:
+            from services.local_embeddings import initialize_embedding_models
+
+            # Get embedding configuration
+            embedding_config = config.get('local_embeddings', {})
+
+            if embedding_config:
+                initialize_embedding_models(embedding_config)
+                logger.info("✅ Local embedding models loaded successfully")
+
+                # Log model information
+                from services.local_embeddings import get_model_manager
+                model_manager = get_model_manager()
+                models_info = model_manager.get_all_models_info()
+
+                for model_name, info in models_info.items():
+                    if info.get('loaded'):
+                        logger.info(f"   📊 {model_name}: {info.get('model_name')} ({info.get('embedding_dim')}D) on {info.get('device')}")
+            else:
+                logger.warning("⚠️ No local embedding configuration found, using default settings")
+
+        except Exception as embedding_error:
+            logger.error(f"❌ Local embedding model initialization failed: {embedding_error}")
+            logger.warning("⚠️ Falling back to API-based embeddings if available")
+
         # Pre-load translation models at startup
         logger.info("🌐 Pre-loading translation models...")
         try:
