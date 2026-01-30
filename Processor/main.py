@@ -394,6 +394,33 @@ async def lifespan(app: FastAPI):
             logger.error(f"❌ Local embedding model initialization failed: {embedding_error}")
             logger.warning("⚠️ Falling back to API-based embeddings if available")
 
+        # Initialize query embedding service for retrieval operations
+        logger.info("🔍 Initializing query embedding service (external Ollama)...")
+        try:
+            from services.query_embeddings import initialize_query_embedding_service
+
+            # Get Ollama configuration for query embeddings
+            ollama_config = config.get('ollama', {})
+
+            query_api_url = ollama_config.get('base_url', 'http://localhost:11434')
+            query_model = ollama_config.get('embedding_model', 'qwen3-embedding:0.6b')
+            query_dim = ollama_config.get('embedding_dim', 1024)
+            query_timeout = ollama_config.get('timeout', 120)
+
+            initialize_query_embedding_service(
+                api_url=query_api_url,
+                model=query_model,
+                embedding_dim=query_dim,
+                timeout=query_timeout
+            )
+            logger.info(f"✅ Query embedding service initialized")
+            logger.info(f"   API: {query_api_url}")
+            logger.info(f"   Model: {query_model} ({query_dim}D)")
+
+        except Exception as query_embedding_error:
+            logger.error(f"❌ Query embedding service initialization failed: {query_embedding_error}")
+            logger.warning("⚠️ Search endpoints may not work properly")
+
         # Pre-load translation models at startup
         logger.info("🌐 Pre-loading translation models...")
         try:

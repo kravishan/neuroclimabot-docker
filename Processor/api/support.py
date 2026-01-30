@@ -583,13 +583,15 @@ def setup_search_routes(app, get_services_func):
     @app.post("/search/chunks")
     @api_response
     async def search_chunks(request: SearchRequest):
-        """Search for similar chunks"""
+        """Search for similar chunks using external Ollama for query embedding"""
 
         try:
             services = get_services_func()
 
-            from processors.pipeline import processor
-            embedding = await processor.embedder.generate_embedding(request.query)
+            # Use query embedding service (external Ollama) for retrieval
+            from services.query_embeddings import get_query_embedding_service
+            query_service = get_query_embedding_service()
+            embedding = await query_service.generate_embedding(request.query)
 
             results = await services.vector_storage.search("chunks", embedding, request.bucket, request.limit)
 
@@ -606,13 +608,15 @@ def setup_search_routes(app, get_services_func):
     @app.post("/search/summaries")
     @api_response
     async def search_summaries(request: SearchRequest):
-        """Search for similar summaries"""
+        """Search for similar summaries using external Ollama for query embedding"""
 
         try:
             services = get_services_func()
 
-            from processors.pipeline import processor
-            embedding = await processor.embedder.generate_embedding(request.query)
+            # Use query embedding service (external Ollama) for retrieval
+            from services.query_embeddings import get_query_embedding_service
+            query_service = get_query_embedding_service()
+            embedding = await query_service.generate_embedding(request.query)
 
             results = await services.vector_storage.search("summaries", embedding, request.bucket, request.limit)
 
@@ -630,13 +634,15 @@ def setup_search_routes(app, get_services_func):
     @api_response
     async def hybrid_search(query: str, bucket: Optional[str] = None,
                            chunk_limit: int = 5, summary_limit: int = 3):
-        """Perform hybrid search across chunks and summaries"""
+        """Perform hybrid search across chunks and summaries using external Ollama"""
 
         try:
             services = get_services_func()
 
-            from processors.pipeline import processor
-            embedding = await processor.embedder.generate_embedding(query)
+            # Use query embedding service (external Ollama) for retrieval
+            from services.query_embeddings import get_query_embedding_service
+            query_service = get_query_embedding_service()
+            embedding = await query_service.generate_embedding(query)
 
             chunk_results = await services.vector_storage.search("chunks", embedding, bucket, chunk_limit)
             summary_results = await services.vector_storage.search("summaries", embedding, bucket, summary_limit)
