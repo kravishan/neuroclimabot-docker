@@ -267,9 +267,6 @@ spec:
         envFrom:
         - configMapRef:
             name: server-config
-        volumeMounts:
-        - name: server-data
-          mountPath: /app/data
         # Readiness probe: Check if server is ready to serve requests
         # Temporarily disabled until correct health endpoint path is determined
         # readinessProbe:
@@ -299,7 +296,3 @@ spec:
           limits:
             memory: "2Gi"
             cpu: "1000m"
-      volumes:
-      - name: server-data
-        persistentVolumeClaim:
-          claimName: server-data-pvc

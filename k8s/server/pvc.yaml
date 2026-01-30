@@ -1,14 +1,9 @@
-# Redis now uses emptyDir (temporary storage) - PVC removed
-# See k8s/server/deployment.yaml for emptyDir configuration
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: server-data-pvc
-  namespace: uoulu
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
+# ============================================================================
+# Server PVCs - DEPRECATED
+# ============================================================================
+# Both Redis and Server data have been removed:
+# - Redis: Now uses emptyDir (temporary storage)
+# - Server data: All data moved to centralized MongoDB
+#
+# See k8s/server/deployment.yaml for current configuration
+# ============================================================================
