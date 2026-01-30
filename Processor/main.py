@@ -367,15 +367,16 @@ async def lifespan(app: FastAPI):
     try:
         await initialize_services()
 
-        # Initialize local embedding models at startup
-        logger.info("🤖 Initializing local embedding models...")
-        try:
-            from services.local_embeddings import initialize_embedding_models
+        # Initialize local embedding models at startup (if mode is 'local')
+        embedding_config = config.get('local_embeddings', {})
+        embedding_mode = embedding_config.get('mode', 'external')
+        embedding_enabled = embedding_config.get('enabled', False)
 
-            # Get embedding configuration
-            embedding_config = config.get('local_embeddings', {})
+        if embedding_enabled and embedding_mode == 'local':
+            logger.info("🤖 Initializing local embedding models (mode=local)...")
+            try:
+                from services.local_embeddings import initialize_embedding_models
 
-            if embedding_config:
                 initialize_embedding_models(embedding_config)
                 logger.info("✅ Local embedding models loaded successfully")
 
@@ -387,12 +388,13 @@ async def lifespan(app: FastAPI):
                 for model_name, info in models_info.items():
                     if info.get('loaded'):
                         logger.info(f"   📊 {model_name}: {info.get('model_name')} ({info.get('embedding_dim')}D) on {info.get('device')}")
-            else:
-                logger.warning("⚠️ No local embedding configuration found, using default settings")
 
-        except Exception as embedding_error:
-            logger.error(f"❌ Local embedding model initialization failed: {embedding_error}")
-            logger.warning("⚠️ Falling back to API-based embeddings if available")
+            except Exception as embedding_error:
+                logger.error(f"❌ Local embedding model initialization failed: {embedding_error}")
+                logger.warning("⚠️ Falling back to external Ollama API for embeddings")
+        else:
+            logger.info(f"🌐 Using external Ollama API for document processing (mode={embedding_mode})")
+            logger.info("   Local models will not be loaded - all embeddings via external API")
 
         # Initialize query embedding service for retrieval operations
         logger.info("🔍 Initializing query embedding service (external Ollama)...")

@@ -850,61 +850,98 @@ class AsyncDocumentProcessor:
 
 
 class AsyncEmbeddingProcessor:
-    """Local embedding generation with batch processing"""
+    """Embedding generation with automatic fallback (local or external API)"""
 
     def __init__(self):
         self.model_name = config.get('ollama.embedding_model')
         self.embedding_dim = config.get('ollama.embedding_dim')
         self.batch_size = config.get('ollama.embedding_batch_size', 32)
+        self.embedding_mode = config.get('local_embeddings.mode', 'external')
 
-        # Get the model manager and use the 'main' model
-        self.model_manager = get_model_manager()
+        # Try to get local model manager
+        try:
+            self.model_manager = get_model_manager()
+            # Check if main model is loaded
+            models_info = self.model_manager.get_all_models_info()
+            self.use_local = models_info.get('main', {}).get('loaded', False)
+        except:
+            self.model_manager = None
+            self.use_local = False
 
-        logger.info(f"📊 Embedding config - Model: {self.model_name} ({self.embedding_dim}D)")
-        logger.info(f"🔧 Using local embedding model (batch size: {self.batch_size})")
+        if self.use_local:
+            logger.info(f"📊 Embedding config - Using LOCAL model (batch size: {self.batch_size})")
+        else:
+            logger.info(f"📊 Embedding config - Using EXTERNAL Ollama API")
+            logger.info(f"   Model: {self.model_name} ({self.embedding_dim}D)")
+            # Initialize external API client
+            from services.query_embeddings import get_query_embedding_service
+            try:
+                self.external_service = get_query_embedding_service()
+                logger.info(f"   ✅ External API service available")
+            except:
+                self.external_service = None
+                logger.warning(f"   ⚠️ External API service not available")
 
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding for text using local model - async wrapper"""
+        """Generate embedding for text using local model or external API"""
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
 
         cleaned_text = text.strip()
 
         try:
-            # Run encoding in thread pool to avoid blocking
-            loop = asyncio.get_event_loop()
-            embedding = await loop.run_in_executor(
-                None,
-                self.model_manager.encode_single,
-                'main',
-                cleaned_text
-            )
-            return embedding
+            if self.use_local:
+                # Use local model
+                loop = asyncio.get_event_loop()
+                embedding = await loop.run_in_executor(
+                    None,
+                    self.model_manager.encode_single,
+                    'main',
+                    cleaned_text
+                )
+                return embedding
+            else:
+                # Use external API
+                if self.external_service:
+                    embedding = await self.external_service.generate_embedding(cleaned_text)
+                    return embedding
+                else:
+                    logger.error("No embedding service available (local or external)")
+                    return [0.0] * self.embedding_dim
 
         except Exception as e:
             logger.error(f"Embedding generation failed: {e}")
             return [0.0] * self.embedding_dim
     
     async def process_chunks(self, chunks: List[ChunkData]) -> List[Dict[str, Any]]:
-        """Process chunks with embeddings - using efficient batch encoding"""
+        """Process chunks with embeddings - local or external API"""
         if not chunks:
             return []
 
-        logger.info(f"🔄 Processing {len(chunks)} chunks with local embedding model")
+        mode_label = "LOCAL model" if self.use_local else "EXTERNAL API"
+        logger.info(f"🔄 Processing {len(chunks)} chunks with {mode_label}")
 
         try:
             # Extract texts for batch encoding
             texts = [chunk.chunk_text.strip() for chunk in chunks]
 
-            # Run batch encoding in thread pool
-            loop = asyncio.get_event_loop()
-            embeddings = await loop.run_in_executor(
-                None,
-                self.model_manager.encode,
-                'main',
-                texts,
-                False  # show_progress
-            )
+            if self.use_local:
+                # Use local model with batch encoding
+                loop = asyncio.get_event_loop()
+                embeddings = await loop.run_in_executor(
+                    None,
+                    self.model_manager.encode,
+                    'main',
+                    texts,
+                    False  # show_progress
+                )
+            else:
+                # Use external API with batch encoding
+                if self.external_service:
+                    embeddings = await self.external_service.generate_embeddings_batch(texts)
+                else:
+                    logger.error("No embedding service available")
+                    embeddings = [[0.0] * self.embedding_dim] * len(texts)
 
             # Create enriched chunks
             enriched_chunks = []

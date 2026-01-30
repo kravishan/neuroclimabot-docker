@@ -115,7 +115,11 @@ class Config:
 
     def _load_local_embeddings(self) -> Dict[str, Any]:
         """Configuration for local embedding models loaded at startup"""
+        mode = os.getenv('PROCESSOR_EMBEDDING_MODE', 'external').lower()
+
         return {
+            'mode': mode,  # 'local' or 'external'
+            'enabled': mode == 'local',  # Only load local models if mode is 'local'
             'main_embedding': {
                 'model_name': os.getenv('LOCAL_EMBEDDING_MODEL', 'Qwen/Qwen3-Embedding-0.6B'),
                 'embedding_dim': int(os.getenv('LOCAL_EMBEDDING_DIM', '1024')),
