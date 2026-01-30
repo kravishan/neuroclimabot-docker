@@ -97,20 +97,28 @@ class LocalEmbeddingService:
 
             else:
                 # Use native transformers for models like Qwen3
-                from transformers import AutoTokenizer, AutoModel
+                try:
+                    from transformers import AutoTokenizer, AutoModel
 
-                self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
-                self.model = AutoModel.from_pretrained(self.model_name, trust_remote_code=True)
+                    self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, trust_remote_code=True)
+                    self.model = AutoModel.from_pretrained(self.model_name, trust_remote_code=True)
 
-                # Move to device
-                self.model = self.model.to(self.device)
-                self.model.eval()  # Set to evaluation mode
+                    # Move to device
+                    self.model = self.model.to(self.device)
+                    self.model.eval()  # Set to evaluation mode
 
-                if self.device == 'cuda':
-                    logger.info(f"🚀 Model loaded on GPU (CUDA)")
-                    logger.info(f"💾 GPU Memory allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
-                else:
-                    logger.info(f"💻 Model loaded on CPU")
+                    if self.device == 'cuda':
+                        logger.info(f"🚀 Model loaded on GPU (CUDA)")
+                        logger.info(f"💾 GPU Memory allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+                    else:
+                        logger.info(f"💻 Model loaded on CPU")
+
+                except Exception as transformers_error:
+                    logger.error(f"❌ Failed to load with transformers library: {transformers_error}")
+                    logger.error("💡 Qwen3 models require transformers>=4.44.0")
+                    logger.error("   To fix: pip install --upgrade transformers>=4.44.0")
+                    logger.error("   Or: Use external Ollama API instead of local models")
+                    raise
 
             logger.info(f"✅ Model loaded successfully: {self.model_name} ({self.embedding_dim}D)")
 
