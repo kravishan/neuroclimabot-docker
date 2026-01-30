@@ -14,6 +14,7 @@ from processors.chunkers import ChunkerFactory
 from processors.summarizers import SummarizerFactory
 from processors.graphrag_processor import graphrag_processor
 from processors.stp_processor import stp_processor
+from services.local_embeddings import get_model_manager
 
 logger = logging.getLogger(__name__)
 
@@ -849,100 +850,131 @@ class AsyncDocumentProcessor:
 
 
 class AsyncEmbeddingProcessor:
-    """Async embedding generation with concurrent processing"""
+    """Embedding generation with automatic fallback (local or external API)"""
 
     def __init__(self):
-        self.embedding_url = config.get('ollama.embedding_url')
-        self.model = config.get('ollama.embedding_model')
+        self.model_name = config.get('ollama.embedding_model')
         self.embedding_dim = config.get('ollama.embedding_dim')
-        self.timeout = config.get('ollama.timeout')
-        self.headers = config.get('ollama.headers')
-        self._session = None
+        self.batch_size = config.get('ollama.embedding_batch_size', 32)
+        self.embedding_mode = config.get('local_embeddings.mode', 'external')
 
-        logger.info(f"📊 Embedding config - Model: {self.model} ({self.embedding_dim}D)")
-    
-    async def _get_session(self):
-        """Get or create aiohttp session"""
-        if self._session is None:
-            import aiohttp
-            self._session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout))
-        return self._session
-    
+        # Try to get local model manager
+        try:
+            self.model_manager = get_model_manager()
+            # Check if main model is loaded
+            models_info = self.model_manager.get_all_models_info()
+            self.use_local = models_info.get('main', {}).get('loaded', False)
+        except:
+            self.model_manager = None
+            self.use_local = False
+
+        if self.use_local:
+            logger.info(f"📊 Embedding config - Using LOCAL model (batch size: {self.batch_size})")
+        else:
+            logger.info(f"📊 Embedding config - Using EXTERNAL Ollama API")
+            logger.info(f"   Model: {self.model_name} ({self.embedding_dim}D)")
+            # Initialize external API client
+            from services.query_embeddings import get_query_embedding_service
+            try:
+                self.external_service = get_query_embedding_service()
+                logger.info(f"   ✅ External API service available")
+            except:
+                self.external_service = None
+                logger.warning(f"   ⚠️ External API service not available")
+
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding for text using Qwen3-Embedding model - async"""
+        """Generate embedding for text using local model or external API"""
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
 
-        cleaned_text = text.strip()[:4000]
-
-        payload = {"model": self.model, "prompt": cleaned_text}
+        cleaned_text = text.strip()
 
         try:
-            session = await self._get_session()
-
-            async with session.post(self.embedding_url, json=payload) as response:
-                if response.status != 200:
-                    raise Exception(f"Embedding API error: {response.status}")
-
-                result = await response.json()
-                embedding = result.get("embedding", [])
-
-                if not embedding:
-                    raise Exception("Empty embedding returned")
-
+            if self.use_local:
+                # Use local model
+                loop = asyncio.get_event_loop()
+                embedding = await loop.run_in_executor(
+                    None,
+                    self.model_manager.encode_single,
+                    'main',
+                    cleaned_text
+                )
                 return embedding
+            else:
+                # Use external API
+                if self.external_service:
+                    embedding = await self.external_service.generate_embedding(cleaned_text)
+                    return embedding
+                else:
+                    logger.error("No embedding service available (local or external)")
+                    return [0.0] * self.embedding_dim
 
         except Exception as e:
             logger.error(f"Embedding generation failed: {e}")
             return [0.0] * self.embedding_dim
     
     async def process_chunks(self, chunks: List[ChunkData]) -> List[Dict[str, Any]]:
-        """Process chunks with embeddings - async with concurrency"""
-        enriched_chunks = []
-        
-        batch_size = 10
-        for i in range(0, len(chunks), batch_size):
-            batch = chunks[i:i + batch_size]
-            batch_tasks = []
-            
-            for chunk in batch:
-                task = self._process_single_chunk(chunk)
-                batch_tasks.append(task)
-            
-            batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
-            
-            for chunk, result in zip(batch, batch_results):
-                if isinstance(result, Exception):
-                    logger.error(f"Failed to generate embedding for chunk {chunk.chunk_id}: {result}")
-                    fallback_chunk = self._create_fallback_chunk(chunk)
-                    enriched_chunks.append(fallback_chunk)
+        """Process chunks with embeddings - local or external API"""
+        if not chunks:
+            return []
+
+        mode_label = "LOCAL model" if self.use_local else "EXTERNAL API"
+        logger.info(f"🔄 Processing {len(chunks)} chunks with {mode_label}")
+
+        try:
+            # Extract texts for batch encoding
+            texts = [chunk.chunk_text.strip() for chunk in chunks]
+
+            if self.use_local:
+                # Use local model with batch encoding
+                loop = asyncio.get_event_loop()
+                embeddings = await loop.run_in_executor(
+                    None,
+                    self.model_manager.encode,
+                    'main',
+                    texts,
+                    False  # show_progress
+                )
+            else:
+                # Use external API with batch encoding
+                if self.external_service:
+                    embeddings = await self.external_service.generate_embeddings_batch(texts)
                 else:
-                    enriched_chunks.append(result)
-        
-        logger.info(f"Generated embeddings for {len(enriched_chunks)}/{len(chunks)} chunks")
-        return enriched_chunks
-    
-    async def _process_single_chunk(self, chunk: ChunkData) -> Dict[str, Any]:
-        """Process single chunk with embedding using Qwen3-Embedding model"""
-        embedding = await self.generate_embedding(chunk.chunk_text)
+                    logger.error("No embedding service available")
+                    embeddings = [[0.0] * self.embedding_dim] * len(texts)
 
-        enriched_chunk = {
-            "chunk_id": chunk.chunk_id,
-            "bucket_source": chunk.bucket_source,
-            "chunk_text": chunk.chunk_text,
-            "chunk_index": chunk.chunk_index,
-            "token_count": chunk.token_count,
-            "processing_timestamp": chunk.processing_timestamp,
-            "embedding": embedding
-        }
+            # Create enriched chunks
+            enriched_chunks = []
+            for chunk, embedding in zip(chunks, embeddings):
+                enriched_chunk = {
+                    "chunk_id": chunk.chunk_id,
+                    "bucket_source": chunk.bucket_source,
+                    "chunk_text": chunk.chunk_text,
+                    "chunk_index": chunk.chunk_index,
+                    "token_count": chunk.token_count,
+                    "processing_timestamp": chunk.processing_timestamp,
+                    "embedding": embedding
+                }
 
-        if chunk.bucket_source == "news":
-            source_url = chunk.chunk_metadata.get("source_url") if chunk.chunk_metadata else chunk.doc_name
-            enriched_chunk["source_url"] = source_url
-        else:
-            enriched_chunk["doc_name"] = chunk.doc_name
+                if chunk.bucket_source == "news":
+                    source_url = chunk.chunk_metadata.get("source_url") if chunk.chunk_metadata else chunk.doc_name
+                    enriched_chunk["source_url"] = source_url
+                else:
+                    enriched_chunk["doc_name"] = chunk.doc_name
 
-        return enriched_chunk
+                enriched_chunks.append(enriched_chunk)
+
+            logger.info(f"✅ Generated embeddings for {len(enriched_chunks)} chunks")
+            return enriched_chunks
+
+        except Exception as e:
+            logger.error(f"❌ Batch embedding generation failed: {e}")
+            # Fallback to creating chunks with zero embeddings
+            enriched_chunks = []
+            for chunk in chunks:
+                fallback_chunk = self._create_fallback_chunk(chunk)
+                enriched_chunks.append(fallback_chunk)
+            return enriched_chunks
     
     def _create_fallback_chunk(self, chunk: ChunkData) -> Dict[str, Any]:
         """Create fallback chunk with zero embedding"""
@@ -993,9 +1025,9 @@ class AsyncEmbeddingProcessor:
             raise
     
     async def cleanup(self):
-        """Cleanup aiohttp session"""
-        if self._session:
-            await self._session.close()
+        """Cleanup resources (no-op for local models)"""
+        # No cleanup needed for local models
+        pass
 
 
 # Create the processor instance and export it properly

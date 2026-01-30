@@ -367,6 +367,62 @@ async def lifespan(app: FastAPI):
     try:
         await initialize_services()
 
+        # Initialize local embedding models at startup (if mode is 'local')
+        embedding_config = config.get('local_embeddings', {})
+        embedding_mode = embedding_config.get('mode', 'external')
+        embedding_enabled = embedding_config.get('enabled', False)
+
+        if embedding_enabled and embedding_mode == 'local':
+            logger.info("🤖 Initializing local embedding models (mode=local)...")
+            try:
+                from services.local_embeddings import initialize_embedding_models
+
+                initialize_embedding_models(embedding_config)
+                logger.info("✅ Local embedding models loaded successfully")
+
+                # Log model information
+                from services.local_embeddings import get_model_manager
+                model_manager = get_model_manager()
+                models_info = model_manager.get_all_models_info()
+
+                for model_name, info in models_info.items():
+                    if info.get('loaded'):
+                        logger.info(f"   📊 {model_name}: {info.get('model_name')} ({info.get('embedding_dim')}D) on {info.get('device')}")
+
+            except Exception as embedding_error:
+                logger.error(f"❌ Local embedding model initialization failed: {embedding_error}")
+                logger.warning("⚠️ Falling back to external Ollama API for embeddings")
+        else:
+            logger.info(f"🌐 Using external Ollama API for document processing (mode={embedding_mode})")
+            logger.info("   Local models will not be loaded - all embeddings via external API")
+
+        # Initialize query embedding service for retrieval operations
+        logger.info("🔍 Initializing query embedding service (external Ollama)...")
+        try:
+            from services.query_embeddings import initialize_query_embedding_service
+
+            # Get Ollama configuration for query embeddings
+            ollama_config = config.get('ollama', {})
+
+            query_api_url = ollama_config.get('base_url', 'http://localhost:11434')
+            query_model = ollama_config.get('embedding_model', 'qwen3-embedding:0.6b')
+            query_dim = ollama_config.get('embedding_dim', 1024)
+            query_timeout = ollama_config.get('timeout', 120)
+
+            initialize_query_embedding_service(
+                api_url=query_api_url,
+                model=query_model,
+                embedding_dim=query_dim,
+                timeout=query_timeout
+            )
+            logger.info(f"✅ Query embedding service initialized")
+            logger.info(f"   API: {query_api_url}")
+            logger.info(f"   Model: {query_model} ({query_dim}D)")
+
+        except Exception as query_embedding_error:
+            logger.error(f"❌ Query embedding service initialization failed: {query_embedding_error}")
+            logger.warning("⚠️ Search endpoints may not work properly")
+
         # Pre-load translation models at startup
         logger.info("🌐 Pre-loading translation models...")
         try:
