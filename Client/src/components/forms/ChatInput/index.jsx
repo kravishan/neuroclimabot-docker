@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Send, Mic } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useSession } from '@/hooks/useSession'
-import { FEATURE_FLAGS } from '@/constants/config'
 import './ChatInput.css'
 
 const ChatInput = ({ difficultyLevel = 'low', selectedLanguage = 'en' }) => {
@@ -26,17 +25,11 @@ const ChatInput = ({ difficultyLevel = 'low', selectedLanguage = 'en' }) => {
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    // If no input and voice model is disabled, do nothing
-    if (!input.trim() && !FEATURE_FLAGS.VOICE_MODEL) {
+    // If no input, do nothing
+    if (!input.trim()) {
       return
     }
-    
-    // If no input but voice model is enabled, navigate to voice model
-    if (!input.trim() && FEATURE_FLAGS.VOICE_MODEL) {
-      navigate('/voice-model')
-      return
-    }
-    
+
     setError(null)
 
     try {
@@ -69,10 +62,8 @@ const ChatInput = ({ difficultyLevel = 'low', selectedLanguage = 'en' }) => {
     }
   }
 
-  // Determine what icon to show and button behavior
-  const showMicIcon = !input.trim() && FEATURE_FLAGS.VOICE_MODEL
-  const showSendIcon = input.trim()
-  const isButtonDisabled = !input.trim() && !FEATURE_FLAGS.VOICE_MODEL
+  // Button is disabled when there's no input
+  const isButtonDisabled = !input.trim()
 
   return (
     <div className="chat-input-container">
@@ -90,25 +81,13 @@ const ChatInput = ({ difficultyLevel = 'low', selectedLanguage = 'en' }) => {
           className="send-button"
           onClick={handleSubmit}
           disabled={isButtonDisabled}
-          aria-label={
-            showSendIcon 
-              ? 'Send message' 
-              : showMicIcon 
-                ? 'Use voice input' 
-                : 'Enter a message to send'
-          }
+          aria-label="Send message"
           style={{
-            opacity: isButtonDisabled ? 0 : 1,
+            opacity: isButtonDisabled ? 0.5 : 1,
             cursor: isButtonDisabled ? 'not-allowed' : 'pointer'
           }}
         >
-          {showSendIcon ? (
-            <Send size={20} className="send-icon" />
-          ) : showMicIcon ? (
-            <Mic size={20} className="mic-icon" />
-          ) : (
-            <Send size={20} className="send-icon" />
-          )}
+          <Send size={20} className="send-icon" />
         </button>
       </div>
       {error && <p className="error-message">{error}</p>}

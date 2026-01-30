@@ -1,7 +1,6 @@
 export const ROUTES = {
   HOME: '/',
   RESPONSE: '/response/:sessionId',
-  VOICE_MODEL: '/voice-model',
   EXPLORE: '/explore-tipping-points',
   QUESTIONNAIRE: '/research-questionnaire',
   DASHBOARD: '/dashboard',
